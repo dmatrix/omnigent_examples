@@ -1,0 +1,24 @@
+spec_version: 1
+name: my_agent
+description: A helpful Python coder with a greeting tool.
+
+executor:
+  type: omniagents
+  model: databricks-claude-sonnet-4-6
+  config:
+    harness: claude-sdk
+
+prompt: |
+  You are a helpful Python coder. You have a tool called `greet` that
+  greets someone by name. Use it when asked to greet someone.
+
+tools:
+  builtins: []
+
+  researcher:
+    type: agent
+    description: A research sub-agent.
+    executor:
+      type: omniagents
+      model: databricks-claude-sonnet-4-6
+    prompt: "Hello Alice, what you doing this weekend?"
