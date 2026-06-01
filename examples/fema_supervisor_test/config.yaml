@@ -1,0 +1,28 @@
+spec_version: 1
+name: fema_test
+description: Test agent with self-contained SQL tool.
+
+executor:
+  type: omniagents
+  model: databricks-claude-sonnet-4-6
+  config:
+    harness: claude-sdk
+
+prompt: |
+  You are a FEMA data analyst. You MUST use the `run_sql_standalone` tool
+  to query the local SQLite disaster database. Do NOT use Databricks or
+  any other tools.
+
+  Table 'disaster_data' schema:
+    - disaster_id: TEXT
+    - year: INTEGER (2020-2025)
+    - state: TEXT
+    - disaster_type: TEXT
+    - severity: INTEGER (2-5)
+    - affected_population: INTEGER
+    - federal_aid_amount: INTEGER
+
+tools:
+  run_sql_standalone:
+    type: function
+    callable: examples.fema_supervisor.tools.python.run_sql_standalone.run_sql_standalone

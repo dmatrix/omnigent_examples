@@ -1,0 +1,14 @@
+spec_version: 1
+name: greeter
+description: A simple agent that greets people using a custom tool.
+
+executor:
+  type: omniagents
+  model: databricks-claude-sonnet-4-6
+  config:
+    harness: claude-sdk
+
+prompt: |
+  You are a friendly greeter. When asked to greet someone, use the
+  `greet` tool. When asked to greet multiple people, call the tool
+  once per person.
