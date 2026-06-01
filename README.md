@@ -71,6 +71,37 @@ tools:
 | **Auto-discovery** | Directory-based agents (`examples/<agent_dir>/config.yaml`) auto-discover tools from `tools/python/` within the same directory. |
 | **`os_env`** | Optional section that gives the agent access to the caller's process, working directory, and shell -- with configurable sandboxing. |
 
+### Standalone YAML vs. directory bundles
+
+There are two ways to define an agent:
+
+**Standalone YAML** -- a single `.yaml` file with everything inline:
+
+```
+examples/yamls/greeter.yaml
+```
+
+**Directory bundle** -- a directory with `config.yaml` plus bundled assets:
+
+```
+examples/greeter/
+├── config.yaml
+└── tools/python/greet.py
+```
+
+#### When to use which
+
+| Layout | Use when | Examples |
+|---|---|---|
+| **Standalone YAML** | The agent has no custom tools, or tools are referenced by dotted callable paths to code that lives elsewhere. Best for prompt-only agents, agents using only builtins like `web_search`, or agents with sub-agents that have no function tools. | `greeter.yaml`, `code_assistant.yaml`, `researcher.yaml` |
+| **Directory bundle** | The agent has custom Python tools that should ship with it. The framework auto-discovers `@tool`-decorated functions in `tools/python/`. Also needed when the agent bundles data files, sub-agent directories under `agents/`, or skills under `skills/`. | `greeter/`, `fema_supervisor/` |
+
+#### The key tradeoff
+
+Standalone YAML is simpler but couples your agent to external code paths -- the `callable:` must be importable from wherever you run the CLI. Directory bundles are portable: everything the agent needs travels in one folder, and `tools/python/` files are auto-discovered without explicit `callable:` declarations.
+
+For anything beyond a prompt-only agent, directory bundles are the better default.
+
 ---
 
 ## Examples
@@ -95,24 +126,7 @@ The `fema_supervisor` agent demonstrates a production-style multi-agent architec
 
 ### Architecture
 
-```
-                        +---------------------+
-                        |   fema_supervisor    |
-                        |   (routing agent)    |
-                        +----------+----------+
-                                   |
-                  +----------------+----------------+
-                  |                                 |
-         +--------v--------+            +-----------v-----------+
-         |      genie       |            |  knowledge_assistant  |
-         |  (data analyst)  |            |   (policy expert)     |
-         +--------+---------+            +-----------+-----------+
-                  |                                  |
-         +--------v--------+            +-----------v-----------+
-         |     run_sql      |            |   search_policies     |
-         | (SQLite query)   |            | (embedding search)    |
-         +-----------------+            +-----------------------+
-```
+![FEMA Supervisor Architecture](images/fema_supervisor_architecture.svg)
 
 ### Routing Logic
 

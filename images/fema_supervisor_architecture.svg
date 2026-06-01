@@ -1,0 +1,185 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 720" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <linearGradient id="userGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#48c9b0"/>
+      <stop offset="100%" stop-color="#1abc9c"/>
+    </linearGradient>
+    <linearGradient id="supervisorGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e94560"/>
+      <stop offset="100%" stop-color="#c73e54"/>
+    </linearGradient>
+    <linearGradient id="genieGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0f3460"/>
+      <stop offset="100%" stop-color="#1a5276"/>
+    </linearGradient>
+    <linearGradient id="kaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#533483"/>
+      <stop offset="100%" stop-color="#6c3d9e"/>
+    </linearGradient>
+    <linearGradient id="toolGrad1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1b4f72"/>
+      <stop offset="100%" stop-color="#154360"/>
+    </linearGradient>
+    <linearGradient id="toolGrad2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4a235a"/>
+      <stop offset="100%" stop-color="#3b1c5a"/>
+    </linearGradient>
+    <linearGradient id="synthGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e97c00"/>
+      <stop offset="100%" stop-color="#f5a623"/>
+    </linearGradient>
+    <linearGradient id="traceGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0d6e3a"/>
+      <stop offset="100%" stop-color="#148f4b"/>
+    </linearGradient>
+
+    <!-- Shadows -->
+    <filter id="softShadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="720" fill="url(#bgGrad)"/>
+
+  <!-- Subtle grid -->
+  <g opacity="0.03" stroke="#fff" stroke-width="0.5">
+    <line x1="0" y1="100" x2="900" y2="100"/><line x1="0" y1="200" x2="900" y2="200"/>
+    <line x1="0" y1="300" x2="900" y2="300"/><line x1="0" y1="400" x2="900" y2="400"/>
+    <line x1="0" y1="500" x2="900" y2="500"/><line x1="0" y1="600" x2="900" y2="600"/>
+    <line x1="150" y1="0" x2="150" y2="720"/><line x1="300" y1="0" x2="300" y2="720"/>
+    <line x1="450" y1="0" x2="450" y2="720"/><line x1="600" y1="0" x2="600" y2="720"/>
+    <line x1="750" y1="0" x2="750" y2="720"/>
+  </g>
+
+  <!-- Decorative circles -->
+  <circle cx="80" cy="120" r="45" fill="#4fc3f7" opacity="0.04"/>
+  <circle cx="820" cy="580" r="60" fill="#bb86fc" opacity="0.04"/>
+  <circle cx="750" cy="100" r="35" fill="#e94560" opacity="0.04"/>
+  <circle cx="150" cy="600" r="50" fill="#48c9b0" opacity="0.04"/>
+
+  <!-- Title -->
+  <text x="450" y="38" text-anchor="middle" fill="#fff" font-size="18" font-weight="700" letter-spacing="1">FEMA Disaster Supervisor — OmniAgents Architecture</text>
+  <text x="450" y="58" text-anchor="middle" fill="#8899aa" font-size="11">YAML-Defined Multi-Agent Orchestration with Claude SDK Harness</text>
+
+  <!-- ============ MLflow Trace Backdrop ============ -->
+  <rect x="40" y="215" width="820" height="410" rx="14" fill="none" stroke="#2ecc71" stroke-width="1.5" stroke-dasharray="8 4" opacity="0.35"/>
+  <rect x="40" y="215" width="820" height="410" rx="14" fill="#0d3b1f" opacity="0.12"/>
+  <text x="65" y="240" fill="#2ecc71" font-size="10" font-weight="600" opacity="0.7">MLflow Tracing Boundary</text>
+
+  <!-- ============ User Query ============ -->
+  <rect x="330" y="75" width="240" height="44" rx="22" fill="url(#userGrad)" filter="url(#softShadow)"/>
+  <text x="370" y="102" fill="#fff" font-size="14" font-weight="600">User Query</text>
+  <text x="520" y="100" fill="#fff" font-size="16">&#x1F464;</text>
+
+  <!-- Arrow: User -> Supervisor -->
+  <line x1="450" y1="119" x2="450" y2="150" stroke="#48c9b0" stroke-width="2" opacity="0.8"/>
+  <polygon points="445,148 455,148 450,158" fill="#48c9b0" opacity="0.8"/>
+
+  <!-- ============ Supervisor ============ -->
+  <rect x="240" y="158" width="420" height="78" rx="12" fill="url(#supervisorGrad)" filter="url(#softShadow)"/>
+  <text x="450" y="185" text-anchor="middle" fill="#fff" font-size="16" font-weight="700">fema_supervisor</text>
+  <text x="450" y="204" text-anchor="middle" fill="#ffd5dd" font-size="10">Prompt-Driven Routing  |  Classify  |  Delegate  |  Synthesize</text>
+  <text x="450" y="222" text-anchor="middle" fill="#ffb3c1" font-size="9" font-style="italic">config.yaml  ·  executor: claude-sdk  ·  model: databricks-claude-sonnet-4-6</text>
+
+  <!-- Route labels -->
+  <!-- Left route arrow (genie) -->
+  <path d="M340,236 L340,260 L220,260 L220,300" fill="none" stroke="#4fc3f7" stroke-width="2" opacity="0.7"/>
+  <polygon points="215,298 225,298 220,308" fill="#4fc3f7" opacity="0.7"/>
+  <rect x="265" y="250" width="60" height="18" rx="9" fill="#4fc3f7" opacity="0.2"/>
+  <text x="295" y="263" text-anchor="middle" fill="#4fc3f7" font-size="9" font-weight="600">genie</text>
+
+  <!-- Right route arrow (knowledge_assistant) -->
+  <path d="M560,236 L560,260 L680,260 L680,300" fill="none" stroke="#bb86fc" stroke-width="2" opacity="0.7"/>
+  <polygon points="675,298 685,298 680,308" fill="#bb86fc" opacity="0.7"/>
+  <rect x="580" y="250" width="85" height="18" rx="9" fill="#bb86fc" opacity="0.2"/>
+  <text x="622" y="263" text-anchor="middle" fill="#bb86fc" font-size="9" font-weight="600">knowledge</text>
+
+  <!-- Center route arrow (both) -->
+  <path d="M450,236 L450,270" fill="none" stroke="#f5a623" stroke-width="2" stroke-dasharray="5 3" opacity="0.6"/>
+  <rect x="425" y="260" width="50" height="18" rx="9" fill="#f5a623" opacity="0.2"/>
+  <text x="450" y="273" text-anchor="middle" fill="#f5a623" font-size="9" font-weight="600">both</text>
+  <!-- Fork to both agents -->
+  <path d="M450,278 L350,295 L350,300" fill="none" stroke="#f5a623" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.5"/>
+  <path d="M450,278 L560,295 L560,300" fill="none" stroke="#f5a623" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.5"/>
+
+  <!-- ============ Genie Agent ============ -->
+  <rect x="100" y="308" width="280" height="90" rx="10" fill="url(#genieGrad)" filter="url(#softShadow)"/>
+  <text x="240" y="335" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">genie</text>
+  <text x="240" y="352" text-anchor="middle" fill="#a8d8ea" font-size="10">Sub-Agent  ·  type: agent</text>
+  <text x="240" y="370" text-anchor="middle" fill="#7ec8e3" font-size="9">Translates natural language to SQL</text>
+  <text x="240" y="386" text-anchor="middle" fill="#5dade2" font-size="8" font-style="italic">Prompt: schema-aware SQLite query generation</text>
+
+  <!-- ============ Knowledge Assistant ============ -->
+  <rect x="520" y="308" width="280" height="90" rx="10" fill="url(#kaGrad)" filter="url(#softShadow)"/>
+  <text x="660" y="335" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">knowledge_assistant</text>
+  <text x="660" y="352" text-anchor="middle" fill="#d7bde2" font-size="10">Sub-Agent  ·  type: agent</text>
+  <text x="660" y="370" text-anchor="middle" fill="#c39bd3" font-size="9">Semantic search over policy documents</text>
+  <text x="660" y="386" text-anchor="middle" fill="#af7ac5" font-size="8" font-style="italic">Prompt: cite document sources by name</text>
+
+  <!-- Arrow: Genie -> run_sql -->
+  <line x1="240" y1="398" x2="240" y2="428" stroke="#4fc3f7" stroke-width="1.5" opacity="0.6"/>
+  <polygon points="236,426 244,426 240,434" fill="#4fc3f7" opacity="0.6"/>
+
+  <!-- Arrow: KA -> search_policies -->
+  <line x1="660" y1="398" x2="660" y2="428" stroke="#bb86fc" stroke-width="1.5" opacity="0.6"/>
+  <polygon points="656,426 664,426 660,434" fill="#bb86fc" opacity="0.6"/>
+
+  <!-- ============ run_sql Tool ============ -->
+  <rect x="110" y="434" width="260" height="80" rx="8" fill="url(#toolGrad1)" filter="url(#softShadow)"/>
+  <text x="240" y="457" text-anchor="middle" fill="#4fc3f7" font-size="12" font-weight="700">run_sql</text>
+  <text x="240" y="473" text-anchor="middle" fill="#85c1e9" font-size="9">@tool  ·  @mlflow.trace(span_type="TOOL")</text>
+  <text x="240" y="490" text-anchor="middle" fill="#aab7c4" font-size="9">SQLite in-memory  ·  200 FEMA records</text>
+  <text x="240" y="504" text-anchor="middle" fill="#7f8c8d" font-size="8">fema_data.py  ·  2020-2025  ·  5 disaster types</text>
+
+  <!-- ============ search_policies Tool ============ -->
+  <rect x="530" y="434" width="260" height="80" rx="8" fill="url(#toolGrad2)" filter="url(#softShadow)"/>
+  <text x="660" y="457" text-anchor="middle" fill="#bb86fc" font-size="12" font-weight="700">search_policies</text>
+  <text x="660" y="473" text-anchor="middle" fill="#d2b4de" font-size="9">@tool  ·  @mlflow.trace(span_type="RETRIEVER")</text>
+  <text x="660" y="490" text-anchor="middle" fill="#aab7c4" font-size="9">OpenAI embeddings  ·  cosine similarity</text>
+  <text x="660" y="504" text-anchor="middle" fill="#7f8c8d" font-size="8">policy_docs.py  ·  11 FEMA documents  ·  top-k retrieval</text>
+
+  <!-- Arrows: Tools -> Synthesizer -->
+  <path d="M240,514 L240,545 L380,545 L380,565" fill="none" stroke="#4fc3f7" stroke-width="1.5" opacity="0.5"/>
+  <path d="M660,514 L660,545 L520,545 L520,565" fill="none" stroke="#bb86fc" stroke-width="1.5" opacity="0.5"/>
+
+  <!-- ============ Synthesizer ============ -->
+  <rect x="310" y="565" width="280" height="50" rx="10" fill="url(#synthGrad)" filter="url(#softShadow)"/>
+  <text x="450" y="593" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">Supervisor Synthesizes Response</text>
+  <text x="450" y="607" text-anchor="middle" fill="#ffecd2" font-size="9">Combines data + policy into unified answer</text>
+
+  <!-- Arrow: Synthesizer -> Response -->
+  <line x1="450" y1="615" x2="450" y2="645" stroke="#f5a623" stroke-width="2" opacity="0.7"/>
+  <polygon points="445,643 455,643 450,653" fill="#f5a623" opacity="0.7"/>
+
+  <!-- ============ Response ============ -->
+  <rect x="345" y="653" width="210" height="38" rx="19" fill="url(#userGrad)" filter="url(#softShadow)" opacity="0.85"/>
+  <text x="450" y="677" text-anchor="middle" fill="#fff" font-size="13" font-weight="600">Final Response</text>
+
+  <!-- ============ Footer Badges ============ -->
+  <g transform="translate(0, 700)">
+    <rect x="95" y="0" width="110" height="20" rx="10" fill="#e94560" opacity="0.25"/>
+    <text x="150" y="14" text-anchor="middle" fill="#e94560" font-size="9" font-weight="600">OmniAgents CLI</text>
+
+    <rect x="220" y="0" width="100" height="20" rx="10" fill="#4fc3f7" opacity="0.25"/>
+    <text x="270" y="14" text-anchor="middle" fill="#4fc3f7" font-size="9" font-weight="600">Claude SDK</text>
+
+    <rect x="335" y="0" width="110" height="20" rx="10" fill="#2ecc71" opacity="0.25"/>
+    <text x="390" y="14" text-anchor="middle" fill="#2ecc71" font-size="9" font-weight="600">MLflow 3.x</text>
+
+    <rect x="460" y="0" width="140" height="20" rx="10" fill="#f5a623" opacity="0.25"/>
+    <text x="530" y="14" text-anchor="middle" fill="#f5a623" font-size="9" font-weight="600">YAML-Defined Agents</text>
+
+    <rect x="615" y="0" width="100" height="20" rx="10" fill="#bb86fc" opacity="0.25"/>
+    <text x="665" y="14" text-anchor="middle" fill="#bb86fc" font-size="9" font-weight="600">FEMA Data</text>
+  </g>
+</svg>
