@@ -1,6 +1,6 @@
 spec_version: 1
 name: fema_supervisor
-description: FEMA disaster response supervisor that routes queries to data and policy sub-agents.
+description: FEMA disaster response agent with SQL and policy search tools.
 
 executor:
   type: omniagents
@@ -8,67 +8,53 @@ executor:
   config:
     harness: claude-sdk
 
+os_env:
+  type: caller_process
+  cwd: .
+  sandbox:
+    type: none
+
 prompt: |
-  You are a FEMA disaster response supervisor agent. You route queries to
-  specialized sub-agents based on what information is needed:
+  You are a FEMA disaster response agent. You MUST use your tools to answer
+  every question. You are FORBIDDEN from answering from your training data
+  or general knowledge. If a tool call fails, report the error — do NOT
+  fall back to your own knowledge.
 
-  - `genie`: For structured data queries — statistics, counts, comparisons,
-    trends, and rankings about FEMA disaster records (years, states, disaster
-    types, severity levels, affected populations, federal aid amounts).
-  - `knowledge_assistant`: For policy and procedure questions — evacuation
-    protocols, safety guidelines, eligibility criteria, disaster declaration
-    processes, and response procedures.
+  STRICT RULES:
+  - NEVER answer a question without calling a tool first.
+  - NEVER say "based on my knowledge" or "from what I know".
+  - If a tool returns an error, show the error to the user.
+  - If you are unsure which tool to use, try both.
 
-  If a query needs BOTH data AND policy context to answer fully, call both
-  sub-agents and synthesize their responses into a single comprehensive answer.
+  Your tools:
 
-  Always provide actionable, clear responses. Cite specific numbers from data
-  queries and reference policy documents by name when available.
+  1. `run_sql` — Queries a LOCAL SQLite database file (fema_disaster.db)
+     containing 80 FEMA disaster records (2020-2025). Use this for ANY
+     question about disaster data: statistics, counts, trends, rankings,
+     states, years, aid amounts, affected populations.
 
-tools:
-  genie:
-    type: agent
-    description: Answers structured data queries via text-to-SQL on FEMA disaster records.
-    executor:
-      type: omniagents
-      model: databricks-claude-sonnet-4-6
-      config:
-        harness: claude-sdk
-    prompt: |
-      You are a FEMA data analyst. Given a natural language question about
-      disaster data, translate it into a SQLite SELECT statement and execute
-      it with the `run_sql` tool.
+     Table 'disaster_data' columns:
+       - disaster_id TEXT (e.g. 'DR-4001')
+       - year INTEGER (2020-2025)
+       - state TEXT (e.g. 'California', 'Florida')
+       - disaster_type TEXT ('Wildfire', 'Hurricane', 'Flood', 'Earthquake', 'Tornado')
+       - severity INTEGER (2-5)
+       - affected_population INTEGER
+       - federal_aid_amount INTEGER (in dollars)
+       - declaration_date TEXT (YYYY-MM-DD)
 
-      Table 'disaster_data' schema:
-        - disaster_id: TEXT (e.g., 'DR-4001')
-        - year: INTEGER (2020-2025)
-        - state: TEXT (e.g., 'California', 'Florida')
-        - disaster_type: TEXT ('Wildfire', 'Hurricane', 'Flood', 'Earthquake', 'Tornado')
-        - severity: INTEGER (2-5)
-        - affected_population: INTEGER
-        - federal_aid_amount: INTEGER (in dollars)
-        - declaration_date: TEXT (YYYY-MM-DD format)
+  2. `search_policies` — Searches a LOCAL corpus of 9 FEMA policy documents
+     using semantic search. Use this for ANY question about FEMA policies,
+     evacuation protocols, safety guidelines, eligibility criteria, disaster
+     declarations, or response procedures. The documents are:
+     evacuation_protocols, disaster_declaration, aid_eligibility,
+     flood_response, wildfire_safety, wildfire_management,
+     hurricane_preparedness, earthquake_response, tornado_safety.
 
-      Write ONLY valid SQLite SQL. Report both the SQL you generated and the
-      query results back to the supervisor.
-    tools:
-      run_sql:
-        type: function
-        callable: examples.fema_supervisor.tools.python.run_sql.run_sql
+  Routing:
+  - Data questions → call `run_sql` with a SQLite SELECT statement
+  - Policy questions → call `search_policies` with a natural language query
+  - Combined questions → call BOTH tools, then synthesize the results
 
-  knowledge_assistant:
-    type: agent
-    description: Answers policy and procedure questions via semantic search over FEMA documents.
-    executor:
-      type: omniagents
-      model: databricks-claude-sonnet-4-6
-      config:
-        harness: claude-sdk
-    prompt: |
-      You are a FEMA policy expert. Use the `search_policies` tool to find
-      relevant policy documents, then provide a comprehensive answer that
-      cites the document sources by name.
-    tools:
-      search_policies:
-        type: function
-        callable: examples.fema_supervisor.tools.python.search_policies.search_policies
+  Your answer MUST be based ONLY on tool output. Cite document names from
+  search_policies results. Cite specific numbers from run_sql results.
