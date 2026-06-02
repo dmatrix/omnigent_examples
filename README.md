@@ -132,9 +132,9 @@ The `fema_supervisor` agent demonstrates a production-style multi-agent architec
 
 The supervisor classifies each incoming query and routes it to one or both sub-agents:
 
-**Path 1 -- Data queries (genie only)**
+**Path 1 -- Data queries (sql_tool only)**
 
-User asks about statistics, counts, comparisons, trends, or rankings from FEMA disaster records. The supervisor dispatches to `genie`, which translates the question into a SQLite SELECT statement and executes it via `run_sql`.
+User asks about statistics, counts, comparisons, trends, or rankings from FEMA disaster records. The supervisor dispatches to `sql_tool`, which translates the question into a SQLite SELECT statement and executes it via `run_sql`.
 
 > Example: "What were the top 5 states by federal aid in 2024?"
 
@@ -178,7 +178,7 @@ User asks a question that requires both data context and policy context. The sup
 ### Example Queries
 
 ```
-# Data query (routed to genie)
+# Data query (routed to sql_tool)
 "Which disaster type received the most federal aid across all years?"
 
 # Policy query (routed to knowledge_assistant)

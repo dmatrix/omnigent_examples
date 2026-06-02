@@ -13,7 +13,7 @@
       <stop offset="0%" stop-color="#e94560"/>
       <stop offset="100%" stop-color="#c73e54"/>
     </linearGradient>
-    <linearGradient id="genieGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+    <linearGradient id="sql_toolGrad" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" stop-color="#0f3460"/>
       <stop offset="100%" stop-color="#1a5276"/>
     </linearGradient>
@@ -92,11 +92,11 @@
   <text x="450" y="222" text-anchor="middle" fill="#ffb3c1" font-size="9" font-style="italic">config.yaml  ·  executor: claude-sdk  ·  model: databricks-claude-sonnet-4-6</text>
 
   <!-- Route labels -->
-  <!-- Left route arrow (genie) -->
+  <!-- Left route arrow (sql_tool) -->
   <path d="M340,236 L340,260 L220,260 L220,300" fill="none" stroke="#4fc3f7" stroke-width="2" opacity="0.7"/>
   <polygon points="215,298 225,298 220,308" fill="#4fc3f7" opacity="0.7"/>
   <rect x="265" y="250" width="60" height="18" rx="9" fill="#4fc3f7" opacity="0.2"/>
-  <text x="295" y="263" text-anchor="middle" fill="#4fc3f7" font-size="9" font-weight="600">genie</text>
+  <text x="295" y="263" text-anchor="middle" fill="#4fc3f7" font-size="9" font-weight="600">sql_tool</text>
 
   <!-- Right route arrow (knowledge_assistant) -->
   <path d="M560,236 L560,260 L680,260 L680,300" fill="none" stroke="#bb86fc" stroke-width="2" opacity="0.7"/>
@@ -112,9 +112,9 @@
   <path d="M450,278 L350,295 L350,300" fill="none" stroke="#f5a623" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.5"/>
   <path d="M450,278 L560,295 L560,300" fill="none" stroke="#f5a623" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.5"/>
 
-  <!-- ============ Genie Agent ============ -->
-  <rect x="100" y="308" width="280" height="90" rx="10" fill="url(#genieGrad)" filter="url(#softShadow)"/>
-  <text x="240" y="335" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">genie</text>
+  <!-- ============ SQL Tool Agent ============ -->
+  <rect x="100" y="308" width="280" height="90" rx="10" fill="url(#sql_toolGrad)" filter="url(#softShadow)"/>
+  <text x="240" y="335" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">sql_tool</text>
   <text x="240" y="352" text-anchor="middle" fill="#a8d8ea" font-size="10">Sub-Agent  ·  type: agent</text>
   <text x="240" y="370" text-anchor="middle" fill="#7ec8e3" font-size="9">Translates natural language to SQL</text>
   <text x="240" y="386" text-anchor="middle" fill="#5dade2" font-size="8" font-style="italic">Prompt: schema-aware SQLite query generation</text>
@@ -126,7 +126,7 @@
   <text x="660" y="370" text-anchor="middle" fill="#c39bd3" font-size="9">Semantic search over policy documents</text>
   <text x="660" y="386" text-anchor="middle" fill="#af7ac5" font-size="8" font-style="italic">Prompt: cite document sources by name</text>
 
-  <!-- Arrow: Genie -> run_sql -->
+  <!-- Arrow: sql_tool -> run_sql -->
   <line x1="240" y1="398" x2="240" y2="428" stroke="#4fc3f7" stroke-width="1.5" opacity="0.6"/>
   <polygon points="236,426 244,426 240,434" fill="#4fc3f7" opacity="0.6"/>
 

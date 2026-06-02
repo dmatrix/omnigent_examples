@@ -87,7 +87,7 @@ omniagents_harness/
 |-- examples/
 |   |-- __init__.py
 |   |-- fema_supervisor/                 # Multi-agent FEMA supervisor
-|   |   |-- config.yaml                  #   Supervisor + 2 sub-agents (genie, knowledge_assistant)
+|   |   |-- config.yaml                  #   Supervisor + 2 sub-agents (sql_tool, knowledge_assistant)
 |   |   |-- __init__.py
 |   |   +-- tools/python/
 |   |       |-- __init__.py
