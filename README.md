@@ -1,32 +1,130 @@
 # OmniAgents Harness
 
-**YAML-defined AI agents for the OmniAgents CLI -- from single-tool assistants to multi-agent supervisors.**
+**YAML-defined AI agents for the OmniAgents CLI -- from single-tool assistants to multi-tool disaster response agents.**
 
 ![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
 ![Databricks](https://img.shields.io/badge/Databricks-FF3621?logo=databricks&logoColor=white)
 ![Claude](https://img.shields.io/badge/Claude-Anthropic-6B4FBB)
-![MLflow](https://img.shields.io/badge/MLflow-Tracing-0194E2?logo=mlflow&logoColor=white)
-![Multi-Agent](https://img.shields.io/badge/Multi--Agent-Supervisor%20Pattern-green)
 ![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)
 
 ---
 
 ## Overview
 
-This repository contains example agent configurations for the [OmniAgents](https://github.com/databricks/omniagents) CLI. Each example defines one or more AI agents entirely in YAML -- specifying the executor, system prompt, tools, and (optionally) sub-agents. The configurations range from a zero-tool greeter to a multi-agent FEMA disaster response supervisor with text-to-SQL and semantic search capabilities, all traced with MLflow.
+This repository contains example agent configurations for the [OmniAgents](https://github.com/databricks/omniagents) CLI. Each example defines an AI agent in YAML -- specifying the executor, system prompt, and tools. The flagship example is a **FEMA disaster response agent** converted from the [mlflow-genai-tutorials multi-agent supervisor notebook](https://github.com/dmatrix/mlflow-genai-tutorials/blob/main/10_multi_agent_supervisor.ipynb) into the OmniAgents harness format.
 
 All agents use the `databricks-claude-sonnet-4-6` model via the `claude-sdk` harness.
 
+### FEMA Disaster Agent
+
+The FEMA agent (`examples/fema_supervisor/`) has two auto-discovered tools with prompt-driven routing:
+
+- **`run_sql`** -- Executes SQLite queries against a local database (`fema_disaster.db`) containing 80 FEMA disaster records (2020--2025). Uses Python's built-in `sqlite3` -- no external SQL warehouse.
+
+- **`search_policies`** -- Semantic search over 9 FEMA policy documents (evacuation protocols, disaster declarations, aid eligibility, flood/wildfire/hurricane/earthquake/tornado procedures). Uses OpenAI embeddings and cosine similarity. Requires `OPENAI_API_KEY` in a `.env` file at the repo root.
+
+The agent's prompt enforces strict tool usage: data questions go to `run_sql`, policy questions go to `search_policies`, combined questions use both. The agent never falls back to training data.
+
 ---
 
-## Architecture: The OmniAgents YAML Pattern
+## Quick Start
 
-Every agent is defined in a `config.yaml` (or standalone `.yaml` file) with four core sections:
+### 1. Prerequisites
+
+- Python 3.12+
+- The `omniagents` CLI installed
+- Databricks CLI authenticated (`databricks auth login`)
+
+### 2. Set up the FEMA database
+
+```bash
+python examples/tools/create_fema_db.py
+```
+
+This creates `examples/tools/data/fema_disaster.db` with 80 disaster records.
+
+### 3. Set up the OpenAI API key
+
+Create a `.env` file at the repo root (the `search_policies` tool needs it for embeddings):
+
+```bash
+echo 'OPENAI_API_KEY="sk-..."' > .env
+```
+
+### 4. Run the agent
+
+```bash
+omniagents run examples/fema_supervisor/
+```
+
+The CLI opens an interactive REPL in your terminal. A Web UI is also available at the Databricks Apps URL printed at startup (e.g., `https://omnigents-<id>.aws.databricksapps.com`) -- open it in a browser to chat with the agent through a web interface.
+
+### 5. Try these queries
+
+**Data queries** (calls `run_sql`):
+```
+What were the top 5 states by federal aid in 2024?
+How many severity-5 disasters occurred between 2020 and 2025?
+Which disaster type affected the most people overall?
+```
+
+**Policy queries** (calls `search_policies`):
+```
+What are the evacuation protocols for hurricanes?
+How do I apply for FEMA individual assistance?
+What should I do immediately after an earthquake?
+```
+
+**Combined queries** (calls both tools):
+```
+How much aid did California get from wildfires and what safety guidelines apply?
+What was the worst flood disaster and what are FEMA's flood response procedures?
+Which states got hit hardest by tornadoes and what shelter standards does FEMA require?
+```
+
+---
+
+## Architecture
+
+![FEMA Supervisor Architecture](images/fema_supervisor_architecture.svg)
+
+### How it works
+
+The FEMA agent is a single agent with two auto-discovered tools in `tools/python/`. The system prompt defines routing rules:
+
+| Query type | Tool called | Example |
+|---|---|---|
+| Data (statistics, counts, trends) | `run_sql` | "Top 5 states by federal aid in 2024?" |
+| Policy (procedures, guidelines) | `search_policies` | "What are the evacuation protocols?" |
+| Combined (data + policy) | Both | "California wildfire aid and safety guidelines?" |
+
+### Tools
+
+**`run_sql`** reads from a pre-built SQLite file (`examples/tools/data/fema_disaster.db`). The database has one table:
+
+| Column | Type | Example |
+|---|---|---|
+| `disaster_id` | TEXT | DR-4001 |
+| `year` | INTEGER | 2020-2025 |
+| `state` | TEXT | California |
+| `disaster_type` | TEXT | Wildfire, Hurricane, Flood, Earthquake, Tornado |
+| `severity` | INTEGER | 2-5 |
+| `affected_population` | INTEGER | 820000 |
+| `federal_aid_amount` | INTEGER | 1800000000 |
+| `declaration_date` | TEXT | 2020-08-18 |
+
+**`search_policies`** searches 9 inline FEMA policy documents using OpenAI embeddings (`text-embedding-3-small`) and cosine similarity. The documents cover: evacuation protocols (ICS-300), disaster declarations, aid eligibility, flood response, wildfire safety/management, hurricane preparedness, earthquake response, and tornado safety.
+
+---
+
+## The OmniAgents YAML Pattern
+
+Every agent is defined in a `config.yaml` with three core sections:
 
 ```yaml
-spec_version: 1            # optional schema version
-name: my_agent
-description: What the agent does.
+spec_version: 1
+name: fema_supervisor
+description: FEMA disaster response agent with SQL and policy search tools.
 
 executor:
   type: omniagents
@@ -34,182 +132,48 @@ executor:
   config:
     harness: claude-sdk
 
+os_env:
+  type: caller_process
+  cwd: .
+  sandbox:
+    type: none
+
 prompt: |
-  System prompt that defines the agent's behavior.
+  You are a FEMA disaster response agent. You MUST use your tools to answer
+  every question. You are FORBIDDEN from answering from your training data.
 
-tools:
-  # Built-in tools (optional)
-  builtins:
-    - web_search
+  Your tools:
+  1. `run_sql` — Queries a LOCAL SQLite database (fema_disaster.db)
+  2. `search_policies` — Searches LOCAL FEMA policy documents
 
-  # Custom function tools -- Python callables
-  my_tool:
-    type: function
-    callable: examples.my_agent.tools.python.my_module.my_function
-
-  # Sub-agent tools -- full agents used as tools
-  sub_agent:
-    type: agent
-    description: What this sub-agent does.
-    executor: { ... }
-    prompt: |
-      Sub-agent system prompt.
-    tools:
-      nested_tool:
-        type: function
-        callable: examples.my_agent.tools.python.nested.func
+  Routing:
+  - Data questions → call `run_sql`
+  - Policy questions → call `search_policies`
+  - Combined questions → call BOTH tools
 ```
 
-### Key concepts
-
-| Concept | Description |
-|---|---|
-| **Executor** | Runtime configuration: model name, harness type (`claude-sdk`), and optional OS environment settings. |
-| **Prompt** | System-level instructions that define the agent's role, behavior, and how it should use its tools. |
-| **`type: function` tools** | Python functions decorated with `@tool` (from `omniagents_client.tools`), referenced by their dotted import path. |
-| **`type: agent` tools** | Full sub-agents defined inline. The parent agent calls them as tools; each sub-agent has its own executor, prompt, and tools. |
-| **Auto-discovery** | Directory-based agents (`examples/<agent_dir>/config.yaml`) auto-discover tools from `tools/python/` within the same directory. |
-| **`os_env`** | Optional section that gives the agent access to the caller's process, working directory, and shell -- with configurable sandboxing. |
+Tools are auto-discovered from `tools/python/` in the agent's directory. Each `.py` file with a `@tool`-decorated function is registered automatically.
 
 ### Standalone YAML vs. directory bundles
 
-There are two ways to define an agent:
-
-**Standalone YAML** -- a single `.yaml` file with everything inline:
-
-```
-examples/yamls/greeter.yaml
-```
-
-**Directory bundle** -- a directory with `config.yaml` plus bundled assets:
-
-```
-examples/greeter/
-├── config.yaml
-└── tools/python/greet.py
-```
-
-#### When to use which
-
 | Layout | Use when | Examples |
 |---|---|---|
-| **Standalone YAML** | The agent has no custom tools, or tools are referenced by dotted callable paths to code that lives elsewhere. Best for prompt-only agents, agents using only builtins like `web_search`, or agents with sub-agents that have no function tools. | `greeter.yaml`, `code_assistant.yaml`, `researcher.yaml` |
-| **Directory bundle** | The agent has custom Python tools that should ship with it. The framework auto-discovers `@tool`-decorated functions in `tools/python/`. Also needed when the agent bundles data files, sub-agent directories under `agents/`, or skills under `skills/`. | `greeter/`, `fema_supervisor/` |
-
-#### The key tradeoff
-
-Standalone YAML is simpler but couples your agent to external code paths -- the `callable:` must be importable from wherever you run the CLI. Directory bundles are portable: everything the agent needs travels in one folder, and `tools/python/` files are auto-discovered without explicit `callable:` declarations.
-
-For anything beyond a prompt-only agent, directory bundles are the better default.
+| **Standalone YAML** | No custom tools. Prompt-only agents or agents using builtins like `web_search`. | `greeter.yaml`, `code_assistant.yaml` |
+| **Directory bundle** | Custom Python tools in `tools/python/`. The framework auto-discovers `@tool` functions. | `fema_supervisor/`, `greeter/` |
 
 ---
 
-## Examples
+## All Examples
 
-| Agent | Config Path | Pattern | Description | Key Features |
-|---|---|---|---|---|
-| **FEMA Supervisor** | `examples/fema_supervisor/config.yaml` | Multi-agent supervisor | Routes disaster queries to data and policy sub-agents | 3-way routing, text-to-SQL, semantic search, MLflow tracing |
-| **Coding Supervisor** | `examples/yamls/supervisor.yaml` | Supervisor / worker | Delegates coding tasks to an implementation sub-agent | Task decomposition, code review, unsandboxed OS access |
-| **Researcher** | `examples/yamls/researcher.yaml` | Single agent | Summarizes topics using web search and a custom tool | Built-in `web_search`, custom `summarize_topic` function |
-| **Code Assistant** | `examples/yamls/code_assistant.yaml` | Single agent | Reads/writes files and runs shell commands | Full OS environment access, no sandbox |
-| **Greeter (prompt-only)** | `examples/yamls/greeter.yaml` | Single agent | Greets people using prompt-defined behavior | Zero tools, prompt-only logic |
-| **Greeter (tool-based)** | `examples/greeter/config.yaml` | Single agent | Greets people using a custom `greet` tool | Auto-discovered tool from `tools/python/greet.py` |
-| **Simple Agent** | `examples/yamls/simple.yaml` | Single agent + sub-agent | Python coder with a research sub-agent | Inline sub-agent definition |
-| **FEMA Minimal** | `examples/fema_supervisor_minimal/config.yaml` | Multi-agent supervisor | Minimal FEMA supervisor without custom tools | Sub-agent routing only, no function tools |
-| **FEMA Test** | `examples/fema_supervisor_test/config.yaml` | Single agent | Standalone SQL test agent | Self-contained SQL tool, no sub-agents |
-
----
-
-## FEMA Disaster Supervisor -- Deep Dive
-
-The `fema_supervisor` agent demonstrates a production-style multi-agent architecture: a supervisor that routes user queries to specialized sub-agents, each equipped with their own tools and MLflow-traced execution.
-
-### Architecture
-
-![FEMA Supervisor Architecture](images/fema_supervisor_architecture.svg)
-
-### Routing Logic
-
-The supervisor classifies each incoming query and routes it to one or both sub-agents:
-
-**Path 1 -- Data queries (sql_tool only)**
-
-User asks about statistics, counts, comparisons, trends, or rankings from FEMA disaster records. The supervisor dispatches to `sql_tool`, which translates the question into a SQLite SELECT statement and executes it via `run_sql`.
-
-> Example: "What were the top 5 states by federal aid in 2024?"
-
-**Path 2 -- Policy queries (knowledge_assistant only)**
-
-User asks about evacuation protocols, safety guidelines, aid eligibility, disaster declaration processes, or response procedures. The supervisor dispatches to `knowledge_assistant`, which searches the policy corpus via `search_policies` and cites documents by name.
-
-> Example: "What are the evacuation protocols for hurricane-prone areas?"
-
-**Path 3 -- Combined queries (both sub-agents)**
-
-User asks a question that requires both data context and policy context. The supervisor calls both sub-agents and synthesizes their responses into a single comprehensive answer.
-
-> Example: "How much aid did Florida receive from hurricanes in 2024, and what is the eligibility process for affected residents?"
-
-### Tools
-
-#### `run_sql` -- Text-to-SQL over FEMA disaster records
-
-- **Callable:** `examples.fema_supervisor.tools.python.run_sql.run_sql`
-- **Backend:** In-memory SQLite database loaded with 200 synthetic FEMA disaster records (2020--2025)
-- **Data source:** `examples/fema_supervisor/tools/python/fema_data.py` -- generates a DataFrame with columns: `disaster_id`, `year`, `state`, `disaster_type`, `severity`, `affected_population`, `federal_aid_amount`, `declaration_date`
-- **MLflow tracing:** Decorated with `@mlflow.trace(name="run_sql", span_type="TOOL")`. Records `sql_query` and `result_rows` as span attributes.
-
-#### `search_policies` -- Semantic search over FEMA policy documents
-
-- **Callable:** `examples.fema_supervisor.tools.python.search_policies.search_policies`
-- **Backend:** Cosine similarity search over OpenAI embeddings (`text-embedding-3-small` by default, configurable via `EMBED_MODEL` env var)
-- **Corpus:** 11 policy documents defined in `examples/fema_supervisor/tools/python/policy_docs.py`, covering:
-  - Evacuation protocols (ICS-300)
-  - Disaster declaration process
-  - Individual assistance eligibility
-  - Federal assistance guidelines
-  - Flood response procedures (2 documents)
-  - Wildfire safety and management (2 documents)
-  - Hurricane preparedness and operational response
-  - Earthquake response protocol
-  - Tornado safety procedures
-- **MLflow tracing:** Decorated with `@mlflow.trace(name="search_policies", span_type="RETRIEVER")`. Records `top_k`, `top_score`, and `retrieved_docs` as span attributes.
-
-### Example Queries
-
-```
-# Data query (routed to sql_tool)
-"Which disaster type received the most federal aid across all years?"
-
-# Policy query (routed to knowledge_assistant)
-"What should I do if a tornado warning is issued for my area?"
-
-# Combined query (routed to both)
-"What was the total federal aid for California wildfires, and what wildfire safety guidelines does FEMA recommend?"
-```
-
----
-
-## Quick Start
-
-### Prerequisites
-
-- Python 3.12+
-- The `omniagents` CLI installed (`uv tool install omniagents`)
-- `OPENAI_API_KEY` set (required for `search_policies` embedding tool)
-
-### Run an agent
-
-```bash
-# Directory-based agent (auto-discovers tools from tools/python/)
-omniagents run examples/fema_supervisor/
-
-# Directory-based greeter with custom tool
-omniagents run examples/greeter/
-
-# Standalone YAML agent
-omniagents run examples/yamls/greeter.yaml
-```
+| Agent | Path | Description |
+|---|---|---|
+| **FEMA Disaster** | `examples/fema_supervisor/` | SQL + policy search with prompt-driven routing |
+| **Coding Supervisor** | `examples/yamls/supervisor.yaml` | Delegates coding tasks to an implementation sub-agent |
+| **Researcher** | `examples/yamls/researcher.yaml` | Web search + custom `summarize_topic` tool |
+| **Code Assistant** | `examples/yamls/code_assistant.yaml` | File I/O and shell access |
+| **Greeter (tool)** | `examples/greeter/` | Auto-discovered `greet` tool |
+| **Greeter (prompt)** | `examples/yamls/greeter.yaml` | Prompt-only, no tools |
+| **Simple Agent** | `examples/yamls/simple.yaml` | Python coder with research sub-agent |
 
 ---
 
@@ -217,54 +181,37 @@ omniagents run examples/yamls/greeter.yaml
 
 ```
 omniagents_harness/
-|-- LICENSE                              # Apache-2.0
-|-- mlflow.db                            # MLflow tracking database
+|-- README.md
+|-- CLAUDE.md
+|-- LICENSE                                  # Apache-2.0
+|-- .env                                     # OPENAI_API_KEY (not committed)
+|-- pyproject.toml
 |-- examples/
-|   |-- __init__.py
-|   |-- fema_supervisor/                 # Multi-agent FEMA supervisor
-|   |   |-- config.yaml                 #   Supervisor + 2 sub-agents
-|   |   |-- __init__.py
-|   |   +-- tools/
-|   |       |-- __init__.py
-|   |       +-- python/
-|   |           |-- __init__.py
-|   |           |-- run_sql.py           #   Text-to-SQL tool (MLflow traced)
-|   |           |-- search_policies.py   #   Semantic search tool (MLflow traced)
-|   |           |-- fema_data.py         #   200 synthetic disaster records
-|   |           |-- policy_docs.py       #   11 FEMA policy documents
-|   |           |-- run_sql_standalone.py #   Self-contained SQL tool (no deps)
-|   |           |-- run_sql_simple.py    #   Simplified SQL variant
-|   |           +-- hello.py             #   Simple greeting tool
-|   |-- fema_supervisor_minimal/         # Minimal FEMA supervisor (no custom tools)
-|   |   +-- config.yaml
-|   |-- fema_supervisor_test/            # Standalone SQL test agent
-|   |   |-- config.yaml
+|   |-- fema_supervisor/                     # FEMA disaster agent
+|   |   |-- config.yaml                      #   Agent config with prompt-driven routing
 |   |   +-- tools/python/
-|   |       |-- fema_data.py
-|   |       +-- run_sql_simple.py
-|   |-- greeter/                         # Tool-based greeter
+|   |       |-- run_sql.py                   #   SQLite query tool (auto-discovered)
+|   |       +-- search_policies.py           #   Policy search tool (auto-discovered)
+|   |-- greeter/                             # Tool-based greeter
 |   |   |-- config.yaml
-|   |   +-- tools/python/
-|   |       +-- greet.py                 #   Auto-discovered greet tool
-|   |-- tools/python/                    # Shared tool library
-|   |   |-- greet.py
-|   |   |-- summarize.py
-|   |   |-- reverse_string.py
-|   |   |-- word_count.py
-|   |   +-- check_syntax.py
-|   +-- yamls/                           # Standalone YAML agents
-|       |-- greeter.yaml                 #   Prompt-only greeter
-|       |-- researcher.yaml             #   Web search + summarize
-|       |-- code_assistant.yaml         #   File I/O + shell access
-|       |-- supervisor.yaml             #   Coding supervisor/worker
-|       |-- simple.yaml                 #   Python coder + sub-agent
-|       +-- agents/
-|           +-- impl_worker/
-|               +-- config.yaml         #   Worker agent for supervisor
+|   |   +-- tools/python/greet.py
+|   |-- tools/                               # Shared utilities
+|   |   |-- create_fema_db.py                #   Database setup script
+|   |   |-- data/fema_disaster.db            #   Pre-built SQLite database (80 records)
+|   |   +-- python/                          #   Shared tool library
+|   |       |-- greet.py, summarize.py, reverse_string.py, ...
+|   |       |-- fema_data.py                 #   FEMA record definitions
+|   |       +-- policy_docs.py               #   FEMA policy document corpus
+|   +-- yamls/                               # Standalone YAML agents
+|       |-- greeter.yaml, researcher.yaml, code_assistant.yaml,
+|       |-- supervisor.yaml, simple.yaml
+|       +-- agents/impl_worker/config.yaml
++-- images/
+    +-- fema_supervisor_architecture.svg
 ```
 
 ---
 
 ## License
 
-This project is licensed under the [Apache License 2.0](LICENSE).
+[Apache License 2.0](LICENSE)

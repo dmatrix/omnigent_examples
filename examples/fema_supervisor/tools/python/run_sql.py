@@ -1,48 +1,55 @@
-"""SQL execution tool for FEMA disaster data."""
+"""SQL execution tool for FEMA disaster data.
+
+Reads from the pre-built SQLite database at examples/tools/data/fema_disaster.db.
+Run examples/tools/create_fema_db.py to create or rebuild the database.
+"""
 
 from __future__ import annotations
 
+import os
 import sqlite3
+from pathlib import Path
 
-import mlflow
-import pandas as pd
 from omniagents_client.tools import tool
 
-from .fema_data import get_disaster_data
 
-_db_conn: sqlite3.Connection | None = None
-
-
-def _get_connection() -> sqlite3.Connection:
-    global _db_conn
-    if _db_conn is None:
-        _db_conn = sqlite3.connect(":memory:")
-        get_disaster_data().to_sql(
-            "disaster_data", _db_conn, index=False, if_exists="replace"
-        )
-    return _db_conn
+def _find_db() -> Path:
+    """Find fema_disaster.db relative to CWD."""
+    candidates = [
+        Path(os.getcwd()) / "examples" / "tools" / "data" / "fema_disaster.db",
+        Path(__file__).resolve().parent.parent.parent.parent / "tools" / "data" / "fema_disaster.db",
+    ]
+    for c in candidates:
+        if c.exists():
+            return c
+    return candidates[0]
 
 
 @tool
-@mlflow.trace(name="run_sql", span_type="TOOL")
 def run_sql(sql_query: str) -> str:
     """
-    Execute a SQL query against the FEMA disaster data.
+    Execute a SQL query against the local FEMA disaster SQLite database.
 
-    :param sql_query: A valid SQLite SELECT statement.
+    :param sql_query: A valid SQLite SELECT statement to run against the disaster_data table.
     :returns: Formatted query results or an error message.
     """
-    conn = _get_connection()
+    db_path = _find_db()
+    if not db_path.exists():
+        return f"Error: database not found at {db_path}. Run: python examples/tools/create_fema_db.py"
+
+    conn = sqlite3.connect(str(db_path))
+    conn.row_factory = sqlite3.Row
     try:
-        result_df = pd.read_sql_query(sql_query, conn)
+        cursor = conn.execute(sql_query)
+        rows = cursor.fetchall()
+        if not rows:
+            return f"Query returned 0 rows.\n\nSQL: {sql_query}"
+        columns = rows[0].keys()
+        lines = ["\t".join(columns)]
+        for row in rows:
+            lines.append("\t".join(str(v) for v in row))
+        return f"Results ({len(rows)} rows):\n" + "\n".join(lines)
     except Exception as e:
         return f"SQL execution error: {e}\n\nQuery: {sql_query}"
-
-    span = mlflow.get_current_active_span()
-    if span:
-        span.set_attributes({
-            "sql_query": sql_query,
-            "result_rows": len(result_df),
-        })
-
-    return f"Results ({len(result_df)} rows):\n{result_df.to_string(index=False)}"
+    finally:
+        conn.close()
