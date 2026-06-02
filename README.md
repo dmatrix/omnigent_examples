@@ -84,6 +84,54 @@ Which states got hit hardest by tornadoes and what shelter standards does FEMA r
 
 ---
 
+## Using Non-Databricks Providers
+
+By default the agent uses `databricks-claude-sonnet-4-6` via Databricks AI Gateway. To run without any Databricks dependencies, change the `executor` block in `config.yaml`:
+
+**Direct Anthropic API** (requires `ANTHROPIC_API_KEY` in `.env`):
+```yaml
+executor:
+  type: omniagents
+  model: anthropic/claude-sonnet-4-6
+  config:
+    harness: claude-sdk
+```
+
+**Direct OpenAI API** (requires `OPENAI_API_KEY` in `.env`):
+```yaml
+executor:
+  type: omniagents
+  model: openai/gpt-4o
+  config:
+    harness: openai-agents
+```
+
+**Local model via Ollama** (no API key needed):
+```yaml
+executor:
+  type: omniagents
+  model: ollama/llama-3
+  config:
+    harness: openai-agents
+    connection:
+      base_url: http://localhost:11434/v1
+```
+
+Or override at the command line without editing the YAML:
+```bash
+omniagents run examples/fema_supervisor/ --model anthropic/claude-sonnet-4-6
+omniagents run examples/fema_supervisor/ --model openai/gpt-4o --harness openai-agents
+```
+
+| Harness | Provider |
+|---|---|
+| `claude-sdk` | Anthropic Claude (direct or Databricks) |
+| `openai-agents` | OpenAI, Ollama, Groq, DeepSeek, or any OpenAI-compatible API |
+
+No Python tool code changes are needed -- the tools are provider-independent. The `.env` file is still required for `search_policies` embeddings (`OPENAI_API_KEY`), regardless of which LLM provider you choose.
+
+---
+
 ## Architecture
 
 ![FEMA Supervisor Architecture](images/fema_supervisor_architecture.svg)
