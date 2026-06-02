@@ -195,7 +195,7 @@ User asks a question that requires both data context and policy context. The sup
 ### Prerequisites
 
 - Python 3.12+
-- The `omniagents` CLI installed (`pip install omniagents`)
+- The `omniagents` CLI installed (`uv tool install omniagents`)
 - `OPENAI_API_KEY` set (required for `search_policies` embedding tool)
 
 ### Run an agent
