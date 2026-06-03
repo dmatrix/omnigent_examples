@@ -33,7 +33,7 @@ The agent's prompt enforces strict tool usage: data questions go to `run_sql`, p
 
 - Python 3.12+
 - The `omniagents` CLI installed
-- Databricks CLI authenticated (`databricks auth login`)
+- Databricks CLI authenticated (`databricks auth login`) -- required for the runner infrastructure, even when using non-Databricks LLM providers
 
 ### 2. Set up the FEMA database
 
@@ -84,15 +84,73 @@ Which states got hit hardest by tornadoes and what shelter standards does FEMA r
 
 ---
 
-## Using Non-Databricks Providers
+## Running Without Databricks
 
-By default the agent uses `databricks-claude-sonnet-4-6` via Databricks AI Gateway. To run without any Databricks dependencies, change the `executor` block in `config.yaml`:
+By default, `omniagents run` connects to a Databricks-hosted server for session management. A separate `fema_supervisor_openai` example is included for running fully locally with OpenAI -- no Databricks dependency at all.
+
+### Setup
+
+1. **Temporarily disable the Databricks global config** (the global `profile: oss` in `~/.omniagents/config.yaml` forces Databricks routing even for non-Databricks models):
+
+```bash
+mv ~/.omniagents/config.yaml ~/.omniagents/config.yaml.bak
+```
+
+2. **Export your OpenAI API key:**
+
+```bash
+export $(grep OPENAI_API_KEY .env | tr -d '"')
+```
+
+3. **Run the OpenAI variant with a local server:**
+
+```bash
+omniagents run examples/fema_supervisor_openai/ --server ""
+```
+
+### Test queries
+
+```
+What were the top 5 states by federal aid in 2024?
+What are the evacuation protocols for hurricanes?
+How much aid did California get from wildfires and what safety guidelines apply?
+```
+
+### Restore Databricks config
+
+```bash
+mv ~/.omniagents/config.yaml.bak ~/.omniagents/config.yaml
+```
+
+### Tested models
+
+| Model | Status |
+|---|---|
+| `gpt-4o` | Works -- self-corrects SQL, accurate policy search |
+| `gpt-4.1-mini` | Works -- occasional SQL column name errors |
+| `gpt-5` | Not yet supported (requires reasoning items the harness doesn't handle) |
+
+The `fema_supervisor_openai/` example uses `gpt-4o` by default. Override with `--model`:
+
+```bash
+omniagents run examples/fema_supervisor_openai/ --server "" --model gpt-4.1-mini
+```
+
+---
+
+## Alternative LLM Providers
+
+By default the agent uses `databricks-claude-sonnet-4-6` via Databricks AI Gateway. You can swap the LLM provider while keeping the same tools and prompts.
+
+**Note:** When using the default Databricks-hosted server (no `--server` flag), `databricks auth login` is required for the runner infrastructure, regardless of which LLM provider you choose. Use `--server ""` to avoid this (see above).
+
+To use a different model, change the `executor` block in `config.yaml`:
 
 **Direct Anthropic API** (requires `ANTHROPIC_API_KEY` in `.env`):
 ```yaml
 executor:
   type: omniagents
-  model: anthropic/claude-sonnet-4-6
+  model: claude-sonnet-4-6
   config:
     harness: claude-sdk
 ```
@@ -101,7 +159,7 @@ executor:
 ```yaml
 executor:
   type: omniagents
-  model: openai/gpt-4o
+  model: gpt-5
   config:
     harness: openai-agents
 ```
@@ -119,16 +177,31 @@ executor:
 
 Or override at the command line without editing the YAML:
 ```bash
-omniagents run examples/fema_supervisor/ --model anthropic/claude-sonnet-4-6
-omniagents run examples/fema_supervisor/ --model openai/gpt-4o --harness openai-agents
+omniagents run examples/fema_supervisor/ --model claude-sonnet-4-6 --harness claude-sdk
+omniagents run examples/fema_supervisor/ --model gpt-5 --harness openai-agents
 ```
 
-| Harness | Provider |
-|---|---|
-| `claude-sdk` | Anthropic Claude (direct or Databricks) |
-| `openai-agents` | OpenAI, Ollama, Groq, DeepSeek, or any OpenAI-compatible API |
+### Supported models
 
-No Python tool code changes are needed -- the tools are provider-independent. The `.env` file is still required for `search_policies` embeddings (`OPENAI_API_KEY`), regardless of which LLM provider you choose.
+| Provider | Model | Harness | Additional Auth |
+|---|---|---|---|
+| **Databricks AI Gateway** | `databricks-claude-sonnet-4-6` | `claude-sdk` | -- (Databricks auth only) |
+| | `databricks-claude-opus-4-7` | `claude-sdk` | -- |
+| | `databricks-claude-opus-4-8` | `claude-sdk` | -- |
+| | `databricks-gpt-5-5` | `openai-agents` | -- |
+| | `databricks-kimi-k2-6` | `openai-agents` | -- |
+| **Anthropic (direct)** | `claude-sonnet-4-6` | `claude-sdk` | `ANTHROPIC_API_KEY` in `.env` |
+| | `claude-opus-4-7` | `claude-sdk` | `ANTHROPIC_API_KEY` in `.env` |
+| | `claude-haiku-4-5` | `claude-sdk` | `ANTHROPIC_API_KEY` in `.env` |
+| **OpenAI (direct)** | `gpt-4o` | `openai-agents` | `OPENAI_API_KEY` in `.env` |
+| | `gpt-4o-mini` | `openai-agents` | `OPENAI_API_KEY` in `.env` |
+| | `gpt-5.4` | `openai-agents` | `OPENAI_API_KEY` in `.env` |
+| | `gpt-5.4-mini` | `openai-agents` | `OPENAI_API_KEY` in `.env` |
+| **Ollama (local)** | `ollama/llama-3` | `openai-agents` | None |
+
+All providers require `databricks auth login` for the runner infrastructure. The "Additional Auth" column shows what else is needed for the LLM API calls. `OPENAI_API_KEY` is always required regardless of LLM provider (the `search_policies` tool uses it for embeddings).
+
+No Python tool code changes are needed -- the tools are provider-independent.
 
 ---
 
@@ -215,7 +288,8 @@ Tools are auto-discovered from `tools/python/` in the agent's directory. Each `.
 
 | Agent | Path | Description |
 |---|---|---|
-| **FEMA Disaster** | `examples/fema_supervisor/` | SQL + policy search with prompt-driven routing |
+| **FEMA Disaster** | `examples/fema_supervisor/` | SQL + policy search via Databricks Claude |
+| **FEMA Disaster (OpenAI)** | `examples/fema_supervisor_openai/` | Same tools, runs on gpt-4o with local server |
 | **Coding Supervisor** | `examples/yamls/supervisor.yaml` | Delegates coding tasks to an implementation sub-agent |
 | **Researcher** | `examples/yamls/researcher.yaml` | Web search + custom `summarize_topic` tool |
 | **Code Assistant** | `examples/yamls/code_assistant.yaml` | File I/O and shell access |
@@ -235,11 +309,16 @@ omniagents_harness/
 |-- .env                                     # OPENAI_API_KEY (not committed)
 |-- pyproject.toml
 |-- examples/
-|   |-- fema_supervisor/                     # FEMA disaster agent
+|   |-- fema_supervisor/                     # FEMA disaster agent (Databricks Claude)
 |   |   |-- config.yaml                      #   Agent config with prompt-driven routing
 |   |   +-- tools/python/
 |   |       |-- run_sql.py                   #   SQLite query tool (auto-discovered)
 |   |       +-- search_policies.py           #   Policy search tool (auto-discovered)
+|   |-- fema_supervisor_openai/              # FEMA disaster agent (OpenAI gpt-4o)
+|   |   |-- config.yaml                      #   Same prompt, openai-agents harness
+|   |   +-- tools/python/
+|   |       |-- run_sql.py                   #   Same tools as fema_supervisor
+|   |       +-- search_policies.py
 |   |-- greeter/                             # Tool-based greeter
 |   |   |-- config.yaml
 |   |   +-- tools/python/greet.py
@@ -247,9 +326,8 @@ omniagents_harness/
 |   |   |-- create_fema_db.py                #   Database setup script
 |   |   |-- data/fema_disaster.db            #   Pre-built SQLite database (80 records)
 |   |   +-- python/                          #   Shared tool library
-|   |       |-- greet.py, summarize.py, reverse_string.py, ...
-|   |       |-- fema_data.py                 #   FEMA record definitions
-|   |       +-- policy_docs.py               #   FEMA policy document corpus
+|   |       |-- greet.py                     #   Greeting tool (used by simple.yaml)
+|   |       +-- summarize.py                 #   Summarization tool (used by researcher.yaml)
 |   +-- yamls/                               # Standalone YAML agents
 |       |-- greeter.yaml, researcher.yaml, code_assistant.yaml,
 |       |-- supervisor.yaml, simple.yaml
