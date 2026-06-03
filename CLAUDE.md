@@ -18,10 +18,16 @@ Example agent configurations for the OmniAgents CLI. The flagship example is a F
 # Set up the database (once)
 python examples/tools/create_fema_db.py
 
-# Run the FEMA agent
+# Databricks-hosted Claude (default)
 omniagents run examples/fema_supervisor/
 
-# Run other agents
+# Direct OpenAI (no Databricks) — requires ~/.omniagents/config.yaml renamed
+omniagents run examples/fema_supervisor_openai/ --server ""
+
+# Direct Anthropic Claude (no Databricks) — requires ~/.omniagents/config.yaml renamed
+omniagents run examples/fema_supervisor_claude/ --server ""
+
+# Other agents
 omniagents run examples/greeter/
 omniagents run examples/yamls/greeter.yaml
 ```
@@ -34,7 +40,7 @@ Tools in `tools/python/` within a directory bundle are auto-discovered. Every `.
 
 ### Environment variables
 
-The `search_policies` tool loads `OPENAI_API_KEY` from a `.env` file at CWD or `~/.env`. The tool subprocess does not inherit shell env vars, so the `.env` file is required.
+The `search_policies` tool loads `OPENAI_API_KEY` from a `.env` file at CWD or `~/.env`. The tool subprocess does not inherit shell env vars, so the `.env` file is required. For non-Databricks Claude, `ANTHROPIC_API_KEY` must also be exported in the shell.
 
 ### Database
 
@@ -56,11 +62,17 @@ os_env:
 
 ```
 examples/
-|-- fema_supervisor/              # FEMA disaster agent
-|   |-- config.yaml               #   Prompt-driven routing to run_sql + search_policies
+|-- fema_supervisor/              # FEMA agent (Databricks Claude)
+|   |-- config.yaml               #   harness: claude-sdk, model: databricks-claude-sonnet-4-6
 |   +-- tools/python/
 |       |-- run_sql.py            #   SQLite query tool (auto-discovered)
 |       +-- search_policies.py    #   Semantic search tool (auto-discovered, inline docs)
+|-- fema_supervisor_openai/       # FEMA agent (direct OpenAI)
+|   |-- config.yaml               #   harness: openai-agents, model: gpt-4o
+|   +-- tools/python/             #   Same tools as fema_supervisor
+|-- fema_supervisor_claude/       # FEMA agent (direct Anthropic Claude)
+|   |-- config.yaml               #   harness: claude-sdk, model: claude-sonnet-4-6
+|   +-- tools/python/             #   Same tools as fema_supervisor
 |-- greeter/                      # Tool-based greeter (auto-discovered greet tool)
 |-- tools/
 |   |-- create_fema_db.py         # Database setup script

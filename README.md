@@ -102,10 +102,15 @@ mv ~/.omniagents/config.yaml ~/.omniagents/config.yaml.bak
 export $(grep OPENAI_API_KEY .env | tr -d '"')
 ```
 
-3. **Run the OpenAI variant with a local server:**
+3. **Run the OpenAI or Claude variant with a local server:**
 
 ```bash
+# OpenAI (gpt-4o) — requires OPENAI_API_KEY
 omniagents run examples/fema_supervisor_openai/ --server ""
+
+# Claude (claude-sonnet-4-6) — requires ANTHROPIC_API_KEY and OPENAI_API_KEY
+export $(grep ANTHROPIC_API_KEY .env | tr -d '"')
+omniagents run examples/fema_supervisor_claude/ --server ""
 ```
 
 The local server provides a terminal REPL only -- there is no browser-based Web UI. The Web UI is a Databricks Apps feature available only when using the default Databricks-hosted server.
@@ -126,15 +131,17 @@ mv ~/.omniagents/config.yaml.bak ~/.omniagents/config.yaml
 
 ### Tested models
 
-| Model | Status |
-|---|---|
-| `gpt-4o` | Works -- self-corrects SQL, accurate policy search |
-| `gpt-4.1-mini` | Works -- occasional SQL column name errors |
-| `gpt-5` | Not yet supported (requires reasoning items the harness doesn't handle) |
+| Model | Harness | Status |
+|---|---|---|
+| `claude-sonnet-4-6` | `claude-sdk` | Works -- accurate SQL and policy search on all query types |
+| `gpt-4o` | `openai-agents` | Works -- self-corrects SQL, accurate policy search |
+| `gpt-4.1-mini` | `openai-agents` | Works -- occasional SQL column name errors |
+| `gpt-5` | `openai-agents` | Not yet supported (requires reasoning items the harness doesn't handle) |
 
-The `fema_supervisor_openai/` example uses `gpt-4o` by default. Override with `--model`:
+The `fema_supervisor_claude/` uses `claude-sonnet-4-6` and `fema_supervisor_openai/` uses `gpt-4o` by default. Override with `--model`:
 
 ```bash
+omniagents run examples/fema_supervisor_claude/ --server "" --model claude-opus-4-7
 omniagents run examples/fema_supervisor_openai/ --server "" --model gpt-4.1-mini
 ```
 
@@ -292,6 +299,7 @@ Tools are auto-discovered from `tools/python/` in the agent's directory. Each `.
 |---|---|---|
 | **FEMA Disaster** | `examples/fema_supervisor/` | SQL + policy search via Databricks Claude |
 | **FEMA Disaster (OpenAI)** | `examples/fema_supervisor_openai/` | Same tools, runs on gpt-4o with local server |
+| **FEMA Disaster (Claude)** | `examples/fema_supervisor_claude/` | Same tools, runs on claude-sonnet-4-6 with local server |
 | **Coding Supervisor** | `examples/yamls/supervisor.yaml` | Delegates coding tasks to an implementation sub-agent |
 | **Researcher** | `examples/yamls/researcher.yaml` | Web search + custom `summarize_topic` tool |
 | **Code Assistant** | `examples/yamls/code_assistant.yaml` | File I/O and shell access |
@@ -318,6 +326,11 @@ omniagents_harness/
 |   |       +-- search_policies.py           #   Policy search tool (auto-discovered)
 |   |-- fema_supervisor_openai/              # FEMA disaster agent (OpenAI gpt-4o)
 |   |   |-- config.yaml                      #   Same prompt, openai-agents harness
+|   |   +-- tools/python/
+|   |       |-- run_sql.py                   #   Same tools as fema_supervisor
+|   |       +-- search_policies.py
+|   |-- fema_supervisor_claude/              # FEMA disaster agent (Anthropic Claude)
+|   |   |-- config.yaml                      #   Same prompt, claude-sdk harness
 |   |   +-- tools/python/
 |   |       |-- run_sql.py                   #   Same tools as fema_supervisor
 |   |       +-- search_policies.py
