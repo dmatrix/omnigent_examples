@@ -57,7 +57,7 @@ echo 'OPENAI_API_KEY="sk-..."' > .env
 omniagents run examples/fema_supervisor/
 ```
 
-The CLI opens an interactive REPL in your terminal. A Web UI is also available at the Databricks Apps URL printed at startup (e.g., `https://omnigents-<id>.aws.databricksapps.com`) -- open it in a browser to chat with the agent through a web interface.
+The CLI opens an interactive REPL in your terminal. When using the Databricks-hosted server (the default), a Web UI is also available at the Databricks Apps URL printed at startup (e.g., `https://omnigents-<id>.aws.databricksapps.com`) -- open it in a browser to chat with the agent through a web interface.
 
 ### 5. Try these queries
 
@@ -107,6 +107,8 @@ export $(grep OPENAI_API_KEY .env | tr -d '"')
 ```bash
 omniagents run examples/fema_supervisor_openai/ --server ""
 ```
+
+The local server provides a terminal REPL only -- there is no browser-based Web UI. The Web UI is a Databricks Apps feature available only when using the default Databricks-hosted server.
 
 ### Test queries
 
