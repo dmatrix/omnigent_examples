@@ -11,9 +11,10 @@
 
 ## Overview
 
-This repository contains example agent configurations for the [OmniAgents](https://github.com/databricks/omniagents) CLI. Each example defines an AI agent in YAML -- specifying the executor, system prompt, and tools. The flagship example is a **FEMA disaster response agent** converted from the [mlflow-genai-tutorials multi-agent supervisor notebook](https://github.com/dmatrix/mlflow-genai-tutorials/blob/main/10_multi_agent_supervisor.ipynb) into the OmniAgents harness format.
+This repository contains example agent configurations for the [OmniAgents](https://github.com/databricks/omniagents) CLI. Each example defines an AI agent in YAML -- specifying the executor, system prompt, and tools. Two flagship examples demonstrate different patterns:
 
-All agents use the `databricks-claude-sonnet-4-6` model via the `claude-sdk` harness.
+1. **FEMA Disaster Agent** -- multi-tool routing (text-to-SQL + semantic policy search)
+2. **MLflow Docs RAG Agent** -- self-building RAG pipeline (embeds documents, then searches them)
 
 ### FEMA Disaster Agent
 
@@ -24,6 +25,18 @@ The FEMA agent (`examples/fema_supervisor/`) has two auto-discovered tools with 
 - **`search_policies`** -- Semantic search over 9 FEMA policy documents (evacuation protocols, disaster declarations, aid eligibility, flood/wildfire/hurricane/earthquake/tornado procedures). Uses OpenAI embeddings and cosine similarity. Requires `OPENAI_API_KEY` in a `.env` file at the repo root.
 
 The agent's prompt enforces strict tool usage: data questions go to `run_sql`, policy questions go to `search_policies`, combined questions use both. The agent never falls back to training data.
+
+### MLflow Docs RAG Agent
+
+The RAG agent (`examples/rag_mlflow_docs/`) answers questions about MLflow by searching a local corpus of 10 documentation pages. It has two auto-discovered tools:
+
+- **`build_docs_db`** -- Creates a SQLite database with 10 MLflow doc pages and their OpenAI embeddings. Called automatically on first query. Idempotent -- skips if the database already exists.
+
+- **`search_docs`** -- Semantic search over the embedded documents using cosine similarity. Returns the top-k most relevant documents with relevance scores.
+
+The agent builds its own database on first use -- no setup script needed. Converted from [tutorial #9](https://github.com/dmatrix/mlflow-genai-tutorials/blob/main/09_complete_rag_application.ipynb) in the mlflow-genai-tutorials repo.
+
+**Known limitation:** The `search_docs` tool correctly filters out-of-scope queries (returns no documents below the relevance threshold), but `databricks-gpt-5-5` ignores the "refuse to answer" prompt instruction and answers from training data anyway. For strict RAG-only behavior where the agent declines out-of-scope questions, use a Claude model (`databricks-claude-sonnet-4-6` with the `claude-sdk` harness) which follows system prompt constraints more reliably.
 
 ---
 
@@ -51,35 +64,47 @@ Create a `.env` file at the repo root (the `search_policies` tool needs it for e
 echo 'OPENAI_API_KEY="sk-..."' > .env
 ```
 
-### 4. Run the agent
+### 4. Run an agent
 
 ```bash
+# FEMA disaster agent (requires database setup in step 2)
 omniagents run examples/fema_supervisor/
+
+# MLflow docs RAG agent (no setup needed -- builds its own DB on first query)
+omniagents run examples/rag_mlflow_docs/
 ```
 
 The CLI opens an interactive REPL in your terminal. When using the Databricks-hosted server (the default), a Web UI is also available at the Databricks Apps URL printed at startup (e.g., `https://omnigents-<id>.aws.databricksapps.com`) -- open it in a browser to chat with the agent through a web interface.
 
 ### 5. Try these queries
 
-**Data queries** (calls `run_sql`):
+**FEMA -- data queries** (calls `run_sql`):
 ```
 What were the top 5 states by federal aid in 2024?
 How many severity-5 disasters occurred between 2020 and 2025?
 Which disaster type affected the most people overall?
 ```
 
-**Policy queries** (calls `search_policies`):
+**FEMA -- policy queries** (calls `search_policies`):
 ```
 What are the evacuation protocols for hurricanes?
 How do I apply for FEMA individual assistance?
 What should I do immediately after an earthquake?
 ```
 
-**Combined queries** (calls both tools):
+**FEMA -- combined queries** (calls both tools):
 ```
 How much aid did California get from wildfires and what safety guidelines apply?
 What was the worst flood disaster and what are FEMA's flood response procedures?
 Which states got hit hardest by tornadoes and what shelter standards does FEMA require?
+```
+
+**MLflow docs RAG** (calls `build_docs_db` on first query, then `search_docs`):
+```
+What tracing capabilities does MLflow provide?
+How does MLflow help with cost tracking?
+Can MLflow integrate with LangChain?
+What is the purpose of MLflow Prompt Registry?
 ```
 
 ---
@@ -113,7 +138,21 @@ export $(grep ANTHROPIC_API_KEY .env | tr -d '"')
 omniagents run examples/fema_supervisor_claude/ --server ""
 ```
 
-The local server provides a terminal REPL only -- there is no browser-based Web UI. The Web UI is a Databricks Apps feature available only when using the default Databricks-hosted server.
+The local server provides a terminal REPL by default. To get a browser-based Web UI locally, run the `ap-web` frontend from the [agent-framework](https://github.com/databricks/omniagents) repo:
+
+```bash
+# Terminal 1: start local server
+OMNIAGENTS_AUTH_MULTI_USER=false omniagents server --agent examples/fema_supervisor_claude/config.yaml
+
+# Terminal 2: register as a runner
+omniagents connect --server http://localhost:8000
+
+# Terminal 3: start the web frontend
+cd /path/to/agent-framework/ap-web && npm install
+OMNIAGENTS_URL=http://localhost:8000 npm run dev
+
+# Open http://localhost:5173/
+```
 
 ### Test queries
 
@@ -216,7 +255,13 @@ No Python tool code changes are needed -- the tools are provider-independent.
 
 ## Architecture
 
+### FEMA Disaster Agent
+
 ![FEMA Supervisor Architecture](images/fema_supervisor_architecture.svg)
+
+### MLflow Docs RAG Agent
+
+![MLflow Docs RAG Architecture](images/rag_mlflow_docs_architecture.svg)
 
 ### How it works
 
@@ -300,6 +345,7 @@ Tools are auto-discovered from `tools/python/` in the agent's directory. Each `.
 | **FEMA Disaster** | `examples/fema_supervisor/` | SQL + policy search via Databricks Claude |
 | **FEMA Disaster (OpenAI)** | `examples/fema_supervisor_openai/` | Same tools, runs on gpt-4o with local server |
 | **FEMA Disaster (Claude)** | `examples/fema_supervisor_claude/` | Same tools, runs on claude-sonnet-4-6 with local server |
+| **MLflow Docs RAG** | `examples/rag_mlflow_docs/` | Self-building RAG over MLflow docs via Databricks OpenAI |
 | **Coding Supervisor** | `examples/yamls/supervisor.yaml` | Delegates coding tasks to an implementation sub-agent |
 | **Researcher** | `examples/yamls/researcher.yaml` | Web search + custom `summarize_topic` tool |
 | **Code Assistant** | `examples/yamls/code_assistant.yaml` | File I/O and shell access |
@@ -334,6 +380,11 @@ omniagents_harness/
 |   |   +-- tools/python/
 |   |       |-- run_sql.py                   #   Same tools as fema_supervisor
 |   |       +-- search_policies.py
+|   |-- rag_mlflow_docs/                     # MLflow docs RAG agent (Databricks OpenAI)
+|   |   |-- config.yaml                      #   openai-agents + databricks-gpt-5-5
+|   |   +-- tools/python/
+|   |       |-- build_docs_db.py             #   Builds SQLite DB with docs + embeddings
+|   |       +-- search_docs.py               #   Semantic search over embedded docs
 |   |-- greeter/                             # Tool-based greeter
 |   |   |-- config.yaml
 |   |   +-- tools/python/greet.py
@@ -348,7 +399,8 @@ omniagents_harness/
 |       |-- supervisor.yaml, simple.yaml
 |       +-- agents/impl_worker/config.yaml
 +-- images/
-    +-- fema_supervisor_architecture.svg
+    |-- fema_supervisor_architecture.svg
+    +-- rag_mlflow_docs_architecture.svg
 ```
 
 ---
