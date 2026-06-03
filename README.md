@@ -199,7 +199,7 @@ omniagents run examples/fema_supervisor/ --model gpt-5 --harness openai-agents
 | | `gpt-5.4-mini` | `openai-agents` | `OPENAI_API_KEY` in `.env` |
 | **Ollama (local)** | `ollama/llama-3` | `openai-agents` | None |
 
-All providers require `databricks auth login` for the runner infrastructure. The "Additional Auth" column shows what else is needed for the LLM API calls. `OPENAI_API_KEY` is always required regardless of LLM provider (the `search_policies` tool uses it for embeddings).
+Databricks AI Gateway models require `databricks auth login`. Non-Databricks models (Anthropic, OpenAI, Ollama) can run fully locally with `--server ""` -- see [Running Without Databricks](#running-without-databricks). `OPENAI_API_KEY` is always required regardless of LLM provider (the `search_policies` tool uses it for embeddings).
 
 No Python tool code changes are needed -- the tools are provider-independent.
 
