@@ -105,6 +105,12 @@ What tracing capabilities does MLflow provide?
 How does MLflow help with cost tracking?
 Can MLflow integrate with LangChain?
 What is the purpose of MLflow Prompt Registry?
+What evaluation scorers does MLflow offer?
+Is MLflow open source and what license does it use?
+How does MLflow support collaborative development?
+What is the MLflow Gateway?
+What ML lifecycle stages does MLflow manage?
+How do I use MLflow for experiment tracking?
 ```
 
 ---

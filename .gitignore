@@ -219,3 +219,10 @@ __marimo__/
 
 # Private docs
 DEVELOPER_EXPERIENCE.md
+
+# OmniAgents runtime files
+omniagents.db
+omniagents.db-shm
+omniagents.db-wal
+mlflow.db
+artifacts/
