@@ -11,10 +11,11 @@
 
 ## Overview
 
-This repository contains example agent configurations for the [OmniAgents](https://github.com/databricks/omniagents) CLI. Each example defines an AI agent in YAML -- specifying the executor, system prompt, and tools. Two flagship examples demonstrate different patterns:
+This repository contains example agent configurations for the [OmniAgents](https://github.com/databricks/omniagents) CLI. Each example defines an AI agent in YAML -- specifying the executor, system prompt, and tools. Three flagship examples demonstrate different patterns:
 
 1. **FEMA Disaster Agent** -- multi-tool routing (text-to-SQL + semantic policy search)
 2. **MLflow Docs RAG Agent** -- self-building RAG pipeline (embeds documents, then searches them)
+3. **Telco Customer Agent** -- multi-tool customer data agent with PII/financial policy labels (planned)
 
 ### FEMA Disaster Agent
 
@@ -37,6 +38,18 @@ The RAG agent (`examples/rag_mlflow_docs/`) answers questions about MLflow by se
 The agent builds its own database on first use -- no setup script needed. Converted from [tutorial #9](https://github.com/dmatrix/mlflow-genai-tutorials/blob/main/09_complete_rag_application.ipynb) in the mlflow-genai-tutorials repo.
 
 **Known limitation:** The `search_docs` tool correctly filters out-of-scope queries (returns no documents below the relevance threshold), but `databricks-gpt-5-5` ignores the "refuse to answer" prompt instruction and answers from training data anyway. For strict RAG-only behavior where the agent declines out-of-scope questions, use a Claude model (`databricks-claude-sonnet-4-6` with the `claude-sdk` harness) which follows system prompt constraints more reliably.
+
+### Telco Customer Agent
+
+The telco agent (`examples/telco_customer_agent/`) demonstrates session-scoped policy enforcement over customer PII and financial data. It has three auto-discovered tools:
+
+- **`query_plans`** -- Queries public plan/pricing data (5 plans mirroring real carrier tiers). Does not trigger any policy labels.
+
+- **`query_customers`** -- Queries the customers and devices tables (20 customers with PII: names, emails, phone numbers, SSN last-4, IMEI). Triggers the `has_pii` label.
+
+- **`query_billing`** -- Queries the billing and subscriptions tables (60 billing records across 3 months, 20 subscriptions with revenue, discounts, payment status). Triggers the `has_financial` label.
+
+The agent is designed to work with OmniAgents' PolicyEngine for session-scoped governance: taint labels track what data the agent has seen, DENY policies block web search after PII/financial access, and ASK policies require human approval before outputting combined PII + financial data. See the [staged implementation plan](customer_telco_use_case_financial_data.md) for the full design. Currently at Stage 3 (all three tools working, policies not yet wired).
 
 ---
 
@@ -112,6 +125,27 @@ What is the MLflow Gateway?
 What ML lifecycle stages does MLflow manage?
 How do I use MLflow for experiment tracking?
 ```
+
+**Telco customer agent** (requires `python examples/tools/create_telco_db.py` first):
+```bash
+omniagents run examples/telco_customer_agent/
+```
+```
+# Plans (public data — no labels triggered)
+What plans are available and what do they cost?
+Compare the Experience More and Experience Beyond plans
+
+# Customers (PII data)
+List all customers in California with their phone numbers
+Show me customers whose contracts expire in the next 90 days
+
+# Billing (financial data)
+What's our total monthly revenue across all plans?
+Which customers have overage charges this month?
+Show me all past-due accounts with amounts owed
+```
+
+See the [staged implementation plan](customer_telco_use_case_financial_data.md) for the full design, policy configuration, and how to test each stage incrementally (Stages 1-10).
 
 ---
 
@@ -269,6 +303,10 @@ No Python tool code changes are needed -- the tools are provider-independent.
 
 ![MLflow Docs RAG Architecture](images/rag_mlflow_docs_architecture.svg)
 
+### Telco Customer Agent
+
+![Telco Customer Agent Architecture](images/telco_customer_agent_architecture.svg)
+
 ### How it works
 
 The FEMA agent is a single agent with two auto-discovered tools in `tools/python/`. The system prompt defines routing rules:
@@ -352,6 +390,7 @@ Tools are auto-discovered from `tools/python/` in the agent's directory. Each `.
 | **FEMA Disaster (OpenAI)** | `examples/fema_supervisor_openai/` | Same tools, runs on gpt-4o with local server |
 | **FEMA Disaster (Claude)** | `examples/fema_supervisor_claude/` | Same tools, runs on claude-sonnet-4-6 with local server |
 | **MLflow Docs RAG** | `examples/rag_mlflow_docs/` | Self-building RAG over MLflow docs via Databricks OpenAI |
+| **Telco Customer** | `examples/telco_customer_agent/` | Customer data agent with PII/financial policy labels |
 | **Coding Supervisor** | `examples/yamls/supervisor.yaml` | Delegates coding tasks to an implementation sub-agent |
 | **Researcher** | `examples/yamls/researcher.yaml` | Web search + custom `summarize_topic` tool |
 | **Code Assistant** | `examples/yamls/code_assistant.yaml` | File I/O and shell access |
@@ -391,6 +430,12 @@ omniagents_harness/
 |   |   +-- tools/python/
 |   |       |-- build_docs_db.py             #   Builds SQLite DB with docs + embeddings
 |   |       +-- search_docs.py               #   Semantic search over embedded docs
+|   |-- telco_customer_agent/                # Telco customer data agent (PII/financial policies)
+|   |   |-- config.yaml                      #   openai-agents + databricks-gpt-5-5
+|   |   +-- tools/python/
+|   |       |-- query_plans.py               #   Public plan/pricing data (no labels)
+|   |       |-- query_customers.py           #   Customer PII + devices (triggers has_pii)
+|   |       +-- query_billing.py             #   Billing + subscriptions (triggers has_financial)
 |   |-- greeter/                             # Tool-based greeter
 |   |   |-- config.yaml
 |   |   +-- tools/python/greet.py
@@ -406,7 +451,8 @@ omniagents_harness/
 |       +-- agents/impl_worker/config.yaml
 +-- images/
     |-- fema_supervisor_architecture.svg
-    +-- rag_mlflow_docs_architecture.svg
+    |-- rag_mlflow_docs_architecture.svg
+    +-- telco_customer_agent_architecture.svg
 ```
 
 ---

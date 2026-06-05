@@ -2,14 +2,14 @@
 
 ## Project Overview
 
-Example agent configurations for the OmniAgents CLI. The flagship example is a FEMA disaster response agent with text-to-SQL and semantic policy search tools.
+Example agent configurations for the OmniAgents CLI. Flagship examples include a FEMA disaster response agent with text-to-SQL and semantic policy search tools, and a telco customer data agent demonstrating session-scoped PII/financial policy labels.
 
 ## Tech Stack
 
 - **OmniAgents CLI** -- runs agents from YAML configs
 - **Claude SDK harness** (`harness: claude-sdk`) -- all agents use `databricks-claude-sonnet-4-6`
 - **Python tools** -- `@tool` decorator from `omniagents_client.tools`, auto-discovered from `tools/python/`
-- **SQLite** -- `run_sql` tool queries a local file (`examples/tools/data/fema_disaster.db`)
+- **SQLite** -- `run_sql` tool queries `examples/tools/data/fema_disaster.db`; telco tools query `examples/tools/data/telco.db`
 - **OpenAI embeddings** -- `search_policies` tool uses `text-embedding-3-small` for semantic search
 
 ## Running
@@ -26,6 +26,10 @@ omniagents run examples/fema_supervisor_openai/ --server ""
 
 # Direct Anthropic Claude (no Databricks) — requires ~/.omniagents/config.yaml renamed
 omniagents run examples/fema_supervisor_claude/ --server ""
+
+# Telco customer agent (requires telco.db setup)
+python examples/tools/create_telco_db.py
+omniagents run examples/telco_customer_agent/
 
 # Other agents
 omniagents run examples/greeter/
@@ -44,7 +48,7 @@ The `search_policies` tool loads `OPENAI_API_KEY` from a `.env` file at CWD or `
 
 ### Database
 
-The `run_sql` tool reads from `examples/tools/data/fema_disaster.db`. Rebuild with `python examples/tools/create_fema_db.py`. The tool finds the database relative to CWD (with `__file__` as fallback).
+The `run_sql` tool reads from `examples/tools/data/fema_disaster.db`. Rebuild with `python examples/tools/create_fema_db.py`. The telco tools (`query_plans`, `query_customers`, `query_billing`) read from `examples/tools/data/telco.db`. Rebuild with `python examples/tools/create_telco_db.py`. All tools find the database relative to CWD (with `__file__` as fallback).
 
 ### os_env
 
@@ -73,10 +77,18 @@ examples/
 |-- fema_supervisor_claude/       # FEMA agent (direct Anthropic Claude)
 |   |-- config.yaml               #   harness: claude-sdk, model: claude-sonnet-4-6
 |   +-- tools/python/             #   Same tools as fema_supervisor
+|-- telco_customer_agent/         # Telco customer data agent (PII/financial policies)
+|   |-- config.yaml               #   harness: openai-agents, model: databricks-gpt-5-5
+|   +-- tools/python/
+|       |-- query_plans.py        #   Public plan/pricing data (no labels)
+|       |-- query_customers.py    #   Customer PII + devices
+|       +-- query_billing.py      #   Billing + subscriptions (financial data)
 |-- greeter/                      # Tool-based greeter (auto-discovered greet tool)
 |-- tools/
-|   |-- create_fema_db.py         # Database setup script
-|   |-- data/fema_disaster.db     # Pre-built SQLite database (80 records)
+|   |-- create_fema_db.py         # FEMA database setup script
+|   |-- create_telco_db.py        # Telco database setup script
+|   |-- data/fema_disaster.db     # Pre-built FEMA database (80 records)
+|   |-- data/telco.db             # Pre-built telco database (5 tables, 125 records)
 |   +-- python/                   # Shared tool library
 +-- yamls/                        # Standalone YAML agents
 ```
