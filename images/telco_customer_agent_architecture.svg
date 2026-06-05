@@ -1,0 +1,209 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 780" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <linearGradient id="userG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#48c9b0"/>
+      <stop offset="100%" stop-color="#1abc9c"/>
+    </linearGradient>
+    <linearGradient id="agentG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2980b9"/>
+      <stop offset="100%" stop-color="#1a5276"/>
+    </linearGradient>
+    <linearGradient id="policyG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e94560"/>
+      <stop offset="100%" stop-color="#c73e54"/>
+    </linearGradient>
+    <linearGradient id="toolCustG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e97c00"/>
+      <stop offset="100%" stop-color="#f5a623"/>
+    </linearGradient>
+    <linearGradient id="toolBillG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#533483"/>
+      <stop offset="100%" stop-color="#6c3d9e"/>
+    </linearGradient>
+    <linearGradient id="toolPlanG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0f3460"/>
+      <stop offset="100%" stop-color="#1a5276"/>
+    </linearGradient>
+    <linearGradient id="toolWebG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1b6b4a"/>
+      <stop offset="100%" stop-color="#148f4b"/>
+    </linearGradient>
+    <linearGradient id="dbG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1b4f72"/>
+      <stop offset="100%" stop-color="#154360"/>
+    </linearGradient>
+    <linearGradient id="labelG" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#c0392b"/>
+      <stop offset="100%" stop-color="#e74c3c"/>
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="780" fill="url(#bg)"/>
+
+  <!-- Subtle grid -->
+  <g opacity="0.03" stroke="#fff" stroke-width="0.5">
+    <line x1="0" y1="100" x2="900" y2="100"/><line x1="0" y1="200" x2="900" y2="200"/>
+    <line x1="0" y1="300" x2="900" y2="300"/><line x1="0" y1="400" x2="900" y2="400"/>
+    <line x1="0" y1="500" x2="900" y2="500"/><line x1="0" y1="600" x2="900" y2="600"/>
+    <line x1="0" y1="700" x2="900" y2="700"/>
+    <line x1="150" y1="0" x2="150" y2="780"/><line x1="300" y1="0" x2="300" y2="780"/>
+    <line x1="450" y1="0" x2="450" y2="780"/><line x1="600" y1="0" x2="600" y2="780"/>
+    <line x1="750" y1="0" x2="750" y2="780"/>
+  </g>
+
+  <!-- Decorative circles -->
+  <circle cx="80" cy="120" r="40" fill="#e94560" opacity="0.04"/>
+  <circle cx="820" cy="600" r="55" fill="#f5a623" opacity="0.04"/>
+  <circle cx="750" cy="100" r="35" fill="#48c9b0" opacity="0.04"/>
+
+  <!-- Title -->
+  <text x="450" y="38" text-anchor="middle" fill="#fff" font-size="18" font-weight="700" letter-spacing="1">Telco Customer Agent — OmniAgents with Policy Labels</text>
+  <text x="450" y="58" text-anchor="middle" fill="#8899aa" font-size="11">Session-Scoped Information Flow Control  |  PII + Financial Guardrails</text>
+
+  <!-- ============ User Query ============ -->
+  <rect x="330" y="75" width="240" height="44" rx="22" fill="url(#userG)" filter="url(#shadow)"/>
+  <text x="370" y="102" fill="#fff" font-size="14" font-weight="600">User Query</text>
+  <text x="520" y="100" fill="#fff" font-size="16">&#x1F464;</text>
+
+  <!-- Arrow: User -> Agent -->
+  <line x1="450" y1="119" x2="450" y2="148" stroke="#48c9b0" stroke-width="2" opacity="0.8"/>
+  <polygon points="445,146 455,146 450,156" fill="#48c9b0" opacity="0.8"/>
+
+  <!-- ============ Agent ============ -->
+  <rect x="200" y="156" width="500" height="65" rx="12" fill="url(#agentG)" filter="url(#shadow)"/>
+  <text x="450" y="183" text-anchor="middle" fill="#fff" font-size="16" font-weight="700">telco_customer_agent</text>
+  <text x="450" y="200" text-anchor="middle" fill="#a8d8ea" font-size="10">Prompt-Driven Routing  |  openai-agents  |  databricks-gpt-5-5</text>
+  <text x="450" y="213" text-anchor="middle" fill="#7ec8e3" font-size="8" font-style="italic">Tools: query_customers, query_billing, query_plans, web_search (builtin)</text>
+
+  <!-- ============ Policy Engine (crimson band) ============ -->
+  <rect x="40" y="240" width="820" height="55" rx="10" fill="url(#policyG)" filter="url(#shadow)"/>
+  <text x="450" y="262" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">PolicyEngine — Runner Layer</text>
+  <text x="450" y="280" text-anchor="middle" fill="#ffd5dd" font-size="9">Intercepts every tool_call and output  |  Checks session labels  |  ALLOW / DENY / ASK</text>
+
+  <!-- ============ Labels State (right side) ============ -->
+  <rect x="710" y="310" width="160" height="130" rx="8" fill="url(#labelG)" filter="url(#shadow)" opacity="0.9"/>
+  <text x="790" y="332" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">Session Labels</text>
+  <text x="790" y="350" text-anchor="middle" fill="#ffd5dd" font-size="9">conversation_labels SQL</text>
+  <line x1="725" y1="358" x2="855" y2="358" stroke="#fff" stroke-width="0.5" opacity="0.3"/>
+  <text x="730" y="375" fill="#ffecd2" font-size="10" font-family="monospace">has_pii:       false</text>
+  <text x="730" y="393" fill="#ffecd2" font-size="10" font-family="monospace">has_financial:  false</text>
+  <text x="730" y="411" fill="#ffecd2" font-size="10" font-family="monospace">has_credit:    false</text>
+  <text x="730" y="429" fill="#ffecd2" font-size="10" font-family="monospace">used_web:      false</text>
+
+  <!-- Arrow: PolicyEngine -> Labels -->
+  <path d="M710,270 L790,310" fill="none" stroke="#e94560" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.6"/>
+  <text x="760" y="295" fill="#e94560" font-size="7" font-weight="600">set/check</text>
+
+  <!-- ============ Tools Row ============ -->
+  <!-- query_customers -->
+  <rect x="30" y="315" width="155" height="75" rx="8" fill="url(#toolCustG)" filter="url(#shadow)"/>
+  <text x="107" y="340" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">query_customers</text>
+  <text x="107" y="355" text-anchor="middle" fill="#ffecd2" font-size="8">@tool  |  Auto-discovered</text>
+  <text x="107" y="370" text-anchor="middle" fill="#ffd5a0" font-size="7">Names, emails, phones, SSN</text>
+  <text x="107" y="382" text-anchor="middle" fill="#e8c07a" font-size="7" font-style="italic">Sets: has_pii, has_credit</text>
+
+  <!-- query_billing -->
+  <rect x="200" y="315" width="155" height="75" rx="8" fill="url(#toolBillG)" filter="url(#shadow)"/>
+  <text x="277" y="340" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">query_billing</text>
+  <text x="277" y="355" text-anchor="middle" fill="#d7bde2" font-size="8">@tool  |  Auto-discovered</text>
+  <text x="277" y="370" text-anchor="middle" fill="#c39bd3" font-size="7">Revenue, discounts, payments</text>
+  <text x="277" y="382" text-anchor="middle" fill="#af7ac5" font-size="7" font-style="italic">Sets: has_financial</text>
+
+  <!-- query_plans -->
+  <rect x="370" y="315" width="155" height="75" rx="8" fill="url(#toolPlanG)" filter="url(#shadow)"/>
+  <text x="447" y="340" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">query_plans</text>
+  <text x="447" y="355" text-anchor="middle" fill="#a8d8ea" font-size="8">@tool  |  Auto-discovered</text>
+  <text x="447" y="370" text-anchor="middle" fill="#7ec8e3" font-size="7">Public pricing data</text>
+  <text x="447" y="382" text-anchor="middle" fill="#5dade2" font-size="7" font-style="italic">No labels triggered</text>
+
+  <!-- web_search -->
+  <rect x="540" y="315" width="155" height="75" rx="8" fill="url(#toolWebG)" filter="url(#shadow)"/>
+  <text x="617" y="340" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">web_search</text>
+  <text x="617" y="355" text-anchor="middle" fill="#a8e6cf" font-size="8">Builtin</text>
+  <text x="617" y="370" text-anchor="middle" fill="#7dcea0" font-size="7">Public web search</text>
+  <text x="617" y="382" text-anchor="middle" fill="#52be80" font-size="7" font-style="italic">DENIED if has_pii or has_financial</text>
+
+  <!-- Arrows: Agent -> Tools (through PolicyEngine) -->
+  <line x1="300" y1="221" x2="300" y2="240" stroke="#2980b9" stroke-width="1.5" opacity="0.5"/>
+  <line x1="450" y1="221" x2="450" y2="240" stroke="#2980b9" stroke-width="1.5" opacity="0.5"/>
+  <line x1="600" y1="221" x2="600" y2="240" stroke="#2980b9" stroke-width="1.5" opacity="0.5"/>
+
+  <line x1="107" y1="295" x2="107" y2="315" stroke="#f5a623" stroke-width="1.5" opacity="0.5"/>
+  <line x1="277" y1="295" x2="277" y2="315" stroke="#bb86fc" stroke-width="1.5" opacity="0.5"/>
+  <line x1="447" y1="295" x2="447" y2="315" stroke="#4fc3f7" stroke-width="1.5" opacity="0.5"/>
+  <line x1="617" y1="295" x2="617" y2="315" stroke="#2ecc71" stroke-width="1.5" opacity="0.5"/>
+
+  <!-- ============ SQLite Database ============ -->
+  <line x1="107" y1="390" x2="107" y2="420" stroke="#f5a623" stroke-width="1.5" opacity="0.5"/>
+  <line x1="277" y1="390" x2="277" y2="420" stroke="#bb86fc" stroke-width="1.5" opacity="0.5"/>
+  <line x1="447" y1="390" x2="447" y2="420" stroke="#4fc3f7" stroke-width="1.5" opacity="0.5"/>
+
+  <rect x="30" y="420" width="660" height="55" rx="8" fill="url(#dbG)" filter="url(#shadow)"/>
+  <text x="360" y="445" text-anchor="middle" fill="#4fc3f7" font-size="13" font-weight="700">telco.db</text>
+  <text x="360" y="462" text-anchor="middle" fill="#85c1e9" font-size="9">SQLite  |  5 tables: plans, customers, devices, subscriptions, billing</text>
+
+  <!-- ============ Policy Scenarios ============ -->
+  <text x="450" y="505" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">Policy Enforcement Scenarios</text>
+
+  <!-- Scenario 1: ALLOW -->
+  <rect x="40" y="520" width="250" height="70" rx="8" fill="#0d3b1f" opacity="0.5" stroke="#2ecc71" stroke-width="1"/>
+  <text x="165" y="542" text-anchor="middle" fill="#2ecc71" font-size="11" font-weight="700">ALLOW</text>
+  <text x="165" y="558" text-anchor="middle" fill="#a8e6cf" font-size="8">query_plans("Show all tiers")</text>
+  <text x="165" y="572" text-anchor="middle" fill="#7dcea0" font-size="7">No sensitive data — no labels triggered</text>
+  <text x="165" y="584" text-anchor="middle" fill="#52be80" font-size="7">web_search still available</text>
+
+  <!-- Scenario 2: DENY -->
+  <rect x="320" y="520" width="250" height="70" rx="8" fill="#3b0d0d" opacity="0.5" stroke="#e74c3c" stroke-width="1"/>
+  <text x="445" y="542" text-anchor="middle" fill="#e74c3c" font-size="11" font-weight="700">DENY</text>
+  <text x="445" y="558" text-anchor="middle" fill="#f5b7b1" font-size="8">web_search after query_customers</text>
+  <text x="445" y="572" text-anchor="middle" fill="#e6a09e" font-size="7">has_pii=true blocks web_search</text>
+  <text x="445" y="584" text-anchor="middle" fill="#d98880" font-size="7">PII could leak in search queries</text>
+
+  <!-- Scenario 3: ASK -->
+  <rect x="600" y="520" width="250" height="70" rx="8" fill="#3b2d0d" opacity="0.5" stroke="#f5a623" stroke-width="1"/>
+  <text x="725" y="542" text-anchor="middle" fill="#f5a623" font-size="11" font-weight="700">ASK</text>
+  <text x="725" y="558" text-anchor="middle" fill="#fdebd0" font-size="8">Output with PII + financial data</text>
+  <text x="725" y="572" text-anchor="middle" fill="#f5cba7" font-size="7">has_pii + has_financial = human review</text>
+  <text x="725" y="584" text-anchor="middle" fill="#e8b88a" font-size="7">Execution pauses for approval</text>
+
+  <!-- ============ Skill ============ -->
+  <rect x="300" y="610" width="300" height="45" rx="8" fill="#1b4f72" filter="url(#shadow)" opacity="0.8"/>
+  <text x="450" y="632" text-anchor="middle" fill="#4fc3f7" font-size="11" font-weight="700">Skill: customer-report</text>
+  <text x="450" y="647" text-anchor="middle" fill="#85c1e9" font-size="8">On-demand via load_skill  |  Redaction rules  |  Churn risk template</text>
+
+  <!-- ============ Output ============ -->
+  <line x1="450" y1="655" x2="450" y2="680" stroke="#48c9b0" stroke-width="2" opacity="0.6"/>
+  <polygon points="445,678 455,678 450,688" fill="#48c9b0" opacity="0.6"/>
+
+  <rect x="330" y="688" width="240" height="38" rx="19" fill="url(#userG)" filter="url(#shadow)" opacity="0.85"/>
+  <text x="450" y="712" text-anchor="middle" fill="#fff" font-size="13" font-weight="600">Policy-Gated Response</text>
+
+  <!-- ============ Footer Badges ============ -->
+  <g transform="translate(0, 742)">
+    <rect x="70" y="0" width="120" height="20" rx="10" fill="#2980b9" opacity="0.25"/>
+    <text x="130" y="14" text-anchor="middle" fill="#2980b9" font-size="9" font-weight="600">OmniAgents CLI</text>
+
+    <rect x="205" y="0" width="110" height="20" rx="10" fill="#e94560" opacity="0.25"/>
+    <text x="260" y="14" text-anchor="middle" fill="#e94560" font-size="9" font-weight="600">PolicyEngine</text>
+
+    <rect x="330" y="0" width="100" height="20" rx="10" fill="#f5a623" opacity="0.25"/>
+    <text x="380" y="14" text-anchor="middle" fill="#f5a623" font-size="9" font-weight="600">Labels</text>
+
+    <rect x="445" y="0" width="130" height="20" rx="10" fill="#bb86fc" opacity="0.25"/>
+    <text x="510" y="14" text-anchor="middle" fill="#bb86fc" font-size="9" font-weight="600">PII + Financial</text>
+
+    <rect x="590" y="0" width="100" height="20" rx="10" fill="#2ecc71" opacity="0.25"/>
+    <text x="640" y="14" text-anchor="middle" fill="#2ecc71" font-size="9" font-weight="600">ASK Flow</text>
+
+    <rect x="705" y="0" width="110" height="20" rx="10" fill="#4fc3f7" opacity="0.25"/>
+    <text x="760" y="14" text-anchor="middle" fill="#4fc3f7" font-size="9" font-weight="600">Telco Data</text>
+  </g>
+</svg>
