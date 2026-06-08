@@ -19,93 +19,98 @@ This repository contains example agent configurations for the [OmniAgents](https
 
 ---
 
-## Quick Start
+## Get Started
 
-### 1. Prerequisites
+### Prerequisites
 
 - Python 3.12+
 - The `omniagents` CLI installed
-- Databricks CLI authenticated (`databricks auth login`) -- required for the runner infrastructure, even when using non-Databricks LLM providers
-
-### 2. Set up the FEMA database
-
-```bash
-python examples/tools/create_fema_db.py
-```
-
-This creates `examples/tools/data/fema_disaster.db` with 80 disaster records.
-
-### 3. Set up the OpenAI API key
-
-Create a `.env` file at the repo root (the `search_policies` tool needs it for embeddings):
+- `OPENAI_API_KEY` in a `.env` file at the repo root (needed for embeddings in the FEMA and RAG agents)
 
 ```bash
 echo 'OPENAI_API_KEY="sk-..."' > .env
 ```
 
-### 4. Run an agent
+### Set up databases
 
 ```bash
-# FEMA disaster agent (requires database setup in step 2)
-omniagents run examples/fema_supervisor/
-
-# MLflow docs RAG agent (no setup needed -- builds its own DB on first query)
-omniagents run examples/rag_mlflow_docs/
-
-# Telco customer agent (requires telco.db setup: python examples/tools/create_telco_db.py)
-omniagents run examples/telco_customer_agent/
+python examples/tools/create_fema_db.py    # FEMA agent (80 disaster records)
+python examples/tools/create_telco_db.py   # Telco agent (5 tables, 125 records)
+# MLflow RAG agent builds its own DB on first query -- no setup needed
 ```
-
-The CLI opens an interactive REPL in your terminal. When using the Databricks-hosted server (the default), a Web UI is also available at the Databricks Apps URL printed at startup (e.g., `https://omnigents-<id>.aws.databricksapps.com`) -- open it in a browser to chat with the agent through a web interface.
-
-### 5. Try these queries
-
-```
-What were the top 5 states by federal aid in 2024?
-What are the evacuation protocols for hurricanes?
-How much aid did California get from wildfires and what safety guidelines apply?
-```
-
-Each example README has a full list of example queries:
-- [FEMA Disaster Agent queries](examples/fema_supervisor/#example-queries)
-- [MLflow Docs RAG queries](examples/rag_mlflow_docs/#example-queries)
-- [Telco Customer Agent queries](examples/telco_customer_agent/#example-queries) (requires `python examples/tools/create_telco_db.py` first)
 
 ---
 
-## Running Without Databricks
+## Run on Databricks
 
-By default, `omniagents run` connects to a Databricks-hosted server for session management. You can run any agent fully locally by overriding the model, harness, and server at the command line.
+Requires Databricks CLI authenticated (`databricks auth login`). The default models route through Databricks AI Gateway.
 
-### Setup
+```bash
+databricks auth login
 
-1. **Temporarily disable the Databricks global config** (the global `profile: oss` in `~/.omniagents/config.yaml` forces Databricks routing even for non-Databricks models):
+# FEMA disaster agent (databricks-claude-sonnet-4-6)
+omniagents run examples/fema_supervisor/
+
+# MLflow docs RAG agent (databricks-gpt-5-5)
+omniagents run examples/rag_mlflow_docs/
+
+# Telco customer agent (databricks-gpt-5-5)
+omniagents run examples/telco_customer_agent/
+```
+
+The CLI opens an interactive REPL. A Web UI is also available at the Databricks Apps URL printed at startup (e.g., `https://omnigents-<id>.aws.databricksapps.com`).
+
+---
+
+## Run Locally (Non-Databricks)
+
+Runs fully on your machine with no Databricks dependency. Override the model, harness, and server at the command line.
+
+### 1. Disable the Databricks global config
+
+The global `profile: oss` in `~/.omniagents/config.yaml` forces Databricks routing -- temporarily rename it:
 
 ```bash
 mv ~/.omniagents/config.yaml ~/.omniagents/config.yaml.bak
 ```
 
-2. **Export your API keys:**
+### 2. Export your API keys
 
 ```bash
-# For OpenAI models (also needed for search_policies embeddings regardless of LLM)
+# Always needed (embeddings use OpenAI regardless of LLM)
 export $(grep OPENAI_API_KEY .env | tr -d '"')
 
-# For Claude models
+# Only needed for Claude models
 export $(grep ANTHROPIC_API_KEY .env | tr -d '"')
 ```
 
-3. **Run with a non-Databricks model:**
+### 3. Run an agent
 
 ```bash
-# OpenAI (gpt-4o)
+# FEMA -- OpenAI
 omniagents run examples/fema_supervisor/ --model gpt-4o --harness openai-agents --server ""
 
-# Anthropic Claude (claude-sonnet-4-6)
+# FEMA -- Anthropic Claude
 omniagents run examples/fema_supervisor/ --model claude-sonnet-4-6 --harness claude-sdk --server ""
+
+# MLflow RAG -- OpenAI
+omniagents run examples/rag_mlflow_docs/ --model gpt-4o --harness openai-agents --server ""
+
+# Telco -- OpenAI
+omniagents run examples/telco_customer_agent/ --model gpt-4o --harness openai-agents --server ""
 ```
 
-The local server provides a terminal REPL by default. To get a browser-based Web UI locally, run the `ap-web` frontend from the [agent-framework](https://github.com/databricks/omniagents) repo:
+### 4. Restore Databricks config when done
+
+```bash
+mv ~/.omniagents/config.yaml.bak ~/.omniagents/config.yaml
+```
+
+Each example README has detailed local setup instructions -- see [FEMA](examples/fema_supervisor/), [RAG](examples/rag_mlflow_docs/), [Telco](examples/telco_customer_agent/).
+
+### Local Web UI
+
+To get a browser-based Web UI instead of the terminal REPL, run the `ap-web` frontend from the [agent-framework](https://github.com/databricks/omniagents) repo:
 
 ```bash
 # Terminal 1: start local server
@@ -121,26 +126,20 @@ OMNIAGENTS_URL=http://localhost:8000 npm run dev
 # Open http://localhost:5173/
 ```
 
-### Restore Databricks config
+---
 
-```bash
-mv ~/.omniagents/config.yaml.bak ~/.omniagents/config.yaml
+## Example Queries
+
+```
+What were the top 5 states by federal aid in 2024?
+What are the evacuation protocols for hurricanes?
+How much aid did California get from wildfires and what safety guidelines apply?
 ```
 
-### Tested models
-
-| Model | Harness | Status |
-|---|---|---|
-| `claude-sonnet-4-6` | `claude-sdk` | Works -- accurate SQL and policy search on all query types |
-| `gpt-4o` | `openai-agents` | Works -- self-corrects SQL, accurate policy search |
-| `gpt-4.1-mini` | `openai-agents` | Works -- occasional SQL column name errors |
-| `gpt-5` | `openai-agents` | Not yet supported (requires reasoning items the harness doesn't handle) |
-
-Override the default model:
-```bash
-omniagents run examples/fema_supervisor/ --server "" --model claude-opus-4-7
-omniagents run examples/fema_supervisor/ --server "" --model gpt-4.1-mini
-```
+Each example README has a full list of queries:
+- [FEMA Disaster Agent queries](examples/fema_supervisor/#example-queries)
+- [MLflow Docs RAG queries](examples/rag_mlflow_docs/#example-queries)
+- [Telco Customer Agent queries](examples/telco_customer_agent/#example-queries)
 
 ---
 
@@ -148,7 +147,7 @@ omniagents run examples/fema_supervisor/ --server "" --model gpt-4.1-mini
 
 By default the agent uses `databricks-claude-sonnet-4-6` via Databricks AI Gateway. You can swap the LLM provider while keeping the same tools and prompts.
 
-**Note:** When using the default Databricks-hosted server (no `--server` flag), `databricks auth login` is required for the runner infrastructure, regardless of which LLM provider you choose. Use `--server ""` to avoid this (see above).
+**Note:** When using the default Databricks-hosted server (no `--server` flag), `databricks auth login` is required for the runner infrastructure, regardless of which LLM provider you choose. Use `--server ""` to run fully locally -- see [Run Locally](#run-locally-non-databricks) above.
 
 To use a different model, change the `executor` block in `config.yaml`:
 
@@ -205,7 +204,7 @@ omniagents run examples/fema_supervisor/ --model gpt-5 --harness openai-agents
 | | `gpt-5.4-mini` | `openai-agents` | `OPENAI_API_KEY` in `.env` |
 | **Ollama (local)** | `ollama/llama-3` | `openai-agents` | None |
 
-Databricks AI Gateway models require `databricks auth login`. Non-Databricks models (Anthropic, OpenAI, Ollama) can run fully locally with `--server ""` -- see [Running Without Databricks](#running-without-databricks). `OPENAI_API_KEY` is always required regardless of LLM provider (the `search_policies` tool uses it for embeddings).
+Databricks AI Gateway models require `databricks auth login`. Non-Databricks models (Anthropic, OpenAI, Ollama) can run fully locally with `--server ""` -- see [Run Locally](#run-locally-non-databricks). `OPENAI_API_KEY` is always required regardless of LLM provider (the `search_policies` tool uses it for embeddings).
 
 No Python tool code changes are needed -- the tools are provider-independent.
 
@@ -277,8 +276,8 @@ Tools are auto-discovered from `tools/python/` in the agent's directory. Each `.
 | Agent | Path | Description |
 |---|---|---|
 | **FEMA Disaster** | [`examples/fema_supervisor/`](examples/fema_supervisor/) | SQL + policy search (supports Databricks, OpenAI, Claude) |
-| **MLflow Docs RAG** | [`examples/rag_mlflow_docs/`](examples/rag_mlflow_docs/) | Self-building RAG over MLflow docs via Databricks OpenAI |
-| **Telco Customer** | [`examples/telco_customer_agent/`](examples/telco_customer_agent/) | Customer data agent with PII/financial policy labels |
+| **MLflow Docs RAG** | [`examples/rag_mlflow_docs/`](examples/rag_mlflow_docs/) | Self-building RAG over MLflow docs (supports Databricks, OpenAI, Claude) |
+| **Telco Customer** | [`examples/telco_customer_agent/`](examples/telco_customer_agent/) | Customer data agent with PII/financial policy labels (supports Databricks, OpenAI, Claude) |
 | **Coding Supervisor** | [`examples/yamls/`](examples/yamls/) | Delegates coding tasks to an implementation sub-agent |
 | **Researcher** | [`examples/yamls/`](examples/yamls/) | Web search + custom `summarize_topic` tool |
 | **Code Assistant** | [`examples/yamls/`](examples/yamls/) | File I/O and shell access |
@@ -297,40 +296,51 @@ omniagents_harness/
 |-- LICENSE                                  # Apache-2.0
 |-- .env                                     # OPENAI_API_KEY (not committed)
 |-- pyproject.toml
+|-- docs/
+|   +-- local_vs_remote.md                   # OmniAgents local vs remote architecture
 |-- examples/
-|   |-- fema_supervisor/                     # FEMA disaster agent (Databricks Claude)
+|   |-- fema_supervisor/                     # FEMA disaster agent
+|   |   |-- README.md
 |   |   |-- config.yaml                      #   Agent config with prompt-driven routing
 |   |   +-- tools/python/
 |   |       |-- run_sql.py                   #   SQLite query tool (auto-discovered)
 |   |       +-- search_policies.py           #   Policy search tool (auto-discovered)
-|   |-- rag_mlflow_docs/                     # MLflow docs RAG agent (Databricks OpenAI)
-|   |   |-- config.yaml                      #   openai-agents + databricks-gpt-5-5
+|   |-- rag_mlflow_docs/                     # MLflow docs RAG agent
+|   |   |-- README.md
+|   |   |-- config.yaml
 |   |   +-- tools/python/
 |   |       |-- build_docs_db.py             #   Builds SQLite DB with docs + embeddings
 |   |       +-- search_docs.py               #   Semantic search over embedded docs
 |   |-- telco_customer_agent/                # Telco customer data agent (PII/financial policies)
-|   |   |-- config.yaml                      #   openai-agents + databricks-gpt-5-5
+|   |   |-- README.md
+|   |   |-- config.yaml
+|   |   |-- design.md                        #   Policy rationale + staged implementation plan
 |   |   +-- tools/python/
 |   |       |-- query_plans.py               #   Public plan/pricing data (no labels)
 |   |       |-- query_customers.py           #   Customer PII + devices (triggers has_pii)
 |   |       +-- query_billing.py             #   Billing + subscriptions (triggers has_financial)
 |   |-- greeter/                             # Tool-based greeter
+|   |   |-- README.md
 |   |   |-- config.yaml
 |   |   +-- tools/python/greet.py
 |   |-- tools/                               # Shared utilities
-|   |   |-- create_fema_db.py                #   Database setup script
-|   |   |-- data/fema_disaster.db            #   Pre-built SQLite database (80 records)
+|   |   |-- create_fema_db.py                #   FEMA database setup script
+|   |   |-- create_telco_db.py               #   Telco database setup script
+|   |   |-- data/fema_disaster.db            #   Pre-built FEMA database (80 records)
 |   |   +-- python/                          #   Shared tool library
 |   |       |-- greet.py                     #   Greeting tool (used by simple.yaml)
 |   |       +-- summarize.py                 #   Summarization tool (used by researcher.yaml)
 |   +-- yamls/                               # Standalone YAML agents
+|       |-- README.md
 |       |-- greeter.yaml, researcher.yaml, code_assistant.yaml,
 |       |-- supervisor.yaml, simple.yaml
 |       +-- agents/impl_worker/config.yaml
 +-- images/
     |-- fema_supervisor_architecture.svg
     |-- rag_mlflow_docs_architecture.svg
-    +-- telco_customer_agent_architecture.svg
+    |-- telco_customer_agent_architecture.svg
+    |-- omniagents_local_architecture.svg
+    +-- omniagents_remote_architecture.svg
 ```
 
 ---
