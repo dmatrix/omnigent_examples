@@ -156,7 +156,7 @@ Neither alone is sufficient. AI Gateway can't enforce session-scoped information
 
 ## Architecture
 
-![Telco Customer Agent Architecture](images/telco_customer_agent_architecture.svg)
+![Telco Customer Agent Architecture](../../images/telco_customer_agent_architecture.svg)
 
 ## File Structure
 
