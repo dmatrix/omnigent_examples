@@ -114,10 +114,10 @@ To get a browser-based Web UI instead of the terminal REPL, run the `ap-web` fro
 
 ```bash
 # Terminal 1: start local server
-OMNIAGENTS_AUTH_MULTI_USER=false omniagents server --agent examples/fema_supervisor/config.yaml
+OMNIAGENTS_AUTH_ENABLED=0 omniagents server --agent examples/fema_supervisor/config.yaml
 
 # Terminal 2: register as a runner
-omniagents connect --server http://localhost:8000
+omniagents host --server http://localhost:8000
 
 # Terminal 3: start the web frontend
 cd /path/to/agent-framework/ap-web && npm install

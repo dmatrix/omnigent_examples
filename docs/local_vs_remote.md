@@ -126,12 +126,12 @@ export OPENAI_API_KEY=...      # for openai-agents harness, and for search_polic
 
 ```bash
 # Terminal 1: Start local server (auth disabled for local dev)
-OMNIAGENTS_AUTH_MULTI_USER=false omniagents server --agent examples/telco_customer_agent/config.yaml
+OMNIAGENTS_AUTH_ENABLED=0 omniagents server --agent examples/telco_customer_agent/config.yaml
 ```
 
 ```bash
 # Terminal 2: Register a runner (connects to the local server)
-omniagents connect --server http://localhost:8000
+omniagents host --server http://localhost:8000
 ```
 
 ```bash
@@ -159,7 +159,7 @@ mv ~/.omniagents/config.yaml.bak ~/.omniagents/config.yaml
 - All components run on localhost — no cloud dependency
 - No AI Gateway — harness calls the LLM API directly (no rate limits, no PII detection at the gateway layer)
 - Session state is local SQLite — single machine, not resumable from other devices
-- Auth disabled (`OMNIAGENTS_AUTH_MULTI_USER=false`)
+- Auth disabled (`OMNIAGENTS_AUTH_ENABLED=0`)
 - Must rename `~/.omniagents/config.yaml` — the `profile: oss` setting injects Databricks routing into every harness subprocess
 
 ---
@@ -174,7 +174,7 @@ mv ~/.omniagents/config.yaml.bak ~/.omniagents/config.yaml
 | **Harness** | On your laptop (subprocess) | Same — on your laptop |
 | **PolicyEngine** | In runner (laptop) | Same — in runner (laptop) |
 | **LLM routing** | Via Databricks AI Gateway | Direct API (OpenAI/Anthropic/Ollama) |
-| **Auth** | Databricks SSO | Disabled (`OMNIAGENTS_AUTH_MULTI_USER=false`) |
+| **Auth** | Databricks SSO | Disabled (`OMNIAGENTS_AUTH_ENABLED=0`) |
 | **Session persistence** | PostgreSQL, resumable anywhere | Local SQLite, single machine |
 | **Models** | `databricks-gpt-5-5`, `databricks-claude-sonnet-4-6` | `gpt-4o`, `claude-sonnet-4-6`, Ollama models |
 | **Config gotcha** | Uses `~/.omniagents/config.yaml` with `profile: oss` | Must rename/remove that config file |
