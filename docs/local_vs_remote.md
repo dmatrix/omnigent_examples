@@ -34,7 +34,7 @@
 
 ## Remote Mode (Default — Databricks-Hosted)
 
-![Remote Architecture](images/omniagents_remote_architecture.svg)
+![Remote Architecture](../images/omniagents_remote_architecture.svg)
 
 ### How it works
 
@@ -83,7 +83,7 @@ The CLI reads `~/.omniagents/config.yaml` (profile: `oss`, server: `omnigents-*.
 
 ## Fully Local Mode (3 Terminals)
 
-![Local Architecture](images/omniagents_local_architecture.svg)
+![Local Architecture](../images/omniagents_local_architecture.svg)
 
 ### How it works
 
