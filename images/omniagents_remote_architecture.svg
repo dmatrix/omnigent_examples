@@ -1,0 +1,227 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 720" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <linearGradient id="cloudG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2980b9"/>
+      <stop offset="100%" stop-color="#1a5276"/>
+    </linearGradient>
+    <linearGradient id="laptopG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1b6b4a"/>
+      <stop offset="100%" stop-color="#148f4b"/>
+    </linearGradient>
+    <linearGradient id="userG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#48c9b0"/>
+      <stop offset="100%" stop-color="#1abc9c"/>
+    </linearGradient>
+    <linearGradient id="serverG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2980b9"/>
+      <stop offset="100%" stop-color="#1a5276"/>
+    </linearGradient>
+    <linearGradient id="webuiG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#8e44ad"/>
+      <stop offset="100%" stop-color="#6c3483"/>
+    </linearGradient>
+    <linearGradient id="runnerG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e97c00"/>
+      <stop offset="100%" stop-color="#f5a623"/>
+    </linearGradient>
+    <linearGradient id="harnessG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#c0392b"/>
+      <stop offset="100%" stop-color="#e74c3c"/>
+    </linearGradient>
+    <linearGradient id="policyG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e94560"/>
+      <stop offset="100%" stop-color="#c73e54"/>
+    </linearGradient>
+    <linearGradient id="gatewayG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0f3460"/>
+      <stop offset="100%" stop-color="#1a5276"/>
+    </linearGradient>
+    <linearGradient id="llmG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#533483"/>
+      <stop offset="100%" stop-color="#6c3d9e"/>
+    </linearGradient>
+    <linearGradient id="dbG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1b4f72"/>
+      <stop offset="100%" stop-color="#154360"/>
+    </linearGradient>
+    <linearGradient id="cliG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1b6b4a"/>
+      <stop offset="100%" stop-color="#148f4b"/>
+    </linearGradient>
+    <linearGradient id="toolG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#7d6608"/>
+      <stop offset="100%" stop-color="#b7950b"/>
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="720" fill="url(#bg)"/>
+
+  <!-- Subtle grid -->
+  <g opacity="0.03" stroke="#fff" stroke-width="0.5">
+    <line x1="0" y1="100" x2="900" y2="100"/><line x1="0" y1="200" x2="900" y2="200"/>
+    <line x1="0" y1="300" x2="900" y2="300"/><line x1="0" y1="400" x2="900" y2="400"/>
+    <line x1="0" y1="500" x2="900" y2="500"/><line x1="0" y1="600" x2="900" y2="600"/>
+    <line x1="150" y1="0" x2="150" y2="720"/><line x1="300" y1="0" x2="300" y2="720"/>
+    <line x1="450" y1="0" x2="450" y2="720"/><line x1="600" y1="0" x2="600" y2="720"/>
+    <line x1="750" y1="0" x2="750" y2="720"/>
+  </g>
+
+  <!-- Decorative circles -->
+  <circle cx="80" cy="120" r="40" fill="#e94560" opacity="0.04"/>
+  <circle cx="820" cy="500" r="55" fill="#f5a623" opacity="0.04"/>
+  <circle cx="750" cy="100" r="35" fill="#48c9b0" opacity="0.04"/>
+
+  <!-- Title -->
+  <text x="450" y="38" text-anchor="middle" fill="#fff" font-size="18" font-weight="700" letter-spacing="1">OmniAgents Architecture &#x2014; Remote Mode (Databricks-Hosted)</text>
+  <text x="450" y="58" text-anchor="middle" fill="#8899aa" font-size="11">Default: omniagents run examples/telco_customer_agent/</text>
+
+  <!-- ==================== CLOUD ZONE ==================== -->
+  <rect x="30" y="75" width="840" height="245" rx="12" fill="none" stroke="#2980b9" stroke-width="1.5" stroke-dasharray="6 4" opacity="0.4"/>
+  <rect x="40" y="67" width="260" height="20" rx="4" fill="#1a1a2e"/>
+  <text x="50" y="81" fill="#2980b9" font-size="11" font-weight="700">DATABRICKS CLOUD  (omnigents-*.databricksapps.com)</text>
+
+  <!-- Browser -->
+  <rect x="60" y="95" width="170" height="44" rx="22" fill="url(#userG)" filter="url(#shadow)"/>
+  <text x="115" y="122" fill="#fff" font-size="13" font-weight="600">Browser</text>
+  <text x="165" y="120" fill="#fff" font-size="14">&#x1F310;</text>
+
+  <!-- Terminal REPL -->
+  <rect x="670" y="95" width="170" height="44" rx="22" fill="url(#cliG)" filter="url(#shadow)"/>
+  <text x="722" y="122" fill="#fff" font-size="13" font-weight="600">Terminal REPL</text>
+  <text x="820" y="120" fill="#fff" font-size="12">&#x2328;</text>
+
+  <!-- Arrow: Browser -> Web UI -->
+  <line x1="145" y1="139" x2="145" y2="165" stroke="#48c9b0" stroke-width="2" opacity="0.8"/>
+  <polygon points="140,163 150,163 145,173" fill="#48c9b0" opacity="0.8"/>
+  <text x="155" y="158" fill="#8899aa" font-size="7">HTTPS</text>
+
+  <!-- Web UI -->
+  <rect x="60" y="173" width="170" height="55" rx="8" fill="url(#webuiG)" filter="url(#shadow)"/>
+  <text x="145" y="196" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">Web UI</text>
+  <text x="145" y="210" text-anchor="middle" fill="#d7bde2" font-size="8">React + Vite  |  Built into App</text>
+  <text x="145" y="222" text-anchor="middle" fill="#c39bd3" font-size="7">xterm.js  |  Monaco Editor</text>
+
+  <!-- Arrow: Web UI -> Server -->
+  <line x1="230" y1="200" x2="310" y2="200" stroke="#8e44ad" stroke-width="1.5" opacity="0.7"/>
+  <polygon points="308,195 308,205 318,200" fill="#8e44ad" opacity="0.7"/>
+  <text x="260" y="193" fill="#8899aa" font-size="7">HTTP/SSE</text>
+
+  <!-- AP Server -->
+  <rect x="320" y="165" width="280" height="70" rx="10" fill="url(#serverG)" filter="url(#shadow)"/>
+  <text x="460" y="192" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">AP Server</text>
+  <text x="460" y="207" text-anchor="middle" fill="#a8d8ea" font-size="9">FastAPI + Uvicorn  |  Port 8000</text>
+  <text x="460" y="220" text-anchor="middle" fill="#7ec8e3" font-size="7">Agent Registry  |  Sessions  |  Policies  |  Sub-agents</text>
+  <text x="460" y="230" text-anchor="middle" fill="#5dade2" font-size="7">omniagents/server/app.py</text>
+
+  <!-- Arrow: Terminal -> Server -->
+  <line x1="755" y1="139" x2="755" y2="165" stroke="#2ecc71" stroke-width="1.5" opacity="0.5"/>
+  <line x1="755" y1="165" x2="600" y2="185" stroke="#2ecc71" stroke-width="1.5" opacity="0.5"/>
+  <polygon points="603,180 603,190 593,185" fill="#2ecc71" opacity="0.5"/>
+  <text x="690" y="160" fill="#8899aa" font-size="7">REST/SSE</text>
+
+  <!-- Database -->
+  <rect x="320" y="253" width="280" height="40" rx="6" fill="url(#dbG)" filter="url(#shadow)"/>
+  <text x="460" y="275" text-anchor="middle" fill="#4fc3f7" font-size="10" font-weight="600">PostgreSQL / SQLite</text>
+  <text x="460" y="288" text-anchor="middle" fill="#85c1e9" font-size="7">conversations  |  conversation_labels  |  agents  |  files</text>
+
+  <!-- Arrow: Server -> DB -->
+  <line x1="460" y1="235" x2="460" y2="253" stroke="#2980b9" stroke-width="1.5" opacity="0.5"/>
+
+  <!-- ==================== LAPTOP ZONE ==================== -->
+  <rect x="30" y="340" width="840" height="340" rx="12" fill="none" stroke="#2ecc71" stroke-width="1.5" stroke-dasharray="6 4" opacity="0.4"/>
+  <rect x="40" y="332" width="160" height="20" rx="4" fill="#1a1a2e"/>
+  <text x="50" y="346" fill="#2ecc71" font-size="11" font-weight="700">USER'S LAPTOP  (localhost)</text>
+
+  <!-- WebSocket Tunnel Arrow -->
+  <line x1="460" y1="295" x2="460" y2="370" stroke="#f5a623" stroke-width="2.5" opacity="0.8" stroke-dasharray="8 4"/>
+  <polygon points="455,368 465,368 460,378" fill="#f5a623" opacity="0.8"/>
+  <rect x="395" y="322" width="130" height="18" rx="4" fill="#1a1a2e" stroke="#f5a623" stroke-width="1" opacity="0.8"/>
+  <text x="460" y="335" text-anchor="middle" fill="#f5a623" font-size="9" font-weight="600">WebSocket Tunnel</text>
+
+  <!-- Runner -->
+  <rect x="280" y="378" width="360" height="65" rx="10" fill="url(#runnerG)" filter="url(#shadow)"/>
+  <text x="460" y="403" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">Runner</text>
+  <text x="460" y="418" text-anchor="middle" fill="#ffecd2" font-size="9">Spawns harnesses  |  Resolves tool calls  |  Manages OS env</text>
+  <text x="460" y="432" text-anchor="middle" fill="#ffd5a0" font-size="7">omniagents/runner/app.py  |  HarnessProcessManager</text>
+
+  <!-- PolicyEngine inside Runner -->
+  <rect x="660" y="378" width="180" height="65" rx="8" fill="url(#policyG)" filter="url(#shadow)"/>
+  <text x="750" y="403" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">PolicyEngine</text>
+  <text x="750" y="418" text-anchor="middle" fill="#ffd5dd" font-size="8">Labels  |  ALLOW/DENY/ASK</text>
+  <text x="750" y="432" text-anchor="middle" fill="#f5b7b1" font-size="7">runtime/policies/engine.py</text>
+
+  <!-- Harness -->
+  <rect x="310" y="470" width="300" height="60" rx="8" fill="url(#harnessG)" filter="url(#shadow)"/>
+  <text x="460" y="495" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">Harness (subprocess)</text>
+  <text x="460" y="510" text-anchor="middle" fill="#f5b7b1" font-size="9">claude-sdk | openai-agents | codex | pi</text>
+  <text x="460" y="522" text-anchor="middle" fill="#e6a09e" font-size="7">omniagents/inner/*_harness.py  |  LLM-tool loop</text>
+
+  <!-- Arrow: Runner -> Harness -->
+  <line x1="460" y1="443" x2="460" y2="470" stroke="#e97c00" stroke-width="1.5" opacity="0.7"/>
+  <polygon points="455,468 465,468 460,478" fill="#e97c00" opacity="0.7"/>
+  <text x="475" y="460" fill="#8899aa" font-size="7">UDS</text>
+
+  <!-- Tools (local) -->
+  <rect x="60" y="470" width="220" height="60" rx="8" fill="url(#toolG)" filter="url(#shadow)"/>
+  <text x="170" y="495" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">Local Tools + Files</text>
+  <text x="170" y="510" text-anchor="middle" fill="#fdebd0" font-size="8">@tool Python  |  SQLite  |  MCP servers</text>
+  <text x="170" y="522" text-anchor="middle" fill="#f5cba7" font-size="7">Local filesystem  |  Terminals  |  Sandboxes</text>
+
+  <!-- Arrow: Runner -> Tools -->
+  <line x1="310" y1="420" x2="250" y2="470" stroke="#b7950b" stroke-width="1.5" opacity="0.6"/>
+  <polygon points="246,466 254,472 244,474" fill="#b7950b" opacity="0.6"/>
+
+  <!-- AI Gateway -->
+  <rect x="310" y="555" width="300" height="45" rx="8" fill="url(#gatewayG)" filter="url(#shadow)"/>
+  <text x="460" y="578" text-anchor="middle" fill="#4fc3f7" font-size="12" font-weight="700">Databricks AI Gateway</text>
+  <text x="460" y="592" text-anchor="middle" fill="#85c1e9" font-size="8">Rate limits  |  PII detection  |  Content filters  |  Audit logging</text>
+
+  <!-- Arrow: Harness -> Gateway -->
+  <line x1="460" y1="530" x2="460" y2="555" stroke="#c0392b" stroke-width="1.5" opacity="0.6"/>
+  <polygon points="455,553 465,553 460,563" fill="#c0392b" opacity="0.6"/>
+  <text x="478" y="546" fill="#8899aa" font-size="7">SDK calls</text>
+
+  <!-- LLM -->
+  <rect x="340" y="620" width="240" height="45" rx="22" fill="url(#llmG)" filter="url(#shadow)"/>
+  <text x="460" y="643" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">Model API</text>
+  <text x="460" y="657" text-anchor="middle" fill="#d7bde2" font-size="8">Claude  |  GPT  |  Kimi  |  Llama</text>
+
+  <!-- Arrow: Gateway -> LLM -->
+  <line x1="460" y1="600" x2="460" y2="620" stroke="#0f3460" stroke-width="1.5" opacity="0.6"/>
+  <polygon points="455,618 465,618 460,628" fill="#0f3460" opacity="0.6"/>
+
+  <!-- ============ Footer Badges ============ -->
+  <g transform="translate(0, 688)">
+    <rect x="50" y="0" width="100" height="20" rx="10" fill="#2980b9" opacity="0.25"/>
+    <text x="100" y="14" text-anchor="middle" fill="#2980b9" font-size="9" font-weight="600">AP Server</text>
+
+    <rect x="165" y="0" width="80" height="20" rx="10" fill="#8e44ad" opacity="0.25"/>
+    <text x="205" y="14" text-anchor="middle" fill="#8e44ad" font-size="9" font-weight="600">Web UI</text>
+
+    <rect x="260" y="0" width="80" height="20" rx="10" fill="#f5a623" opacity="0.25"/>
+    <text x="300" y="14" text-anchor="middle" fill="#f5a623" font-size="9" font-weight="600">Runner</text>
+
+    <rect x="355" y="0" width="80" height="20" rx="10" fill="#e94560" opacity="0.25"/>
+    <text x="395" y="14" text-anchor="middle" fill="#e94560" font-size="9" font-weight="600">Policies</text>
+
+    <rect x="450" y="0" width="80" height="20" rx="10" fill="#c0392b" opacity="0.25"/>
+    <text x="490" y="14" text-anchor="middle" fill="#c0392b" font-size="9" font-weight="600">Harness</text>
+
+    <rect x="545" y="0" width="100" height="20" rx="10" fill="#0f3460" opacity="0.25"/>
+    <text x="595" y="14" text-anchor="middle" fill="#4fc3f7" font-size="9" font-weight="600">AI Gateway</text>
+
+    <rect x="660" y="0" width="80" height="20" rx="10" fill="#533483" opacity="0.25"/>
+    <text x="700" y="14" text-anchor="middle" fill="#bb86fc" font-size="9" font-weight="600">Model</text>
+
+    <rect x="755" y="0" width="80" height="20" rx="10" fill="#b7950b" opacity="0.25"/>
+    <text x="795" y="14" text-anchor="middle" fill="#f5cba7" font-size="9" font-weight="600">Tools</text>
+  </g>
+</svg>
