@@ -22,10 +22,10 @@ python examples/tools/create_fema_db.py
 omniagents run examples/fema_supervisor/
 
 # Direct OpenAI (no Databricks) — requires ~/.omniagents/config.yaml renamed
-omniagents run examples/fema_supervisor_openai/ --server ""
+omniagents run examples/fema_supervisor/ --model gpt-4o --harness openai-agents --server ""
 
 # Direct Anthropic Claude (no Databricks) — requires ~/.omniagents/config.yaml renamed
-omniagents run examples/fema_supervisor_claude/ --server ""
+omniagents run examples/fema_supervisor/ --model claude-sonnet-4-6 --harness claude-sdk --server ""
 
 # Telco customer agent (requires telco.db setup)
 python examples/tools/create_telco_db.py
@@ -71,12 +71,6 @@ examples/
 |   +-- tools/python/
 |       |-- run_sql.py            #   SQLite query tool (auto-discovered)
 |       +-- search_policies.py    #   Semantic search tool (auto-discovered, inline docs)
-|-- fema_supervisor_openai/       # FEMA agent (direct OpenAI)
-|   |-- config.yaml               #   harness: openai-agents, model: gpt-4o
-|   +-- tools/python/             #   Same tools as fema_supervisor
-|-- fema_supervisor_claude/       # FEMA agent (direct Anthropic Claude)
-|   |-- config.yaml               #   harness: claude-sdk, model: claude-sonnet-4-6
-|   +-- tools/python/             #   Same tools as fema_supervisor
 |-- telco_customer_agent/         # Telco customer data agent (PII/financial policies)
 |   |-- config.yaml               #   harness: openai-agents, model: databricks-gpt-5-5
 |   +-- tools/python/

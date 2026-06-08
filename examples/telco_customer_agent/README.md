@@ -1,0 +1,184 @@
+# Telco Customer Agent
+
+**Multi-tool customer data agent with session-scoped PII and financial policy enforcement.**
+
+![Telco Customer Agent Architecture](../../images/telco_customer_agent_architecture.svg)
+
+---
+
+## Overview
+
+The telco agent demonstrates session-scoped policy enforcement over customer PII and financial data. It has three database tools and one builtin:
+
+- **`query_plans`** -- Queries public plan/pricing data (5 plans mirroring real carrier tiers). Does not trigger any policy labels.
+
+- **`query_customers`** -- Queries the customers and devices tables (20 customers with PII: names, emails, phone numbers, SSN last-4, IMEI). Triggers the `has_pii` label.
+
+- **`query_billing`** -- Queries the billing and subscriptions tables (60 billing records across 3 months, 20 subscriptions with revenue, discounts, payment status). Triggers the `has_financial` label.
+
+- **`web_search`** -- Builtin web search for external/competitor/market questions. Blocked after PII or financial data access.
+
+The agent works with OmniAgents' PolicyEngine for session-scoped governance: taint labels track what data the agent has seen, DENY policies block web search after PII/financial access, and ASK policies require human approval before outputting combined PII + financial data.
+
+See the [design doc](design.md) for the full design, policy rationale, and staged implementation plan.
+
+---
+
+## Setup
+
+### 1. Build the database
+
+```bash
+python examples/tools/create_telco_db.py
+```
+
+This creates `examples/tools/data/telco.db` with 5 tables and 125 records.
+
+### 2. Run the agent
+
+```bash
+omniagents run examples/telco_customer_agent/
+```
+
+This uses `databricks-gpt-5-5` via Databricks AI Gateway (requires `databricks auth login`).
+
+---
+
+## Example Queries
+
+**Plans** (public data -- no labels triggered):
+```
+What plans are available and what do they cost?
+Compare the Experience More and Experience Beyond plans
+```
+
+**Customers** (PII data -- triggers `has_pii`):
+```
+List all customers in California with their phone numbers
+Show me customers whose contracts expire in the next 90 days
+```
+
+**Billing** (financial data -- triggers `has_financial`):
+```
+What's our total monthly revenue across all plans?
+Which customers have overage charges this month?
+Show me all past-due accounts with amounts owed
+```
+
+---
+
+## Policy Engine
+
+The agent's `config.yaml` defines session-scoped guardrails:
+
+### Labels
+
+| Label | Triggered by | Monotonic |
+|---|---|---|
+| `has_pii` | `query_customers` | Yes (once set, cannot be unset) |
+| `has_financial` | `query_billing` | Yes |
+| `has_credit` | `query_customers` | Yes |
+| `used_web` | `web_search` | Yes |
+
+### Policies
+
+| Policy | Condition | Action | Reason |
+|---|---|---|---|
+| `block_web_after_pii` | `has_pii = True` | DENY `web_search` | PII in session could leak via search queries |
+| `block_web_after_financial` | `has_financial = True` | DENY `web_search` | Financial data in session could leak |
+| `approve_pii_financial_output` | `has_pii = True` AND `has_financial = True` | ASK (human approval) | Combined PII + financial output requires review |
+| `approve_credit_output` | `has_credit = True` | ASK (human approval) | Credit/collections data regulated under FDCPA |
+
+---
+
+## Database Schema
+
+### `plans`
+
+| Column | Type | Example |
+|---|---|---|
+| `plan_id` | TEXT | PLAN-ES, PLAN-EM, PLAN-EB |
+| `plan_name` | TEXT | Essentials Saver, Experience More |
+| `monthly_rate` | INTEGER | 55, 65, 90, 105, 200 |
+| `data_limit_gb` | INTEGER | -1 means unlimited |
+| `hotspot_gb` | INTEGER | -1 means unlimited, 0 means none |
+| `international` | TEXT | none, 5gb_intl, 15gb_intl, unlimited |
+| `streaming_perks` | TEXT | none, netflix_ads,apple_tv, etc. |
+| `price_guarantee_years` | INTEGER | 0, 3, or 5 |
+
+### `customers`
+
+| Column | Type | Example |
+|---|---|---|
+| `customer_id` | TEXT | CUST-1001 |
+| `name` | TEXT | -- |
+| `email` | TEXT | -- |
+| `phone_number` | TEXT | -- |
+| `ssn_last4` | TEXT | -- |
+| `address_state` | TEXT | California, New York |
+| `account_type` | TEXT | individual, family, business |
+| `credit_class` | TEXT | A, B, C, D |
+| `account_status` | TEXT | active, suspended, past_due, churned |
+| `signup_date` | TEXT | YYYY-MM-DD |
+| `auto_pay` | TEXT | true, false |
+
+### `devices`
+
+| Column | Type | Example |
+|---|---|---|
+| `device_id` | TEXT | -- |
+| `subscription_id` | TEXT | JOIN with subscriptions |
+| `make` | TEXT | Apple, Samsung, Google |
+| `model` | TEXT | iPhone 16 Pro Max, Galaxy S25 Ultra |
+| `imei` | TEXT | -- |
+| `installment_monthly` | INTEGER | -- |
+| `installment_remaining` | INTEGER | months left |
+| `installment_total` | INTEGER | full device price |
+| `insurance_plan` | TEXT | none, basic_protect, total_protect |
+| `insurance_monthly` | INTEGER | -- |
+
+### `subscriptions`
+
+| Column | Type | Example |
+|---|---|---|
+| `subscription_id` | TEXT | -- |
+| `customer_id` | TEXT | -- |
+| `plan_id` | TEXT | -- |
+| `contract_start` | TEXT | YYYY-MM-DD |
+| `contract_end` | TEXT | YYYY-MM-DD |
+| `auto_renew` | TEXT | true, false |
+| `discount_pct` | INTEGER | -- |
+| `promo_code` | TEXT | -- |
+| `ported_from` | TEXT | carrier they switched from, or null |
+
+### `billing`
+
+| Column | Type | Example |
+|---|---|---|
+| `billing_id` | TEXT | -- |
+| `customer_id` | TEXT | -- |
+| `month` | TEXT | 2025-04 |
+| `plan_charge` | INTEGER | -- |
+| `device_installment` | INTEGER | -- |
+| `insurance` | INTEGER | -- |
+| `overage_charges` | INTEGER | -- |
+| `international_charges` | INTEGER | -- |
+| `taxes_and_fees` | INTEGER | -- |
+| `autopay_discount` | INTEGER | negative, e.g. -10 |
+| `promo_discount` | INTEGER | negative, e.g. -21 |
+| `total_due` | INTEGER | -- |
+| `payment_status` | TEXT | current, past_due_30, past_due_60, collections |
+| `late_fee` | INTEGER | -- |
+
+### Common Joins
+
+```sql
+-- Customers with devices
+SELECT c.name, d.make, d.model FROM customers c
+JOIN subscriptions s ON c.customer_id = s.customer_id
+JOIN devices d ON s.subscription_id = d.subscription_id
+
+-- Billing with subscriptions
+SELECT b.month, b.total_due, s.plan_id FROM billing b
+JOIN subscriptions s ON b.customer_id = s.customer_id
+```

@@ -1,5 +1,7 @@
 # Telco Customer Data Agent with PII/Financial Policy Labels
 
+Implemented  here: https://github.com/dmatrix/omniagents_harness (A private repo)
+
 ## Why OmniAgents Is the Right Framework for This
 
 An agent that touches customer PII, financial records, and credit data cannot rely on the LLM to self-regulate. We discovered this when building a RAG with Omniagent: GPT-5.5 ignores every prompt instruction to refuse answering, even when the tool explicitly returns "no relevant documents found," for our use case RAG example. Prompt engineering is not a compliance strategy.
@@ -550,18 +552,40 @@ Check logs — `has_financial` should also be `true` now.
 - Add `block_web_after_financial` policy — DENY web_search when has_financial=true
 
 **Test:**
+
+**Scenario A: PII taint → web search denied**
 ```
-# Before any data access — should work
-Search the web for T-Mobile pricing
+Turn 1:  What devices does customer CUST-1001 have?
+         → agent calls query_customers → taint_pii fires → has_pii = true ✓
 
-# Now access customer data
-List all customers in California
-
-# Try web search again — should be DENIED
-Search the web for AT&T competitor pricing
+Turn 2:  Use web_search to find the latest iPhone trade-in deals from T-Mobile and Verizon
+         → agent tries web_search → block_web_after_pii fires → DENIED ✗
 ```
 
-**Validates:** DENY enforcement works. The agent can use web_search before touching data, but not after. This is the core differentiator — the moment labels gate tool access.
+**Scenario B: Financial taint → web search denied**
+```
+Turn 1:  Show me the billing summary for CUST-1003 for the last 3 months
+         → agent calls query_billing → taint_financial fires → has_financial = true ✓
+
+Turn 2:  Use web_search to find how T-Mobile pricing compares to our plans
+         → agent tries web_search → block_web_after_financial fires → DENIED ✗
+```
+
+**Scenario C: Web search works until tainted (contrast — best demo)**
+```
+Turn 1:  What are Verizon's current unlimited plan prices?
+         → agent calls web_search → taint_web fires → used_web = true, no denial ✓
+
+Turn 2:  Now show me CUST-1002's billing history
+         → agent calls query_billing → taint_financial fires → has_financial = true ✓
+
+Turn 3:  Use web_search to find average churn rates in telecom
+         → agent tries web_search → block_web_after_financial fires → DENIED ✗
+```
+
+> **Note:** Use explicit "Use web_search to..." phrasing in denial turns. Ambiguous prompts like "What are the latest iPhone deals?" may cause the LLM to route around the tool (answering from training data or using `query_plans` instead), which means the DENY policy never fires. The policy enforces at the tool-call layer — if the LLM never attempts the call, there's nothing to deny.
+
+**Validates:** DENY enforcement works. The agent can use web_search before touching data, but not after. Scenario C is the most compelling demo — it shows web search succeeding in turn 1, then getting blocked after sensitive data enters the session. The order matters because labels are monotonic.
 
 ---
 
@@ -572,14 +596,48 @@ Search the web for AT&T competitor pricing
 - Add `approve_credit_output` policy — ASK on output when has_credit
 
 **Test:**
+
+**Scenario A: PII + financial → output paused for approval**
 ```
-List all customers in California
-What's our total monthly revenue?
-Generate a billing report for enterprise customers
-→ Should PAUSE for human approval
+Turn 1:  List all customers in California
+         → agent calls query_customers → taint_pii fires → has_pii = true ✓
+
+Turn 2:  What's our total monthly revenue?
+         → agent calls query_billing → taint_financial fires → has_financial = true ✓
+
+Turn 3:  Generate a billing report for enterprise customers
+         → agent produces output → approve_pii_financial_output fires
+         → PAUSED: "Output contains both PII and financial data. Human review required."
+         → Human approves → output delivered ✓
+         → Human rejects → output blocked ✗
 ```
 
-**Validates:** ASK flow works — execution pauses, user approves or rejects, agent continues or stops.
+**Scenario B: Credit data → output paused for approval**
+```
+Turn 1:  Show me customers with credit class D and their payment history
+         → agent calls query_customers → taint_pii + taint_credit fire
+         → has_pii = true, has_credit = true ✓
+
+Turn 2:  Which of those customers are in collections?
+         → agent calls query_billing → taint_financial fires → has_financial = true ✓
+         → agent produces output → approve_credit_output fires
+         → PAUSED: "Output contains credit/collections data. Regulated under FDCPA."
+```
+
+**Scenario C: PII alone does NOT trigger ASK (contrast)**
+```
+Turn 1:  List all customers in California with their phone numbers
+         → agent calls query_customers → has_pii = true ✓
+
+Turn 2:  How many of those are on the Experience Beyond plan?
+         → agent calls query_plans (no new labels) ✓
+         → agent produces output → approve_pii_financial_output does NOT fire
+           (condition requires BOTH has_pii AND has_financial) → output delivered normally ✓
+```
+
+> **Note:** ASK policies fire on `[output]`, not `[tool_call]`. The pause happens when the agent tries to send its response to the user, not when it calls a tool. This means the agent completes all its reasoning and tool calls first — the human reviews the final assembled answer.
+
+**Validates:** ASK flow works — execution pauses, user approves or rejects, agent continues or stops. Scenario C confirms that PII alone is not enough to trigger the combined PII+financial approval gate — both labels must be true.
 
 ---
 
@@ -650,6 +708,80 @@ Stage 10 (docs)
 ```
 
 Each stage is independently testable. If Stage 6 (DENY) fails, you still have a working 3-tool agent from Stage 4. If Stage 7 (ASK) fails, DENY enforcement from Stage 6 still works. The skill and strict prompt are additive — they enhance but don't break the core functionality.
+
+## Testing with Non-Databricks OpenAI Models
+
+The telco agent config defaults to `databricks-gpt-5-5`, but you can test every stage with direct OpenAI models using CLI overrides — no separate project structure needed.
+
+### Prerequisites (one-time)
+
+```bash
+# Disable Databricks global config (prevents forced Databricks routing)
+mv ~/.omniagents/config.yaml ~/.omniagents/config.yaml.bak
+
+# Export OpenAI API key from .env
+export $(grep OPENAI_API_KEY .env | tr -d '"')
+```
+
+### The override pattern
+
+Same `config.yaml`, different model — override at the command line:
+
+```bash
+omniagents run examples/telco_customer_agent/ --server "" --model gpt-4o --harness openai-agents
+```
+
+- `--server ""` — disables Databricks-hosted server, runs fully local
+- `--model gpt-4o` — overrides `executor.model` in config.yaml
+- `--harness openai-agents` — overrides `executor.config.harness` (already `openai-agents` by default, but explicit is clearer)
+
+### Per-stage test commands
+
+The command is the same for every stage — what changes is the tools and policies present in `config.yaml` at each stage:
+
+```bash
+omniagents run examples/telco_customer_agent/ --server "" --model gpt-4o --harness openai-agents
+```
+
+**Stage 1** (plans tool only):
+```
+What plans are available and what do they cost?
+Compare the Experience More and Experience Beyond plans
+```
+
+**Stage 2** (+ customers tool):
+```
+List all customers in California with their phone numbers
+Show me customers whose contracts expire in the next 90 days
+```
+
+**Stage 3** (+ billing tool):
+```
+What's our total monthly revenue across all plans?
+Which customers have overage charges this month?
+Show me all past-due accounts with amounts owed
+```
+
+**Stage 4** (+ web_search builtin):
+```
+Search the web for T-Mobile's current pricing
+How do our plans compare to T-Mobile's current unlimited plans? Show our pricing first, then search for theirs.
+What plans are available?   ← should route to query_plans, not web_search
+```
+
+### Tested OpenAI models
+
+| Model | Flag | Notes |
+|---|---|---|
+| `gpt-4o` | `--model gpt-4o` | Recommended — accurate SQL, good tool routing |
+| `gpt-4.1-mini` | `--model gpt-4.1-mini` | Budget option — occasional SQL column name errors |
+| `gpt-5.4` | `--model gpt-5.4` | Latest — untested with telco agent |
+
+### Restore Databricks config
+
+```bash
+mv ~/.omniagents/config.yaml.bak ~/.omniagents/config.yaml
+```
 
 ## Verification Checklist (cumulative)
 
