@@ -18,23 +18,61 @@ The agent builds its own database on first use -- no setup script needed. Conver
 
 ---
 
-## Setup
+## Get Started
 
-No database setup needed -- the agent builds its own DB on the first query. You only need:
-
-1. **Set up the OpenAI API key** (for embeddings):
+No database setup needed -- the agent builds its own DB on the first query. You only need the OpenAI API key (for embeddings):
 
 ```bash
 echo 'OPENAI_API_KEY="sk-..."' > .env
 ```
 
-2. **Run the agent:**
+---
+
+## Run on Databricks
+
+Uses `databricks-gpt-5-5` via Databricks AI Gateway.
 
 ```bash
+databricks auth login
 omniagents run examples/rag_mlflow_docs/
 ```
 
-This uses `databricks-gpt-5-5` via Databricks AI Gateway (requires `databricks auth login`).
+The CLI opens an interactive REPL. A Web UI is also available at the Databricks Apps URL printed at startup.
+
+---
+
+## Run Locally (Non-Databricks)
+
+Runs fully on your machine with no Databricks dependency.
+
+### 1. Disable the Databricks global config
+
+```bash
+mv ~/.omniagents/config.yaml ~/.omniagents/config.yaml.bak
+```
+
+### 2. Export your API key
+
+```bash
+export $(grep OPENAI_API_KEY .env | tr -d '"')
+```
+
+### 3. Run the agent
+
+```bash
+# OpenAI
+omniagents run examples/rag_mlflow_docs/ --model gpt-4o --harness openai-agents --server ""
+
+# Anthropic Claude (stricter RAG behavior -- see Known Limitation below)
+export $(grep ANTHROPIC_API_KEY .env | tr -d '"')
+omniagents run examples/rag_mlflow_docs/ --model claude-sonnet-4-6 --harness claude-sdk --server ""
+```
+
+### 4. Restore Databricks config when done
+
+```bash
+mv ~/.omniagents/config.yaml.bak ~/.omniagents/config.yaml
+```
 
 ---
 

@@ -22,14 +22,44 @@ These agents demonstrate the standalone YAML pattern -- no `tools/python/` direc
 
 ---
 
-## Running
+## Get Started
+
+No setup required -- these agents have no database or API key dependencies (except `researcher.yaml` which uses `web_search`).
+
+---
+
+## Run on Databricks
+
+All YAML agents default to `databricks-claude-sonnet-4-6` via Databricks AI Gateway.
 
 ```bash
+databricks auth login
 omniagents run examples/yamls/greeter.yaml
 omniagents run examples/yamls/researcher.yaml
 omniagents run examples/yamls/code_assistant.yaml
 omniagents run examples/yamls/supervisor.yaml
 omniagents run examples/yamls/simple.yaml
+```
+
+---
+
+## Run Locally (Non-Databricks)
+
+```bash
+mv ~/.omniagents/config.yaml ~/.omniagents/config.yaml.bak
+export $(grep ANTHROPIC_API_KEY .env | tr -d '"')
+
+omniagents run examples/yamls/greeter.yaml --model claude-sonnet-4-6 --harness claude-sdk --server ""
+omniagents run examples/yamls/researcher.yaml --model claude-sonnet-4-6 --harness claude-sdk --server ""
+omniagents run examples/yamls/code_assistant.yaml --model claude-sonnet-4-6 --harness claude-sdk --server ""
+omniagents run examples/yamls/supervisor.yaml --model claude-sonnet-4-6 --harness claude-sdk --server ""
+omniagents run examples/yamls/simple.yaml --model claude-sonnet-4-6 --harness claude-sdk --server ""
+```
+
+Restore when done:
+
+```bash
+mv ~/.omniagents/config.yaml.bak ~/.omniagents/config.yaml
 ```
 
 ---

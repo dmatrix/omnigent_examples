@@ -18,7 +18,7 @@ The agent's prompt enforces strict tool usage: data questions go to `run_sql`, p
 
 ---
 
-## Setup
+## Get Started
 
 ### 1. Build the database
 
@@ -36,13 +36,69 @@ Create a `.env` file at the repo root (the `search_policies` tool needs it for e
 echo 'OPENAI_API_KEY="sk-..."' > .env
 ```
 
-### 3. Run the agent
+---
+
+## Run on Databricks
+
+Uses `databricks-claude-sonnet-4-6` via Databricks AI Gateway.
 
 ```bash
+databricks auth login
 omniagents run examples/fema_supervisor/
 ```
 
-This uses `databricks-claude-sonnet-4-6` via Databricks AI Gateway (requires `databricks auth login`).
+The CLI opens an interactive REPL. A Web UI is also available at the Databricks Apps URL printed at startup.
+
+---
+
+## Run Locally (Non-Databricks)
+
+Runs fully on your machine with no Databricks dependency.
+
+### 1. Disable the Databricks global config
+
+The global `profile: oss` in `~/.omniagents/config.yaml` forces Databricks routing -- temporarily rename it:
+
+```bash
+mv ~/.omniagents/config.yaml ~/.omniagents/config.yaml.bak
+```
+
+### 2. Export your API keys
+
+```bash
+# Always needed (search_policies embeddings use OpenAI regardless of LLM)
+export $(grep OPENAI_API_KEY .env | tr -d '"')
+
+# Only needed for Claude models
+export $(grep ANTHROPIC_API_KEY .env | tr -d '"')
+```
+
+### 3. Run the agent
+
+```bash
+# OpenAI
+omniagents run examples/fema_supervisor/ --model gpt-4o --harness openai-agents --server ""
+
+# Anthropic Claude
+omniagents run examples/fema_supervisor/ --model claude-sonnet-4-6 --harness claude-sdk --server ""
+```
+
+### 4. Restore Databricks config when done
+
+```bash
+mv ~/.omniagents/config.yaml.bak ~/.omniagents/config.yaml
+```
+
+### Tested Models
+
+| Model | Harness | Status |
+|---|---|---|
+| `databricks-claude-sonnet-4-6` | `claude-sdk` | Works (default on Databricks) |
+| `claude-sonnet-4-6` | `claude-sdk` | Works -- accurate SQL and policy search on all query types |
+| `gpt-4o` | `openai-agents` | Works -- self-corrects SQL, accurate policy search |
+| `gpt-4.1-mini` | `openai-agents` | Works -- occasional SQL column name errors |
+
+See the [top-level README](../../README.md) for the full supported models table.
 
 ---
 
@@ -104,52 +160,3 @@ Reads from `examples/tools/data/fema_disaster.db`. The database has one table:
 
 Searches 9 inline FEMA policy documents using OpenAI embeddings (`text-embedding-3-small`) and cosine similarity. Documents: evacuation protocols (ICS-300), disaster declarations, aid eligibility, flood response, wildfire safety/management, hurricane preparedness, earthquake response, and tornado safety.
 
----
-
-## Running Without Databricks
-
-By default the agent uses `databricks-claude-sonnet-4-6` via Databricks AI Gateway. You can run it with any supported provider by overriding the model and harness at the command line.
-
-### Setup
-
-1. **Temporarily disable the Databricks global config** (the global `profile: oss` in `~/.omniagents/config.yaml` forces Databricks routing):
-
-```bash
-mv ~/.omniagents/config.yaml ~/.omniagents/config.yaml.bak
-```
-
-2. **Export your API keys:**
-
-```bash
-# For OpenAI models (also needed for search_policies embeddings regardless of LLM)
-export $(grep OPENAI_API_KEY .env | tr -d '"')
-
-# For Claude models
-export $(grep ANTHROPIC_API_KEY .env | tr -d '"')
-```
-
-3. **Run with a non-Databricks model:**
-
-```bash
-# OpenAI
-omniagents run examples/fema_supervisor/ --model gpt-4o --harness openai-agents --server ""
-
-# Anthropic Claude
-omniagents run examples/fema_supervisor/ --model claude-sonnet-4-6 --harness claude-sdk --server ""
-```
-
-4. **Restore Databricks config when done:**
-
-```bash
-mv ~/.omniagents/config.yaml.bak ~/.omniagents/config.yaml
-```
-
-### Tested Models
-
-| Model | Harness | Status |
-|---|---|---|
-| `claude-sonnet-4-6` | `claude-sdk` | Works -- accurate SQL and policy search on all query types |
-| `gpt-4o` | `openai-agents` | Works -- self-corrects SQL, accurate policy search |
-| `gpt-4.1-mini` | `openai-agents` | Works -- occasional SQL column name errors |
-
-See the [top-level README](../../README.md) for the full supported models table and alternative LLM provider configuration.

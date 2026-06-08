@@ -24,9 +24,9 @@ See the [design doc](design.md) for the full design, policy rationale, and stage
 
 ---
 
-## Setup
+## Get Started
 
-### 1. Build the database
+Build the database:
 
 ```bash
 python examples/tools/create_telco_db.py
@@ -34,13 +34,53 @@ python examples/tools/create_telco_db.py
 
 This creates `examples/tools/data/telco.db` with 5 tables and 125 records.
 
-### 2. Run the agent
+---
+
+## Run on Databricks
+
+Uses `databricks-gpt-5-5` via Databricks AI Gateway.
 
 ```bash
+databricks auth login
 omniagents run examples/telco_customer_agent/
 ```
 
-This uses `databricks-gpt-5-5` via Databricks AI Gateway (requires `databricks auth login`).
+The CLI opens an interactive REPL. A Web UI is also available at the Databricks Apps URL printed at startup.
+
+---
+
+## Run Locally (Non-Databricks)
+
+Runs fully on your machine with no Databricks dependency.
+
+### 1. Disable the Databricks global config
+
+```bash
+mv ~/.omniagents/config.yaml ~/.omniagents/config.yaml.bak
+```
+
+### 2. Export your API key
+
+```bash
+export $(grep OPENAI_API_KEY .env | tr -d '"')
+```
+
+### 3. Run the agent
+
+```bash
+# OpenAI
+omniagents run examples/telco_customer_agent/ --model gpt-4o --harness openai-agents --server ""
+
+# Anthropic Claude
+export $(grep ANTHROPIC_API_KEY .env | tr -d '"')
+omniagents run examples/telco_customer_agent/ --model claude-sonnet-4-6 --harness claude-sdk --server ""
+```
+
+### 4. Restore Databricks config when done
+
+```bash
+mv ~/.omniagents/config.yaml.bak ~/.omniagents/config.yaml
+```
 
 ---
 
