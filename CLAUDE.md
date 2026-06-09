@@ -73,16 +73,18 @@ examples/
 |       +-- search_policies.py    #   Semantic search tool (auto-discovered, inline docs)
 |-- telco_customer_agent/         # Telco customer data agent (PII/financial policies)
 |   |-- config.yaml               #   harness: openai-agents, model: databricks-gpt-5-5
-|   +-- tools/python/
-|       |-- query_plans.py        #   Public plan/pricing data (no labels)
-|       |-- query_customers.py    #   Customer PII + devices
-|       +-- query_billing.py      #   Billing + subscriptions (financial data)
+|   |-- tools/python/
+|   |   |-- query_plans.py        #   Public plan/pricing data (no labels)
+|   |   |-- query_customers.py    #   Customer PII + devices
+|   |   +-- query_billing.py      #   Billing + subscriptions (financial data)
+|   +-- skills/customer-report/
+|       +-- SKILL.md              #   On-demand report template with PII redaction
 |-- greeter/                      # Tool-based greeter (auto-discovered greet tool)
 |-- tools/
 |   |-- create_fema_db.py         # FEMA database setup script
 |   |-- create_telco_db.py        # Telco database setup script
 |   |-- data/fema_disaster.db     # Pre-built FEMA database (80 records)
-|   |-- data/telco.db             # Pre-built telco database (5 tables, 125 records)
+|   |-- data/telco.db             # Pre-built telco database (5 tables, 125 records) 
 |   +-- python/                   # Shared tool library
 +-- yamls/                        # Standalone YAML agents
 ```

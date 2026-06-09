@@ -8,6 +8,14 @@
 
 These agents demonstrate the standalone YAML pattern -- no `tools/python/` directory, just a single `.yaml` file. They use either no tools (prompt-only) or builtin tools like `web_search`.
 
+OmniAgents supports two agent layouts. This directory showcases the simpler one:
+
+- **Standalone YAML** -- everything lives in one `.yaml` file. No custom Python tools, no database setup, no directory structure. Good for prompt-only agents, agents that only use builtins (`web_search`), or agents that delegate to sub-agents. Zero setup -- just `omniagents run <file>.yaml`.
+
+- **Directory bundle** -- a folder with `config.yaml` + `tools/python/*.py` + optional `skills/`. The framework auto-discovers `@tool`-decorated functions from every `.py` file in `tools/python/` at load time. Required when you need custom tools (SQL queries, API calls, embeddings). Examples: [`fema_supervisor/`](../fema_supervisor/), [`telco_customer_agent/`](../telco_customer_agent/), [`greeter/`](../greeter/).
+
+The standalone pattern exists because not every agent needs custom tools. A supervisor that delegates to sub-agents, a researcher that only uses `web_search`, or a greeter with just a system prompt can all be defined in a single file with no boilerplate.
+
 ---
 
 ## Agents
@@ -62,11 +70,3 @@ Restore when done:
 mv ~/.omniagents/config.yaml.bak ~/.omniagents/config.yaml
 ```
 
----
-
-## Standalone YAML vs. Directory Bundles
-
-| Layout | Use when | Examples |
-|---|---|---|
-| **Standalone YAML** | No custom tools. Prompt-only agents or agents using builtins like `web_search`. | `greeter.yaml`, `code_assistant.yaml` |
-| **Directory bundle** | Custom Python tools in `tools/python/`. The framework auto-discovers `@tool` functions. | [`fema_supervisor/`](../fema_supervisor/), [`greeter/`](../greeter/) |

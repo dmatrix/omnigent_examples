@@ -20,6 +20,10 @@ The telco agent demonstrates session-scoped policy enforcement over customer PII
 
 The agent works with OmniAgents' PolicyEngine for session-scoped governance: taint labels track what data the agent has seen, DENY policies block web search after PII/financial access, and ASK policies require human approval before outputting combined PII + financial data.
 
+The agent also includes a **`customer-report` skill** (`skills/customer-report/SKILL.md`) that generates structured quarterly business reviews with PII redaction rules. The skill is loaded on demand via `load_skill` when the user requests a report.
+
+The prompt enforces **strict tool usage** -- the agent must use tools for every answer and declines out-of-scope questions rather than answering from training data.
+
 See the [design doc](design.md) for the full design, policy rationale, and staged implementation plan.
 
 ---
@@ -103,6 +107,35 @@ Show me customers whose contracts expire in the next 90 days
 What's our total monthly revenue across all plans?
 Which customers have overage charges this month?
 Show me all past-due accounts with amounts owed
+```
+
+**Web search denied** (after PII or financial data access):
+```
+Search the web for competitor pricing on unlimited family plans
+→ BLOCKED: "Web search blocked — customer PII is in session context."
+```
+
+**Human approval required** (combined PII + financial output):
+```
+Show me all past-due customers with their names, phone numbers, and amounts owed
+→ PAUSED: "Output contains both PII and financial data. Human review required."
+```
+
+**Credit data approval** (FDCPA-regulated output):
+```
+Show me customers with credit class D and their payment history
+→ PAUSED: "Output contains credit/collections data. Regulated under FDCPA."
+```
+
+**Skill** (on-demand structured report):
+```
+Use the customer-report skill to produce a quarterly business review
+```
+
+**Out-of-scope** (strict tool enforcement -- should decline):
+```
+What's the weather in San Francisco?
+→ "I can only help with telco customer data questions."
 ```
 
 ---

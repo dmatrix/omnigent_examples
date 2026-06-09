@@ -315,10 +315,12 @@ omniagents_harness/
 |   |   |-- README.md
 |   |   |-- config.yaml
 |   |   |-- design.md                        #   Policy rationale + staged implementation plan
-|   |   +-- tools/python/
-|   |       |-- query_plans.py               #   Public plan/pricing data (no labels)
-|   |       |-- query_customers.py           #   Customer PII + devices (triggers has_pii)
-|   |       +-- query_billing.py             #   Billing + subscriptions (triggers has_financial)
+|   |   |-- tools/python/
+|   |   |   |-- query_plans.py               #   Public plan/pricing data (no labels)
+|   |   |   |-- query_customers.py           #   Customer PII + devices (triggers has_pii)
+|   |   |   +-- query_billing.py             #   Billing + subscriptions (triggers has_financial)
+|   |   +-- skills/customer-report/
+|   |       +-- SKILL.md                     #   On-demand report template with PII redaction
 |   |-- greeter/                             # Tool-based greeter
 |   |   |-- README.md
 |   |   |-- config.yaml
@@ -327,6 +329,7 @@ omniagents_harness/
 |   |   |-- create_fema_db.py                #   FEMA database setup script
 |   |   |-- create_telco_db.py               #   Telco database setup script
 |   |   |-- data/fema_disaster.db            #   Pre-built FEMA database (80 records)
+|   |   |-- data/telco.db                    #   Pre-built telco database (5 tables, 125 records)
 |   |   +-- python/                          #   Shared tool library
 |   |       |-- greet.py                     #   Greeting tool (used by simple.yaml)
 |   |       +-- summarize.py                 #   Summarization tool (used by researcher.yaml)
