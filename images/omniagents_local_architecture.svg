@@ -114,9 +114,9 @@
   <rect x="320" y="185" width="75" height="16" rx="3" fill="#0d3b1f" stroke="#2ecc71" stroke-width="0.5"/>
   <text x="357" y="196" text-anchor="middle" fill="#2ecc71" font-size="7" font-weight="600">Terminal 1</text>
 
-  <!-- AP Server -->
+  <!-- OmniAgents Server -->
   <rect x="320" y="205" width="280" height="70" rx="10" fill="url(#serverG)" filter="url(#shadow)"/>
-  <text x="460" y="228" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">AP Server</text>
+  <text x="460" y="228" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">OmniAgents Server</text>
   <text x="460" y="243" text-anchor="middle" fill="#a8d8ea" font-size="9">FastAPI + Uvicorn  |  localhost:8000</text>
   <text x="460" y="256" text-anchor="middle" fill="#7ec8e3" font-size="7">OMNIAGENTS_AUTH_MULTI_USER=false</text>
   <text x="460" y="268" text-anchor="middle" fill="#5dade2" font-size="7">omniagents server --agent config.yaml</text>
@@ -202,8 +202,8 @@
 
   <!-- ============ Footer Badges ============ -->
   <g transform="translate(0, 688)">
-    <rect x="70" y="0" width="100" height="20" rx="10" fill="#2980b9" opacity="0.25"/>
-    <text x="120" y="14" text-anchor="middle" fill="#2980b9" font-size="9" font-weight="600">AP Server</text>
+    <rect x="50" y="0" width="140" height="20" rx="10" fill="#2980b9" opacity="0.25"/>
+    <text x="120" y="14" text-anchor="middle" fill="#2980b9" font-size="9" font-weight="600">OmniAgents Server</text>
 
     <rect x="185" y="0" width="80" height="20" rx="10" fill="#8e44ad" opacity="0.25"/>
     <text x="225" y="14" text-anchor="middle" fill="#8e44ad" font-size="9" font-weight="600">Web UI</text>

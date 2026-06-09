@@ -4,7 +4,7 @@
 
 | Component | Role | Source File | Framework |
 |-----------|------|-------------|-----------|
-| **AP Server** | Agent registry, conversation persistence, session/label state, policy orchestration, sub-agent dispatch, runner tunnel routing | `omniagents/server/app.py` | FastAPI + Uvicorn |
+| **OmniAgents Server** | Agent registry, conversation persistence, session/label state, policy orchestration, sub-agent dispatch, runner tunnel routing | `omniagents/server/app.py` | FastAPI + Uvicorn |
 | **Runner** | Spawns and manages harness subprocesses, resolves tool calls (priorities 1-5), manages OS environments/sandboxes, streams SSE events to server | `omniagents/runner/app.py` | FastAPI |
 | **Harness** | Drives the LLM-tool loop for one SDK — translates SDK events into standard SSE format, per-conversation in-memory state | `omniagents/inner/*_harness.py` | FastAPI wrappers |
 | **Web UI (ap-web)** | Browser-based chat interface with terminal emulation (xterm.js) and code editor (Monaco), connects to server via HTTP/SSE | `ap-web/` | React 19 + Vite |
@@ -39,7 +39,7 @@
 ### How it works
 
 ```
-Browser ──HTTPS──▶ Databricks App (AP Server + Web UI)
+Browser ──HTTPS──▶ Databricks App (OmniAgents Server + Web UI)
                           │
                     WebSocket Tunnel
                           │
@@ -54,7 +54,7 @@ Terminal REPL ──▶ Runner (laptop) ──▶ Harness (laptop) ──▶ AI 
 
 | Component | Location | Address |
 |-----------|----------|---------|
-| **AP Server** | Databricks App | `omnigents-3272836215725701.aws.databricksapps.com` |
+| **OmniAgents Server** | Databricks App | `omnigents-3272836215725701.aws.databricksapps.com` |
 | **Web UI** | Built into the Databricks App | Same URL |
 | **Database** | PostgreSQL on Databricks | Managed |
 | **Runner** | User's laptop | Outbound WebSocket tunnel to server |
@@ -88,7 +88,7 @@ The CLI reads `~/.omniagents/config.yaml` (profile: `oss`, server: `omnigents-*.
 ### How it works
 
 ```
-Browser ──HTTP──▶ ap-web (localhost:5173) ──proxy──▶ AP Server (localhost:8000)
+Browser ──HTTP──▶ ap-web (localhost:5173) ──proxy──▶ OmniAgents Server (localhost:8000)
                                                           │
                                                      localhost
                                                           │
@@ -103,7 +103,7 @@ Terminal REPL ──────────────────────
 
 | Component | Location | Address |
 |-----------|----------|---------|
-| **AP Server** | Terminal 1 | `localhost:8000` |
+| **OmniAgents Server** | Terminal 1 | `localhost:8000` |
 | **Web UI (ap-web)** | Terminal 3 | `localhost:5173` (Vite dev server, proxies to :8000) |
 | **Database** | Local SQLite | `~/.omniagents/omniagents.db` |
 | **Runner** | Terminal 2 | Connects to `localhost:8000` |
