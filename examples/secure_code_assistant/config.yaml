@@ -1,0 +1,117 @@
+spec_version: 1
+name: secure_code_assistant
+description: >
+  Coding assistant with information flow policies. Reads project files,
+  searches the web for docs, and runs shell commands — governed by taint
+  labels that prevent proprietary code from leaking via web search and
+  untrusted web content from being written to project files.
+
+executor:
+  type: omnigents
+  model: claude-sonnet-4-6
+  config:
+    harness: claude-sdk
+
+os_env:
+  type: caller_process
+  cwd: .
+  sandbox:
+    type: none
+
+tools:
+  builtins:
+    - web_search
+
+guardrails:
+  labels:
+    has_proprietary_code:
+      initial: "False"
+      values: ["False", "True"]
+      monotonic: increasing
+    has_external_content:
+      initial: "False"
+      values: ["False", "True"]
+      monotonic: increasing
+
+  policies:
+    # --- Taint policies: track what data the agent has seen ---
+
+    taint_code_read:
+      type: function
+      function:
+        path: omnigents.policies.function.make_fixed_action_callable
+        arguments:
+          action: allow
+          set_labels:
+            has_proprietary_code: "True"
+          on_phases: [tool_call]
+          on_tools: [read_source]
+      set_labels: [has_proprietary_code]
+
+    taint_web_search:
+      type: function
+      function:
+        path: omnigents.policies.function.make_fixed_action_callable
+        arguments:
+          action: allow
+          set_labels:
+            has_external_content: "True"
+          on_phases: [tool_call]
+          on_tools: [web_search, search_docs]
+      set_labels: [has_external_content]
+
+    # --- Deny policies: enforce information flow boundaries ---
+
+    block_search_after_code:
+      type: function
+      condition:
+        has_proprietary_code: "True"
+      function:
+        path: omnigents.policies.function.make_fixed_action_callable
+        arguments:
+          action: deny
+          reason: |
+            Web search blocked — proprietary source code is in session
+            context. Search queries could leak implementation details,
+            API keys, or business logic to external search engines.
+          on_phases: [tool_call]
+          on_tools: [web_search, search_docs]
+
+    block_write_after_web:
+      type: function
+      condition:
+        has_external_content: "True"
+      function:
+        path: omnigents.policies.function.make_fixed_action_callable
+        arguments:
+          action: deny
+          reason: |
+            File write blocked — untrusted web content is in session
+            context. Writing files after ingesting external content
+            risks injection of malicious code or license-incompatible
+            snippets into the project.
+          on_phases: [tool_call]
+          on_tools: [sys_os_write, sys_os_edit]
+
+    # --- Cost policy: budget guardrail ---
+
+    cost_guard:
+      type: function
+      function:
+        path: omnigents.policies.builtins.cost.cost_budget
+        arguments:
+          max_cost_usd: 5.0
+          ask_thresholds_usd: [1.0]
+
+prompt: |
+  You are a secure code assistant. You help developers understand
+  codebases, find patterns, search documentation, and navigate projects.
+
+  Your tools:
+  1. `read_source` — reads source files in the project
+  2. `search_docs` — searches the web for documentation
+  3. `web_search` — general web search (builtin)
+  4. Shell access — run grep, find, git log, etc.
+
+  Use tools for every answer. Do not answer from training data when
+  tools can provide current, accurate information.

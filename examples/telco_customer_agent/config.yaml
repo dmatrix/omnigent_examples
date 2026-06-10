@@ -3,10 +3,10 @@ name: telco_customer_agent
 description: Telco customer data agent with plan, customer, and billing tools.
 
 executor:
-  type: omniagents
-  model: databricks-gpt-5-5
+  type: omnigents
+  model: claude-sonnet-4-6
   config:
-    harness: openai-agents
+    harness: claude-sdk
 
 os_env:
   type: caller_process
@@ -43,7 +43,7 @@ guardrails:
     taint_pii:
       type: function
       function:
-        path: omniagents.policies.function.make_fixed_action_callable
+        path: omnigents.policies.function.make_fixed_action_callable
         arguments:
           action: allow
           set_labels:
@@ -55,7 +55,7 @@ guardrails:
     taint_financial:
       type: function
       function:
-        path: omniagents.policies.function.make_fixed_action_callable
+        path: omnigents.policies.function.make_fixed_action_callable
         arguments:
           action: allow
           set_labels:
@@ -67,7 +67,7 @@ guardrails:
     taint_credit:
       type: function
       function:
-        path: omniagents.policies.function.make_fixed_action_callable
+        path: omnigents.policies.function.make_fixed_action_callable
         arguments:
           action: allow
           set_labels:
@@ -79,7 +79,7 @@ guardrails:
     taint_web:
       type: function
       function:
-        path: omniagents.policies.function.make_fixed_action_callable
+        path: omnigents.policies.function.make_fixed_action_callable
         arguments:
           action: allow
           set_labels:
@@ -95,7 +95,7 @@ guardrails:
       condition:
         has_pii: "True"
       function:
-        path: omniagents.policies.function.make_fixed_action_callable
+        path: omnigents.policies.function.make_fixed_action_callable
         arguments:
           action: deny
           reason: |
@@ -109,7 +109,7 @@ guardrails:
       condition:
         has_financial: "True"
       function:
-        path: omniagents.policies.function.make_fixed_action_callable
+        path: omnigents.policies.function.make_fixed_action_callable
         arguments:
           action: deny
           reason: |
@@ -126,7 +126,7 @@ guardrails:
         has_pii: "True"
         has_financial: "True"
       function:
-        path: omniagents.policies.function.make_fixed_action_callable
+        path: omnigents.policies.function.make_fixed_action_callable
         arguments:
           action: ask
           reason: |
@@ -139,7 +139,7 @@ guardrails:
       condition:
         has_credit: "True"
       function:
-        path: omniagents.policies.function.make_fixed_action_callable
+        path: omnigents.policies.function.make_fixed_action_callable
         arguments:
           action: ask
           reason: |

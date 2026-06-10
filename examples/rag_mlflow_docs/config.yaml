@@ -3,7 +3,7 @@ name: rag_mlflow_docs
 description: RAG agent that answers MLflow questions using semantic search over documentation.
 
 executor:
-  type: omniagents
+  type: omnigents
   model: databricks-gpt-5-5
   config:
     harness: openai-agents

@@ -1,0 +1,225 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 780" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <linearGradient id="userG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#48c9b0"/>
+      <stop offset="100%" stop-color="#1abc9c"/>
+    </linearGradient>
+    <linearGradient id="agentG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2980b9"/>
+      <stop offset="100%" stop-color="#1a5276"/>
+    </linearGradient>
+    <linearGradient id="policyG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e94560"/>
+      <stop offset="100%" stop-color="#c73e54"/>
+    </linearGradient>
+    <linearGradient id="toolReadG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e97c00"/>
+      <stop offset="100%" stop-color="#f5a623"/>
+    </linearGradient>
+    <linearGradient id="toolDocsG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#533483"/>
+      <stop offset="100%" stop-color="#6c3d9e"/>
+    </linearGradient>
+    <linearGradient id="toolWebG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1b6b4a"/>
+      <stop offset="100%" stop-color="#148f4b"/>
+    </linearGradient>
+    <linearGradient id="toolShellG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0f3460"/>
+      <stop offset="100%" stop-color="#1a5276"/>
+    </linearGradient>
+    <linearGradient id="labelG" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#c0392b"/>
+      <stop offset="100%" stop-color="#e74c3c"/>
+    </linearGradient>
+    <linearGradient id="costG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#7d6608"/>
+      <stop offset="100%" stop-color="#b7950b"/>
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="780" fill="url(#bg)"/>
+
+  <!-- Subtle grid -->
+  <g opacity="0.03" stroke="#fff" stroke-width="0.5">
+    <line x1="0" y1="100" x2="900" y2="100"/><line x1="0" y1="200" x2="900" y2="200"/>
+    <line x1="0" y1="300" x2="900" y2="300"/><line x1="0" y1="400" x2="900" y2="400"/>
+    <line x1="0" y1="500" x2="900" y2="500"/><line x1="0" y1="600" x2="900" y2="600"/>
+    <line x1="0" y1="700" x2="900" y2="700"/>
+    <line x1="150" y1="0" x2="150" y2="780"/><line x1="300" y1="0" x2="300" y2="780"/>
+    <line x1="450" y1="0" x2="450" y2="780"/><line x1="600" y1="0" x2="600" y2="780"/>
+    <line x1="750" y1="0" x2="750" y2="780"/>
+  </g>
+
+  <!-- Decorative circles -->
+  <circle cx="80" cy="120" r="40" fill="#e94560" opacity="0.04"/>
+  <circle cx="820" cy="600" r="55" fill="#f5a623" opacity="0.04"/>
+  <circle cx="750" cy="100" r="35" fill="#48c9b0" opacity="0.04"/>
+
+  <!-- Title -->
+  <text x="450" y="38" text-anchor="middle" fill="#fff" font-size="18" font-weight="700" letter-spacing="1">Secure Code Assistant — OmniAgents with Information Flow Control</text>
+  <text x="450" y="58" text-anchor="middle" fill="#8899aa" font-size="11">Bidirectional Taint Tracking  |  Code Leakage Prevention  |  Injection Protection</text>
+
+  <!-- ============ User Query ============ -->
+  <rect x="330" y="75" width="240" height="44" rx="22" fill="url(#userG)" filter="url(#shadow)"/>
+  <text x="370" y="102" fill="#fff" font-size="14" font-weight="600">User Query</text>
+  <text x="520" y="100" fill="#fff" font-size="16">&#x1F464;</text>
+
+  <!-- Arrow: User -> Agent -->
+  <line x1="450" y1="119" x2="450" y2="148" stroke="#48c9b0" stroke-width="2" opacity="0.8"/>
+  <polygon points="445,146 455,146 450,156" fill="#48c9b0" opacity="0.8"/>
+
+  <!-- ============ Agent ============ -->
+  <rect x="200" y="156" width="500" height="65" rx="12" fill="url(#agentG)" filter="url(#shadow)"/>
+  <text x="450" y="183" text-anchor="middle" fill="#fff" font-size="16" font-weight="700">secure_code_assistant</text>
+  <text x="450" y="200" text-anchor="middle" fill="#a8d8ea" font-size="10">claude-sdk  |  claude-sonnet-4-6  |  Portable: GPT-4o, Ollama</text>
+  <text x="450" y="213" text-anchor="middle" fill="#7ec8e3" font-size="8" font-style="italic">Tools: read_source, search_docs, web_search (builtin), shell access</text>
+
+  <!-- ============ Policy Engine (crimson band) ============ -->
+  <rect x="40" y="240" width="820" height="55" rx="10" fill="url(#policyG)" filter="url(#shadow)"/>
+  <text x="450" y="262" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">PolicyEngine — Runner Layer</text>
+  <text x="450" y="280" text-anchor="middle" fill="#ffd5dd" font-size="9">Intercepts every tool_call  |  Checks session labels  |  ALLOW + set_labels / DENY  |  Model cannot override</text>
+
+  <!-- ============ Labels State (right side) ============ -->
+  <rect x="710" y="310" width="170" height="105" rx="8" fill="url(#labelG)" filter="url(#shadow)" opacity="0.9"/>
+  <text x="795" y="332" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">Session Labels</text>
+  <text x="795" y="350" text-anchor="middle" fill="#ffd5dd" font-size="9">monotonic: increasing</text>
+  <line x1="725" y1="358" x2="865" y2="358" stroke="#fff" stroke-width="0.5" opacity="0.3"/>
+  <text x="728" y="380" fill="#ffecd2" font-size="10" font-family="monospace">has_proprietary_code: false</text>
+  <text x="728" y="403" fill="#ffecd2" font-size="10" font-family="monospace">has_external_content: false</text>
+
+  <!-- Arrow: PolicyEngine -> Labels -->
+  <path d="M720,270 L795,310" fill="none" stroke="#e94560" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.6"/>
+  <text x="770" y="295" fill="#e94560" font-size="7" font-weight="600">set/check</text>
+
+  <!-- ============ Tools Row ============ -->
+  <!-- read_source -->
+  <rect x="30" y="315" width="155" height="75" rx="8" fill="url(#toolReadG)" filter="url(#shadow)"/>
+  <text x="107" y="340" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">read_source</text>
+  <text x="107" y="355" text-anchor="middle" fill="#ffecd2" font-size="8">@tool  |  Auto-discovered</text>
+  <text x="107" y="370" text-anchor="middle" fill="#ffd5a0" font-size="7">Reads project source files</text>
+  <text x="107" y="382" text-anchor="middle" fill="#e8c07a" font-size="7" font-style="italic">Sets: has_proprietary_code</text>
+
+  <!-- search_docs -->
+  <rect x="200" y="315" width="155" height="75" rx="8" fill="url(#toolDocsG)" filter="url(#shadow)"/>
+  <text x="277" y="340" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">search_docs</text>
+  <text x="277" y="355" text-anchor="middle" fill="#d7bde2" font-size="8">@tool  |  Auto-discovered</text>
+  <text x="277" y="370" text-anchor="middle" fill="#c39bd3" font-size="7">Web doc search (taint target)</text>
+  <text x="277" y="382" text-anchor="middle" fill="#af7ac5" font-size="7" font-style="italic">Sets: has_external_content</text>
+
+  <!-- web_search -->
+  <rect x="370" y="315" width="155" height="75" rx="8" fill="url(#toolWebG)" filter="url(#shadow)"/>
+  <text x="447" y="340" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">web_search</text>
+  <text x="447" y="355" text-anchor="middle" fill="#a8e6cf" font-size="8">Builtin</text>
+  <text x="447" y="370" text-anchor="middle" fill="#7dcea0" font-size="7">General web search</text>
+  <text x="447" y="382" text-anchor="middle" fill="#52be80" font-size="7" font-style="italic">Sets: has_external_content</text>
+
+  <!-- shell (sys_os_write / sys_os_edit) -->
+  <rect x="540" y="315" width="155" height="75" rx="8" fill="url(#toolShellG)" filter="url(#shadow)"/>
+  <text x="617" y="340" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">Shell / File I/O</text>
+  <text x="617" y="355" text-anchor="middle" fill="#a8d8ea" font-size="8">sys_os_write, sys_os_edit</text>
+  <text x="617" y="370" text-anchor="middle" fill="#7ec8e3" font-size="7">grep, find, git, file writes</text>
+  <text x="617" y="382" text-anchor="middle" fill="#5dade2" font-size="7" font-style="italic">No labels triggered</text>
+
+  <!-- Arrows: Agent -> Tools (through PolicyEngine) -->
+  <line x1="300" y1="221" x2="300" y2="240" stroke="#2980b9" stroke-width="1.5" opacity="0.5"/>
+  <line x1="450" y1="221" x2="450" y2="240" stroke="#2980b9" stroke-width="1.5" opacity="0.5"/>
+  <line x1="600" y1="221" x2="600" y2="240" stroke="#2980b9" stroke-width="1.5" opacity="0.5"/>
+
+  <line x1="107" y1="295" x2="107" y2="315" stroke="#f5a623" stroke-width="1.5" opacity="0.5"/>
+  <line x1="277" y1="295" x2="277" y2="315" stroke="#bb86fc" stroke-width="1.5" opacity="0.5"/>
+  <line x1="447" y1="295" x2="447" y2="315" stroke="#2ecc71" stroke-width="1.5" opacity="0.5"/>
+  <line x1="617" y1="295" x2="617" y2="315" stroke="#4fc3f7" stroke-width="1.5" opacity="0.5"/>
+
+  <!-- ============ Information Flow Scenarios ============ -->
+  <text x="450" y="425" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">Bidirectional Information Flow Control</text>
+
+  <!-- Flow 1: Code can't leak out -->
+  <rect x="40" y="445" width="400" height="140" rx="10" fill="#3b0d0d" opacity="0.4" stroke="#e74c3c" stroke-width="1.2"/>
+  <text x="240" y="470" text-anchor="middle" fill="#e74c3c" font-size="12" font-weight="700">&#x1F6AB; Code Can't Leak Out</text>
+
+  <!-- Step 1 -->
+  <rect x="55" y="485" width="170" height="40" rx="6" fill="#0d3b1f" opacity="0.7" stroke="#2ecc71" stroke-width="0.8"/>
+  <text x="140" y="502" text-anchor="middle" fill="#2ecc71" font-size="9" font-weight="600">1. read_source(file.py)</text>
+  <text x="140" y="517" text-anchor="middle" fill="#7dcea0" font-size="7">ALLOW — sets has_proprietary_code</text>
+
+  <!-- Arrow -->
+  <line x1="225" y1="505" x2="250" y2="505" stroke="#fff" stroke-width="1.5" opacity="0.4"/>
+  <polygon points="248,501 248,509 256,505" fill="#fff" opacity="0.4"/>
+
+  <!-- Step 2 -->
+  <rect x="258" y="485" width="170" height="40" rx="6" fill="#3b0d0d" opacity="0.7" stroke="#e74c3c" stroke-width="0.8"/>
+  <text x="343" y="502" text-anchor="middle" fill="#e74c3c" font-size="9" font-weight="600">2. web_search(query)</text>
+  <text x="343" y="517" text-anchor="middle" fill="#f5b7b1" font-size="7">DENIED — code in session context</text>
+
+  <!-- Explanation -->
+  <text x="240" y="548" text-anchor="middle" fill="#e6a09e" font-size="8">Search query may be generic, but session has seen proprietary code.</text>
+  <text x="240" y="562" text-anchor="middle" fill="#d98880" font-size="8">Policy blocks at framework layer — model cannot override.</text>
+  <text x="240" y="576" text-anchor="middle" fill="#cc7a76" font-size="7" font-style="italic">has_proprietary_code = True  &#x2192;  web_search, search_docs DENIED</text>
+
+  <!-- Flow 2: Web can't be written in -->
+  <rect x="460" y="445" width="400" height="140" rx="10" fill="#3b0d0d" opacity="0.4" stroke="#e74c3c" stroke-width="1.2"/>
+  <text x="660" y="470" text-anchor="middle" fill="#e74c3c" font-size="12" font-weight="700">&#x1F6AB; Untrusted Content Can't Be Written</text>
+
+  <!-- Step 1 -->
+  <rect x="475" y="485" width="170" height="40" rx="6" fill="#0d3b1f" opacity="0.7" stroke="#2ecc71" stroke-width="0.8"/>
+  <text x="560" y="502" text-anchor="middle" fill="#2ecc71" font-size="9" font-weight="600">1. web_search(docs)</text>
+  <text x="560" y="517" text-anchor="middle" fill="#7dcea0" font-size="7">ALLOW — sets has_external_content</text>
+
+  <!-- Arrow -->
+  <line x1="645" y1="505" x2="670" y2="505" stroke="#fff" stroke-width="1.5" opacity="0.4"/>
+  <polygon points="668,501 668,509 676,505" fill="#fff" opacity="0.4"/>
+
+  <!-- Step 2 -->
+  <rect x="678" y="485" width="170" height="40" rx="6" fill="#3b0d0d" opacity="0.7" stroke="#e74c3c" stroke-width="0.8"/>
+  <text x="763" y="502" text-anchor="middle" fill="#e74c3c" font-size="9" font-weight="600">2. sys_os_write(file)</text>
+  <text x="763" y="517" text-anchor="middle" fill="#f5b7b1" font-size="7">DENIED — web content in session</text>
+
+  <!-- Explanation -->
+  <text x="660" y="548" text-anchor="middle" fill="#e6a09e" font-size="8">After ingesting external web content, file writes are blocked.</text>
+  <text x="660" y="562" text-anchor="middle" fill="#d98880" font-size="8">Prevents injection of malicious or license-incompatible code.</text>
+  <text x="660" y="576" text-anchor="middle" fill="#cc7a76" font-size="7" font-style="italic">has_external_content = True  &#x2192;  sys_os_write, sys_os_edit DENIED</text>
+
+  <!-- ============ Clean Session (center) ============ -->
+  <rect x="250" y="600" width="400" height="55" rx="8" fill="#0d3b1f" opacity="0.5" stroke="#2ecc71" stroke-width="1"/>
+  <text x="450" y="622" text-anchor="middle" fill="#2ecc71" font-size="11" font-weight="700">&#x2705; Clean Session — Everything Works</text>
+  <text x="450" y="638" text-anchor="middle" fill="#a8e6cf" font-size="8">No labels set yet — read_source, search_docs, web_search, shell all allowed</text>
+  <text x="450" y="649" text-anchor="middle" fill="#7dcea0" font-size="7">Labels only fire when tools are called — no preemptive restrictions</text>
+
+  <!-- ============ Cost Guard ============ -->
+  <rect x="330" y="670" width="240" height="35" rx="8" fill="url(#costG)" filter="url(#shadow)" opacity="0.8"/>
+  <text x="450" y="690" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">cost_guard: $5 max  |  $1 ASK threshold</text>
+
+  <!-- ============ Output ============ -->
+  <line x1="450" y1="705" x2="450" y2="720" stroke="#48c9b0" stroke-width="2" opacity="0.6"/>
+  <polygon points="445,718 455,718 450,728" fill="#48c9b0" opacity="0.6"/>
+
+  <rect x="330" y="728" width="240" height="30" rx="15" fill="url(#userG)" filter="url(#shadow)" opacity="0.85"/>
+  <text x="450" y="748" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">Policy-Gated Response</text>
+
+  <!-- ============ Footer Badges ============ -->
+  <g transform="translate(0, 762)">
+    <rect x="95" y="0" width="120" height="16" rx="8" fill="#2980b9" opacity="0.25"/>
+    <text x="155" y="12" text-anchor="middle" fill="#2980b9" font-size="8" font-weight="600">OmniAgents CLI</text>
+
+    <rect x="230" y="0" width="110" height="16" rx="8" fill="#e94560" opacity="0.25"/>
+    <text x="285" y="12" text-anchor="middle" fill="#e94560" font-size="8" font-weight="600">PolicyEngine</text>
+
+    <rect x="355" y="0" width="110" height="16" rx="8" fill="#f5a623" opacity="0.25"/>
+    <text x="410" y="12" text-anchor="middle" fill="#f5a623" font-size="8" font-weight="600">Taint Labels</text>
+
+    <rect x="480" y="0" width="120" height="16" rx="8" fill="#e74c3c" opacity="0.25"/>
+    <text x="540" y="12" text-anchor="middle" fill="#e74c3c" font-size="8" font-weight="600">Flow Control</text>
+
+    <rect x="615" y="0" width="100" height="16" rx="8" fill="#b7950b" opacity="0.25"/>
+    <text x="665" y="12" text-anchor="middle" fill="#b7950b" font-size="8" font-weight="600">Cost Guard</text>
+  </g>
+</svg>

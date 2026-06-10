@@ -33,11 +33,11 @@ echo 'OPENAI_API_KEY="sk-..."' > .env
 Uses `databricks-gpt-5-5` via Databricks AI Gateway.
 
 ```bash
-databricks auth login
-omniagents run examples/rag_mlflow_docs/
+omnigents login https://omnigents-<id>.aws.databricksapps.com
+omnigents run examples/rag_mlflow_docs/ --server https://omnigents-<id>.aws.databricksapps.com
 ```
 
-The CLI opens an interactive REPL. A Web UI is also available at the Databricks Apps URL printed at startup.
+The CLI opens an interactive REPL. A Web UI is also available at the Databricks Apps URL.
 
 ---
 
@@ -45,10 +45,10 @@ The CLI opens an interactive REPL. A Web UI is also available at the Databricks 
 
 Runs fully on your machine with no Databricks dependency.
 
-### 1. Disable the Databricks global config
+### 1. Configure credentials (one-time)
 
 ```bash
-mv ~/.omniagents/config.yaml ~/.omniagents/config.yaml.bak
+omnigents setup
 ```
 
 ### 2. Export your API key
@@ -60,18 +60,18 @@ export $(grep OPENAI_API_KEY .env | tr -d '"')
 ### 3. Run the agent
 
 ```bash
-# OpenAI
-omniagents run examples/rag_mlflow_docs/ --model gpt-4o --harness openai-agents --server ""
+# Uses credentials configured in setup
+omnigents run examples/rag_mlflow_docs/
+
+# Override model and harness at the command line
+omnigents run examples/rag_mlflow_docs/ --model gpt-4o --harness openai-agents
 
 # Anthropic Claude (stricter RAG behavior -- see Known Limitation below)
 export $(grep ANTHROPIC_API_KEY .env | tr -d '"')
-omniagents run examples/rag_mlflow_docs/ --model claude-sonnet-4-6 --harness claude-sdk --server ""
-```
+omnigents run examples/rag_mlflow_docs/ --model claude-sonnet-4-6 --harness claude-sdk
 
-### 4. Restore Databricks config when done
-
-```bash
-mv ~/.omniagents/config.yaml.bak ~/.omniagents/config.yaml
+# Fresh session (no persistence)
+omnigents run examples/rag_mlflow_docs/ --no-session
 ```
 
 ---

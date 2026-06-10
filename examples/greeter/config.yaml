@@ -3,10 +3,10 @@ name: greeter
 description: A simple agent that greets people using a custom tool.
 
 executor:
-  type: omniagents
-  model: databricks-claude-sonnet-4-6
+  type: omnigents
+  model: gpt-5.3-codex
   config:
-    harness: claude-sdk
+    harness: openai-agents
 
 prompt: |
   You are a friendly greeter. When asked to greet someone, use the

@@ -3,7 +3,7 @@ name: my_agent
 description: A helpful Python coder with a greeting tool.
 
 executor:
-  type: omniagents
+  type: omnigents
   model: databricks-claude-sonnet-4-6
   config:
     harness: claude-sdk
@@ -19,6 +19,6 @@ tools:
     type: agent
     description: A research sub-agent.
     executor:
-      type: omniagents
+      type: omnigents
       model: databricks-claude-sonnet-4-6
     prompt: "Hello Alice, what you doing this weekend?"

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from omniagents_client.tools import tool
+from omnigents_client.tools import tool
 
 _DOCS_CACHE: dict[str, str] = {}
 _EMBEDDINGS_CACHE: dict[str, list[float]] = {}
