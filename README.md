@@ -16,6 +16,7 @@ This repository contains example agent configurations for the [OmniAgents](https
 1. **[FEMA Disaster Agent](examples/fema_supervisor/)** -- multi-tool routing (text-to-SQL + semantic policy search)
 2. **[MLflow Docs RAG Agent](examples/rag_mlflow_docs/)** -- self-building RAG pipeline (embeds documents, then searches them)
 3. **[Telco Customer Agent](examples/telco_customer_agent/)** -- multi-tool customer data agent with PII/financial policy labels
+4. **[Secure Code Assistant](examples/secure_code_assistant/)** -- information flow control (blocks web search after code read, blocks file writes after web search)
 
 ---
 
@@ -157,6 +158,7 @@ Each example README has a full list of queries:
 - [FEMA Disaster Agent queries](examples/fema_supervisor/#example-queries)
 - [MLflow Docs RAG queries](examples/rag_mlflow_docs/#example-queries)
 - [Telco Customer Agent queries](examples/telco_customer_agent/#example-queries)
+- [Secure Code Assistant queries](examples/secure_code_assistant/#example-queries)
 
 ---
 

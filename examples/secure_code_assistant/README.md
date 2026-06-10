@@ -138,6 +138,8 @@ The agent's `config.yaml` defines session-scoped guardrails:
 
 ## How to Demo (10-15 min)
 
+![Demo Setup](../../images/secure_code_assistant_demo_setup.svg)
+
 ### Pre-demo setup
 
 ```bash

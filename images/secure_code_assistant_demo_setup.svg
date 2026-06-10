@@ -1,0 +1,226 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 680" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <linearGradient id="termG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2c3e50"/>
+      <stop offset="100%" stop-color="#1a252f"/>
+    </linearGradient>
+    <linearGradient id="browserG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0f3460"/>
+      <stop offset="100%" stop-color="#1a5276"/>
+    </linearGradient>
+    <linearGradient id="serverG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1b6b4a"/>
+      <stop offset="100%" stop-color="#148f4b"/>
+    </linearGradient>
+    <linearGradient id="sessionG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2980b9"/>
+      <stop offset="100%" stop-color="#1a5276"/>
+    </linearGradient>
+    <linearGradient id="policyG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e94560"/>
+      <stop offset="100%" stop-color="#c73e54"/>
+    </linearGradient>
+    <linearGradient id="labelG" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#c0392b"/>
+      <stop offset="100%" stop-color="#e74c3c"/>
+    </linearGradient>
+    <linearGradient id="userG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#48c9b0"/>
+      <stop offset="100%" stop-color="#1abc9c"/>
+    </linearGradient>
+    <linearGradient id="llmG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#533483"/>
+      <stop offset="100%" stop-color="#6c3d9e"/>
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="680" fill="url(#bg)"/>
+
+  <!-- Subtle grid -->
+  <g opacity="0.03" stroke="#fff" stroke-width="0.5">
+    <line x1="0" y1="100" x2="900" y2="100"/><line x1="0" y1="200" x2="900" y2="200"/>
+    <line x1="0" y1="300" x2="900" y2="300"/><line x1="0" y1="400" x2="900" y2="400"/>
+    <line x1="0" y1="500" x2="900" y2="500"/><line x1="0" y1="600" x2="900" y2="600"/>
+    <line x1="150" y1="0" x2="150" y2="680"/><line x1="300" y1="0" x2="300" y2="680"/>
+    <line x1="450" y1="0" x2="450" y2="680"/><line x1="600" y1="0" x2="600" y2="680"/>
+    <line x1="750" y1="0" x2="750" y2="680"/>
+  </g>
+
+  <!-- Decorative circles -->
+  <circle cx="80" cy="100" r="40" fill="#e94560" opacity="0.04"/>
+  <circle cx="820" cy="550" r="55" fill="#48c9b0" opacity="0.04"/>
+
+  <!-- Title -->
+  <text x="450" y="35" text-anchor="middle" fill="#fff" font-size="18" font-weight="700" letter-spacing="1">Secure Code Assistant — Local Demo Setup</text>
+  <text x="450" y="55" text-anchor="middle" fill="#8899aa" font-size="11">2 Terminals + Browser  |  Auto-Spawned Server  |  Shared Session State</text>
+
+  <!-- ============ Surfaces Row (top) ============ -->
+
+  <!-- Terminal 1: Developer -->
+  <rect x="40" y="80" width="240" height="130" rx="10" fill="url(#termG)" filter="url(#shadow)"/>
+  <!-- Title bar -->
+  <rect x="40" y="80" width="240" height="24" rx="10" fill="#1a1a2e"/>
+  <rect x="40" y="94" width="240" height="10" fill="#1a1a2e"/>
+  <circle cx="56" cy="92" r="5" fill="#e74c3c" opacity="0.8"/>
+  <circle cx="72" cy="92" r="5" fill="#f5a623" opacity="0.8"/>
+  <circle cx="88" cy="92" r="5" fill="#2ecc71" opacity="0.8"/>
+  <text x="160" y="96" text-anchor="middle" fill="#8899aa" font-size="8">Terminal 1</text>
+  <!-- Content -->
+  <text x="55" y="122" fill="#48c9b0" font-size="9" font-family="monospace">$ omnigents run</text>
+  <text x="60" y="136" fill="#48c9b0" font-size="9" font-family="monospace">examples/secure_code_assistant/</text>
+  <text x="55" y="156" fill="#8899aa" font-size="8" font-family="monospace">&gt; Read file read_source.py</text>
+  <text x="55" y="170" fill="#e74c3c" font-size="8" font-family="monospace">&gt; web_search → DENIED</text>
+  <text x="55" y="190" fill="#fff" font-size="9" font-weight="600">Developer — Acts 1-3</text>
+  <text x="55" y="202" fill="#7f8c8d" font-size="7">Policies, portability, wow moment</text>
+
+  <!-- Terminal 2: Teammate -->
+  <rect x="330" y="80" width="240" height="130" rx="10" fill="url(#termG)" filter="url(#shadow)"/>
+  <!-- Title bar -->
+  <rect x="330" y="80" width="240" height="24" rx="10" fill="#1a1a2e"/>
+  <rect x="330" y="94" width="240" height="10" fill="#1a1a2e"/>
+  <circle cx="346" cy="92" r="5" fill="#e74c3c" opacity="0.8"/>
+  <circle cx="362" cy="92" r="5" fill="#f5a623" opacity="0.8"/>
+  <circle cx="378" cy="92" r="5" fill="#2ecc71" opacity="0.8"/>
+  <text x="450" y="96" text-anchor="middle" fill="#8899aa" font-size="8">Terminal 2</text>
+  <!-- Content -->
+  <text x="345" y="122" fill="#48c9b0" font-size="9" font-family="monospace">$ omnigents attach</text>
+  <text x="350" y="136" fill="#48c9b0" font-size="9" font-family="monospace">&lt;session_id&gt;</text>
+  <text x="345" y="156" fill="#8899aa" font-size="8" font-family="monospace">&gt; Full history visible</text>
+  <text x="345" y="170" fill="#8899aa" font-size="8" font-family="monospace">&gt; Labels carry over</text>
+  <text x="345" y="190" fill="#fff" font-size="9" font-weight="600">Teammate — Act 4</text>
+  <text x="345" y="202" fill="#7f8c8d" font-size="7">Co-attach, real-time sync</text>
+
+  <!-- Browser: Web UI -->
+  <rect x="620" y="80" width="240" height="130" rx="10" fill="url(#browserG)" filter="url(#shadow)"/>
+  <!-- Browser bar -->
+  <rect x="620" y="80" width="240" height="24" rx="10" fill="#0a2540"/>
+  <rect x="620" y="94" width="240" height="10" fill="#0a2540"/>
+  <rect x="670" y="84" width="150" height="14" rx="7" fill="#16213e"/>
+  <text x="745" y="95" text-anchor="middle" fill="#5dade2" font-size="7">localhost:8000</text>
+  <circle cx="636" cy="91" r="4" fill="#e74c3c" opacity="0.7"/>
+  <circle cx="650" cy="91" r="4" fill="#f5a623" opacity="0.7"/>
+  <!-- Content -->
+  <text x="740" y="122" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">OmniAgents Web UI</text>
+  <text x="740" y="140" text-anchor="middle" fill="#85c1e9" font-size="8">Same session, in the browser</text>
+  <text x="740" y="158" text-anchor="middle" fill="#5dade2" font-size="8">Full conversation + label state</text>
+  <text x="740" y="176" text-anchor="middle" fill="#4fc3f7" font-size="8">Works from phone on deployed instance</text>
+  <text x="740" y="196" fill="#fff" font-size="9" font-weight="600">Multi-Surface — Act 4</text>
+
+  <!-- ============ Arrows: Surfaces → Server ============ -->
+  <!-- Terminal 1 → Server -->
+  <line x1="160" y1="210" x2="160" y2="268" stroke="#48c9b0" stroke-width="2" opacity="0.6"/>
+  <polygon points="155,266 165,266 160,276" fill="#48c9b0" opacity="0.6"/>
+  <text x="130" y="245" fill="#48c9b0" font-size="7">run</text>
+
+  <!-- Terminal 2 → Server -->
+  <line x1="450" y1="210" x2="450" y2="268" stroke="#48c9b0" stroke-width="2" opacity="0.6"/>
+  <polygon points="445,266 455,266 450,276" fill="#48c9b0" opacity="0.6"/>
+  <text x="420" y="245" fill="#48c9b0" font-size="7">attach</text>
+
+  <!-- Browser → Server -->
+  <line x1="740" y1="210" x2="740" y2="268" stroke="#5dade2" stroke-width="2" opacity="0.6"/>
+  <polygon points="735,266 745,266 740,276" fill="#5dade2" opacity="0.6"/>
+  <text x="752" y="245" fill="#5dade2" font-size="7">HTTP</text>
+
+  <!-- ============ OmniAgents Server (auto-spawned) ============ -->
+  <rect x="60" y="276" width="780" height="50" rx="10" fill="url(#serverG)" filter="url(#shadow)"/>
+  <text x="450" y="298" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">OmniAgents Server</text>
+  <text x="450" y="314" text-anchor="middle" fill="#a8e6cf" font-size="9">Auto-spawned by `omnigents run`  |  Manages sessions  |  Serves Web UI at localhost:8000</text>
+
+  <!-- ============ Arrow: Server → Session ============ -->
+  <line x1="450" y1="326" x2="450" y2="350" stroke="#2ecc71" stroke-width="2" opacity="0.6"/>
+  <polygon points="445,348 455,348 450,358" fill="#2ecc71" opacity="0.6"/>
+
+  <!-- ============ Session (persistent, shared) ============ -->
+  <rect x="120" y="358" width="660" height="75" rx="10" fill="url(#sessionG)" filter="url(#shadow)"/>
+  <text x="450" y="382" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">Persistent Session</text>
+  <text x="450" y="398" text-anchor="middle" fill="#a8d8ea" font-size="9">Session ID: shared across all surfaces  |  Conversation history  |  Fork supported</text>
+  <text x="450" y="414" text-anchor="middle" fill="#7ec8e3" font-size="9">The session is the unit of continuity — not the terminal</text>
+
+  <!-- Label badges inside session -->
+  <rect x="180" y="420" width="155" height="7" rx="3" fill="url(#labelG)" opacity="0.5"/>
+  <rect x="565" y="420" width="155" height="7" rx="3" fill="url(#labelG)" opacity="0.5"/>
+
+  <!-- ============ Arrow: Session → PolicyEngine ============ -->
+  <line x1="450" y1="433" x2="450" y2="455" stroke="#2980b9" stroke-width="2" opacity="0.6"/>
+  <polygon points="445,453 455,453 450,463" fill="#2980b9" opacity="0.6"/>
+
+  <!-- ============ PolicyEngine + Labels ============ -->
+  <rect x="60" y="463" width="540" height="55" rx="10" fill="url(#policyG)" filter="url(#shadow)"/>
+  <text x="330" y="486" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">PolicyEngine</text>
+  <text x="330" y="504" text-anchor="middle" fill="#ffd5dd" font-size="9">Intercepts tool_call  |  Evaluates conditions  |  ALLOW + set_labels / DENY  |  Framework-level enforcement</text>
+
+  <!-- Session Labels -->
+  <rect x="625" y="463" width="215" height="55" rx="8" fill="url(#labelG)" filter="url(#shadow)" opacity="0.9"/>
+  <text x="732" y="482" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">Session Labels</text>
+  <line x1="638" y1="488" x2="827" y2="488" stroke="#fff" stroke-width="0.5" opacity="0.3"/>
+  <text x="638" y="502" fill="#ffecd2" font-size="9" font-family="monospace">has_proprietary_code: false</text>
+  <text x="638" y="514" fill="#ffecd2" font-size="9" font-family="monospace">has_external_content: false</text>
+
+  <!-- Arrow: PolicyEngine ↔ Labels -->
+  <line x1="600" y1="490" x2="625" y2="490" stroke="#e94560" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.6"/>
+  <text x="608" y="485" fill="#e94560" font-size="6" font-weight="600">set/check</text>
+
+  <!-- ============ Arrow: PolicyEngine → Agent + LLM ============ -->
+  <line x1="330" y1="518" x2="330" y2="545" stroke="#e94560" stroke-width="2" opacity="0.6"/>
+  <polygon points="325,543 335,543 330,553" fill="#e94560" opacity="0.6"/>
+
+  <!-- ============ Agent + LLM Harness ============ -->
+  <rect x="60" y="553" width="370" height="50" rx="10" fill="url(#llmG)" filter="url(#shadow)"/>
+  <text x="245" y="575" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">secure_code_assistant</text>
+  <text x="245" y="592" text-anchor="middle" fill="#d7bde2" font-size="9">claude-sdk harness  |  Swappable: --model gpt-4o --harness openai-agents</text>
+
+  <!-- ============ Tools ============ -->
+  <rect x="460" y="553" width="95" height="50" rx="6" fill="#e97c00" filter="url(#shadow)" opacity="0.85"/>
+  <text x="507" y="575" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">read_source</text>
+  <text x="507" y="590" text-anchor="middle" fill="#ffecd2" font-size="7">Project files</text>
+
+  <rect x="565" y="553" width="95" height="50" rx="6" fill="#533483" filter="url(#shadow)" opacity="0.85"/>
+  <text x="612" y="575" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">search_docs</text>
+  <text x="612" y="590" text-anchor="middle" fill="#d7bde2" font-size="7">Web docs</text>
+
+  <rect x="670" y="553" width="85" height="50" rx="6" fill="#1b6b4a" filter="url(#shadow)" opacity="0.85"/>
+  <text x="712" y="575" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">web_search</text>
+  <text x="712" y="590" text-anchor="middle" fill="#a8e6cf" font-size="7">Builtin</text>
+
+  <rect x="765" y="553" width="75" height="50" rx="6" fill="#0f3460" filter="url(#shadow)" opacity="0.85"/>
+  <text x="802" y="575" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">Shell</text>
+  <text x="802" y="590" text-anchor="middle" fill="#a8d8ea" font-size="7">File I/O</text>
+
+  <!-- Arrows: PolicyEngine → Tools -->
+  <line x1="507" y1="518" x2="507" y2="553" stroke="#f5a623" stroke-width="1" opacity="0.4"/>
+  <line x1="612" y1="518" x2="612" y2="553" stroke="#bb86fc" stroke-width="1" opacity="0.4"/>
+  <line x1="712" y1="518" x2="712" y2="553" stroke="#2ecc71" stroke-width="1" opacity="0.4"/>
+  <line x1="802" y1="518" x2="802" y2="553" stroke="#4fc3f7" stroke-width="1" opacity="0.4"/>
+
+  <!-- ============ Demo Flow annotation ============ -->
+  <rect x="60" y="620" width="780" height="42" rx="8" fill="#1a1a2e" stroke="#3d5a80" stroke-width="0.8" opacity="0.8"/>
+  <text x="450" y="637" text-anchor="middle" fill="#8899aa" font-size="10" font-weight="600">Demo Flow</text>
+  <text x="450" y="652" text-anchor="middle" fill="#5c7a99" font-size="8">Act 1-2: Policy wow (Terminal 1)  →  Act 3: Swap to GPT-4o (Terminal 1)  →  Act 4: Teammate attaches (Terminal 2 + Browser)</text>
+
+  <!-- ============ Footer Badges ============ -->
+  <g transform="translate(0, 665)">
+    <rect x="130" y="0" width="100" height="14" rx="7" fill="#148f4b" opacity="0.25"/>
+    <text x="180" y="10" text-anchor="middle" fill="#148f4b" font-size="7" font-weight="600">Auto-Spawned</text>
+
+    <rect x="245" y="0" width="100" height="14" rx="7" fill="#2980b9" opacity="0.25"/>
+    <text x="295" y="10" text-anchor="middle" fill="#2980b9" font-size="7" font-weight="600">Session State</text>
+
+    <rect x="360" y="0" width="100" height="14" rx="7" fill="#e94560" opacity="0.25"/>
+    <text x="410" y="10" text-anchor="middle" fill="#e94560" font-size="7" font-weight="600">PolicyEngine</text>
+
+    <rect x="475" y="0" width="100" height="14" rx="7" fill="#6c3d9e" opacity="0.25"/>
+    <text x="525" y="10" text-anchor="middle" fill="#6c3d9e" font-size="7" font-weight="600">Portable LLM</text>
+
+    <rect x="590" y="0" width="100" height="14" rx="7" fill="#48c9b0" opacity="0.25"/>
+    <text x="640" y="10" text-anchor="middle" fill="#48c9b0" font-size="7" font-weight="600">Multi-Surface</text>
+  </g>
+</svg>
