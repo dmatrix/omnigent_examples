@@ -40,27 +40,14 @@ This creates `examples/tools/data/telco.db` with 5 tables and 125 records.
 
 ---
 
-## Run on Databricks
+## Run Locally
 
-Uses `databricks-gpt-5-5` via Databricks AI Gateway.
+The default config uses `gpt-5.4` via direct OpenAI API (`openai-agents` harness).
 
-```bash
-databricks auth login
-omniagents run examples/telco_customer_agent/
-```
-
-The CLI opens an interactive REPL. A Web UI is also available at the Databricks Apps URL printed at startup.
-
----
-
-## Run Locally (Non-Databricks)
-
-Runs fully on your machine with no Databricks dependency.
-
-### 1. Disable the Databricks global config
+### 1. Configure credentials (one-time)
 
 ```bash
-mv ~/.omniagents/config.yaml ~/.omniagents/config.yaml.bak
+omnigents setup
 ```
 
 ### 2. Export your API key
@@ -72,18 +59,23 @@ export $(grep OPENAI_API_KEY .env | tr -d '"')
 ### 3. Run the agent
 
 ```bash
-# OpenAI
-omniagents run examples/telco_customer_agent/ --model gpt-4o --harness openai-agents --server ""
+# Uses credentials configured in setup (default: gpt-5.4)
+omnigents run examples/telco_customer_agent/
 
-# Anthropic Claude
+# Override model at the command line
+omnigents run examples/telco_customer_agent/ --model gpt-5.4
+omnigents run examples/telco_customer_agent/ --model gpt-5.3-codex
+omnigents run examples/telco_customer_agent/ --model gpt-4o
+
+# Anthropic Claude (requires ANTHROPIC_API_KEY)
 export $(grep ANTHROPIC_API_KEY .env | tr -d '"')
-omniagents run examples/telco_customer_agent/ --model claude-sonnet-4-6 --harness claude-sdk --server ""
-```
+omnigents run examples/telco_customer_agent/ --model claude-sonnet-4-6 --harness claude-sdk
 
-### 4. Restore Databricks config when done
+# Ollama (local, no API key needed)
+omnigents run examples/telco_customer_agent/ --model ollama/llama-3 --harness openai-agents
 
-```bash
-mv ~/.omniagents/config.yaml.bak ~/.omniagents/config.yaml
+# Fresh session (no persistence)
+omnigents run examples/telco_customer_agent/ --no-session
 ```
 
 ---

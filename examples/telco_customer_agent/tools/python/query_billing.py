@@ -6,7 +6,7 @@ import os
 import sqlite3
 from pathlib import Path
 
-from omniagents_client.tools import tool
+from omnigents_client.tools import tool
 
 
 def _find_db() -> Path:

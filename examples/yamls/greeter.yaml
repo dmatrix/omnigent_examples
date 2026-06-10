@@ -2,7 +2,7 @@ name: greeter
 description: A simple agent that greets people.
 
 executor:
-  type: omniagents
+  type: omnigents
   model: databricks-claude-sonnet-4-6
   config:
     harness: claude-sdk

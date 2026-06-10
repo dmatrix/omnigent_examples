@@ -43,11 +43,11 @@ echo 'OPENAI_API_KEY="sk-..."' > .env
 Uses `databricks-claude-sonnet-4-6` via Databricks AI Gateway.
 
 ```bash
-databricks auth login
-omniagents run examples/fema_supervisor/
+omnigents login https://omnigents-<id>.aws.databricksapps.com
+omnigents run examples/fema_supervisor/ --server https://omnigents-<id>.aws.databricksapps.com
 ```
 
-The CLI opens an interactive REPL. A Web UI is also available at the Databricks Apps URL printed at startup.
+The CLI opens an interactive REPL. A Web UI is also available at the Databricks Apps URL.
 
 ---
 
@@ -55,12 +55,10 @@ The CLI opens an interactive REPL. A Web UI is also available at the Databricks 
 
 Runs fully on your machine with no Databricks dependency.
 
-### 1. Disable the Databricks global config
-
-The global `profile: oss` in `~/.omniagents/config.yaml` forces Databricks routing -- temporarily rename it:
+### 1. Configure credentials (one-time)
 
 ```bash
-mv ~/.omniagents/config.yaml ~/.omniagents/config.yaml.bak
+omnigents setup
 ```
 
 ### 2. Export your API keys
@@ -69,24 +67,24 @@ mv ~/.omniagents/config.yaml ~/.omniagents/config.yaml.bak
 # Always needed (search_policies embeddings use OpenAI regardless of LLM)
 export $(grep OPENAI_API_KEY .env | tr -d '"')
 
-# Only needed for Claude models
+# Only needed for Claude models via direct API
 export $(grep ANTHROPIC_API_KEY .env | tr -d '"')
 ```
 
 ### 3. Run the agent
 
 ```bash
-# OpenAI
-omniagents run examples/fema_supervisor/ --model gpt-4o --harness openai-agents --server ""
+# Uses credentials configured in setup
+omnigents run examples/fema_supervisor/
+
+# Override model and harness at the command line
+omnigents run examples/fema_supervisor/ --model gpt-4o --harness openai-agents
 
 # Anthropic Claude
-omniagents run examples/fema_supervisor/ --model claude-sonnet-4-6 --harness claude-sdk --server ""
-```
+omnigents run examples/fema_supervisor/ --model claude-sonnet-4-6 --harness claude-sdk
 
-### 4. Restore Databricks config when done
-
-```bash
-mv ~/.omniagents/config.yaml.bak ~/.omniagents/config.yaml
+# Fresh session (no persistence)
+omnigents run examples/fema_supervisor/ --no-session
 ```
 
 ### Tested Models
