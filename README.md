@@ -1,6 +1,6 @@
 # OmniAgents Harness
 
-**YAML-defined AI agents for the OmniAgents CLI -- from single-tool assistants to multi-tool disaster response agents.**
+**YAML-defined AI agents for the OmniAgents CLI -- from single-tool assistants to multi-tool disaster response agents and secure code asistants.**
 
 ![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
 ![Databricks](https://img.shields.io/badge/Databricks-FF3621?logo=databricks&logoColor=white)
