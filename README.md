@@ -1,6 +1,6 @@
-# OmniAgents Harness
+# OmniAgent Harness
 
-**YAML-defined AI agents for the OmniAgents CLI -- from single-tool assistants to multi-tool disaster response agents and secure code asistants.**
+**YAML-defined AI agents for the OmniAgent CLI -- from single-tool assistants to multi-tool disaster response agents and secure code assistants.**
 
 ![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
 ![Databricks](https://img.shields.io/badge/Databricks-FF3621?logo=databricks&logoColor=white)
@@ -11,7 +11,7 @@
 
 ## Overview
 
-This repository contains example agent configurations for the [OmniAgents](https://github.com/databricks/omniagents) CLI. Each example defines an AI agent in YAML -- specifying the executor, system prompt, and tools. Three flagship examples demonstrate different patterns:
+This repository contains example agent configurations for the [OmniAgent](https://github.com/databricks/omniagent) CLI. Each example defines an AI agent in YAML -- specifying the executor, system prompt, and tools. Three flagship examples demonstrate different patterns:
 
 1. **[FEMA Disaster Agent](examples/fema_supervisor/)** -- multi-tool routing (text-to-SQL + semantic policy search)
 2. **[MLflow Docs RAG Agent](examples/rag_mlflow_docs/)** -- self-building RAG pipeline (embeds documents, then searches them)
@@ -25,7 +25,7 @@ This repository contains example agent configurations for the [OmniAgents](https
 ### Prerequisites
 
 - Python 3.12+
-- The `omnigents` CLI installed (`pip install omnigents` or editable from `agent-framework`)
+- The `omnigent` CLI installed (`pip install omnigent` or editable from `agent-framework`)
 - `OPENAI_API_KEY` in a `.env` file at the repo root (needed for embeddings in the FEMA and RAG agents)
 
 ```bash
@@ -37,10 +37,10 @@ echo 'OPENAI_API_KEY="sk-..."' > .env
 Run the interactive setup to configure your model credentials:
 
 ```bash
-omnigents setup
+omnigent setup
 ```
 
-This walks you through choosing providers for each harness (Claude, OpenAI, Ollama, etc.) and stores credentials in `~/.omnigents/config.yaml`. View your configuration at any time with `omnigents config list`.
+This walks you through choosing providers for each harness (Claude, OpenAI, Ollama, etc.) and stores credentials in `~/.omnigent/config.yaml`. View your configuration at any time with `omnigent config list`.
 
 ### Set up databases
 
@@ -54,20 +54,20 @@ python examples/tools/create_telco_db.py   # Telco agent (5 tables, 125 records)
 
 ## Run on Databricks
 
-Connect to a Databricks-hosted OmniAgents server. Models route through Databricks AI Gateway.
+Connect to a Databricks-hosted OmniAgent server. Models route through Databricks AI Gateway.
 
 ```bash
 # Authenticate with the remote server
-omnigents login https://omnigents-<id>.aws.databricksapps.com
+omnigent login https://omnigent-<id>.aws.databricksapps.com
 
 # FEMA disaster agent (databricks-claude-sonnet-4-6)
-omnigents run examples/fema_supervisor/ --server https://omnigents-<id>.aws.databricksapps.com
+omnigent run examples/fema_supervisor/ --server https://omnigent-<id>.aws.databricksapps.com
 
 # MLflow docs RAG agent (databricks-gpt-5-5)
-omnigents run examples/rag_mlflow_docs/ --server https://omnigents-<id>.aws.databricksapps.com
+omnigent run examples/rag_mlflow_docs/ --server https://omnigent-<id>.aws.databricksapps.com
 
 # Telco customer agent (gpt-5.4)
-omnigents run examples/telco_customer_agent/ --server https://omnigents-<id>.aws.databricksapps.com
+omnigent run examples/telco_customer_agent/ --server https://omnigent-<id>.aws.databricksapps.com
 ```
 
 The CLI opens an interactive REPL. A Web UI is also available at the Databricks Apps URL.
@@ -75,7 +75,7 @@ The CLI opens an interactive REPL. A Web UI is also available at the Databricks 
 To avoid repeating `--server`, set it as a default:
 
 ```bash
-omnigents config set --global server=https://omnigents-<id>.aws.databricksapps.com
+omnigent config set --global server=https://omnigent-<id>.aws.databricksapps.com
 ```
 
 ---
@@ -87,10 +87,10 @@ Runs fully on your machine with no Databricks dependency. The CLI auto-spawns a 
 ### 1. Configure credentials (one-time)
 
 ```bash
-omnigents setup
+omnigent setup
 ```
 
-Choose your providers (Claude subscription, OpenAI API key, Ollama local, etc.). Omnigents auto-detects credentials already in your environment and offers them as defaults.
+Choose your providers (Claude subscription, OpenAI API key, Ollama local, etc.). Omnigent auto-detects credentials already in your environment and offers them as defaults.
 
 ### 2. Export your API keys
 
@@ -106,19 +106,19 @@ export $(grep ANTHROPIC_API_KEY .env | tr -d '"')
 
 ```bash
 # FEMA -- uses credentials configured in setup
-omnigents run examples/fema_supervisor/
+omnigent run examples/fema_supervisor/
 
 # Override model and harness at the command line
-omnigents run examples/fema_supervisor/ --model gpt-4o --harness openai-agents
+omnigent run examples/fema_supervisor/ --model gpt-4o --harness openai-agents
 
 # Anthropic Claude
-omnigents run examples/fema_supervisor/ --model claude-sonnet-4-6 --harness claude-sdk
+omnigent run examples/fema_supervisor/ --model claude-sonnet-4-6 --harness claude-sdk
 
 # Telco -- OpenAI
-omnigents run examples/telco_customer_agent/ --model gpt-4o --harness openai-agents
+omnigent run examples/telco_customer_agent/ --model gpt-4o --harness openai-agents
 
 # Fresh session (no persistence)
-omnigents run examples/telco_customer_agent/ --no-session
+omnigent run examples/telco_customer_agent/ --no-session
 ```
 
 Each example README has detailed local setup instructions -- see [FEMA](examples/fema_supervisor/), [RAG](examples/rag_mlflow_docs/), [Telco](examples/telco_customer_agent/).
@@ -129,10 +129,10 @@ The Web UI is built into the server. Start the server and register your machine 
 
 ```bash
 # Start the server in the background (serves Web UI at http://localhost:8000)
-omnigents server start
+omnigent server start
 
 # Register this machine as a host (separate terminal)
-omnigents host
+omnigent host
 
 # Open http://localhost:8000/
 ```
@@ -140,8 +140,8 @@ omnigents host
 ### Manage the background server
 
 ```bash
-omnigents server status    # is the background server running?
-omnigents server stop      # stop server and local host daemon
+omnigent server status    # is the background server running?
+omnigent server stop      # stop server and local host daemon
 ```
 
 ---
@@ -173,7 +173,7 @@ To use a different model, change the `executor` block in `config.yaml`:
 **Direct Anthropic API** (requires `ANTHROPIC_API_KEY` in `.env`):
 ```yaml
 executor:
-  type: omnigents
+  type: omnigent
   model: claude-sonnet-4-6
   config:
     harness: claude-sdk
@@ -182,7 +182,7 @@ executor:
 **Direct OpenAI API** (requires `OPENAI_API_KEY` in `.env`):
 ```yaml
 executor:
-  type: omnigents
+  type: omnigent
   model: gpt-5
   config:
     harness: openai-agents
@@ -191,7 +191,7 @@ executor:
 **Local model via Ollama** (no API key needed):
 ```yaml
 executor:
-  type: omnigents
+  type: omnigent
   model: ollama/llama-3
   config:
     harness: openai-agents
@@ -201,8 +201,8 @@ executor:
 
 Or override at the command line without editing the YAML:
 ```bash
-omnigents run examples/fema_supervisor/ --model claude-sonnet-4-6 --harness claude-sdk
-omnigents run examples/fema_supervisor/ --model gpt-5 --harness openai-agents
+omnigent run examples/fema_supervisor/ --model claude-sonnet-4-6 --harness claude-sdk
+omnigent run examples/fema_supervisor/ --model gpt-5 --harness openai-agents
 ```
 
 ### Supported models
@@ -243,12 +243,12 @@ Each flagship agent has its own architecture diagram in its README:
 
 Reference docs:
 
-- [Local vs Remote modes](docs/local_vs_remote.md) -- how all OmniAgents components (server, runner, harness, Web UI, PolicyEngine) fit together in Databricks-hosted and fully-local deployments
+- [Local vs Remote modes](docs/local_vs_remote.md) -- how all OmniAgent components (server, runner, harness, Web UI, PolicyEngine) fit together in Databricks-hosted and fully-local deployments
 - [Telco agent design doc](examples/telco_customer_agent/design.md) -- policy rationale, database schema, and staged implementation plan
 
 ---
 
-## The OmniAgents YAML Pattern
+## The OmniAgent YAML Pattern
 
 Every agent is defined in a `config.yaml` with three core sections:
 
@@ -258,7 +258,7 @@ name: fema_supervisor
 description: FEMA disaster response agent with SQL and policy search tools.
 
 executor:
-  type: omnigents
+  type: omnigent
   model: databricks-claude-sonnet-4-6
   config:
     harness: claude-sdk
@@ -314,14 +314,14 @@ Tools are auto-discovered from `tools/python/` in the agent's directory. Each `.
 ## Project Structure
 
 ```
-omniagents_harness/
+omniagent_harness/
 |-- README.md
 |-- CLAUDE.md
 |-- LICENSE                                  # Apache-2.0
 |-- .env                                     # OPENAI_API_KEY (not committed)
 |-- pyproject.toml
 |-- docs/
-|   +-- local_vs_remote.md                   # OmniAgents local vs remote architecture
+|   +-- local_vs_remote.md                   # OmniAgent local vs remote architecture
 |-- examples/
 |   |-- fema_supervisor/                     # FEMA disaster agent
 |   |   |-- README.md
@@ -372,8 +372,8 @@ omniagents_harness/
     |-- fema_supervisor_architecture.svg
     |-- rag_mlflow_docs_architecture.svg
     |-- telco_customer_agent_architecture.svg
-    |-- omniagents_local_architecture.svg
-    +-- omniagents_remote_architecture.svg
+    |-- omniagent_local_architecture.svg
+    +-- omniagent_remote_architecture.svg
 ```
 
 ---

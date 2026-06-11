@@ -7,7 +7,7 @@ description: >
   untrusted web content from being written to project files.
 
 executor:
-  type: omnigents
+  type: omnigent
   model: claude-sonnet-4-6
   config:
     harness: claude-sdk
@@ -39,7 +39,7 @@ guardrails:
     taint_code_read:
       type: function
       function:
-        path: omnigents.policies.function.make_fixed_action_callable
+        path: omnigent.policies.function.make_fixed_action_callable
         arguments:
           action: allow
           set_labels:
@@ -51,7 +51,7 @@ guardrails:
     taint_web_search:
       type: function
       function:
-        path: omnigents.policies.function.make_fixed_action_callable
+        path: omnigent.policies.function.make_fixed_action_callable
         arguments:
           action: allow
           set_labels:
@@ -67,7 +67,7 @@ guardrails:
       condition:
         has_proprietary_code: "True"
       function:
-        path: omnigents.policies.function.make_fixed_action_callable
+        path: omnigent.policies.function.make_fixed_action_callable
         arguments:
           action: deny
           reason: |
@@ -82,7 +82,7 @@ guardrails:
       condition:
         has_external_content: "True"
       function:
-        path: omnigents.policies.function.make_fixed_action_callable
+        path: omnigent.policies.function.make_fixed_action_callable
         arguments:
           action: deny
           reason: |
@@ -98,7 +98,7 @@ guardrails:
     cost_guard:
       type: function
       function:
-        path: omnigents.policies.builtins.cost.cost_budget
+        path: omnigent.policies.builtins.cost.cost_budget
         arguments:
           max_cost_usd: 5.0
           ask_thresholds_usd: [1.0]

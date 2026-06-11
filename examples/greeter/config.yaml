@@ -3,7 +3,7 @@ name: greeter
 description: A simple agent that greets people using a custom tool.
 
 executor:
-  type: omnigents
+  type: omnigent
   model: gpt-5.3-codex
   config:
     harness: openai-agents

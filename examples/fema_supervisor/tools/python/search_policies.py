@@ -6,7 +6,7 @@ and cosine similarity. Requires OPENAI_API_KEY to be set.
 
 from __future__ import annotations
 
-from omnigents_client.tools import tool
+from omnigent_client.tools import tool
 
 _EMBEDDING_CACHE: dict[str, list[float]] = {}
 _DOC_EMBEDDINGS: dict[str, list[float]] = {}

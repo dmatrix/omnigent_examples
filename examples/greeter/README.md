@@ -23,8 +23,8 @@ No setup required -- this agent has no database or API key dependencies.
 Uses `databricks-claude-sonnet-4-6` via Databricks AI Gateway.
 
 ```bash
-omnigents login https://omnigents-<id>.aws.databricksapps.com
-omnigents run examples/greeter/ --server https://omnigents-<id>.aws.databricksapps.com
+omnigent login https://omnigent-<id>.aws.databricksapps.com
+omnigent run examples/greeter/ --server https://omnigent-<id>.aws.databricksapps.com
 ```
 
 ---
@@ -33,11 +33,11 @@ omnigents run examples/greeter/ --server https://omnigents-<id>.aws.databricksap
 
 ```bash
 # One-time setup
-omnigents setup
+omnigent setup
 
 # Run the agent
-omnigents run examples/greeter/
+omnigent run examples/greeter/
 
 # Override model at the command line
-omnigents run examples/greeter/ --model gpt-4o --harness openai-agents
+omnigent run examples/greeter/ --model gpt-4o --harness openai-agents
 ```

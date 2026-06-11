@@ -8,7 +8,7 @@
 
 ## Overview
 
-The secure code assistant demonstrates bidirectional information flow control using OmniAgents' policy engine. It has two custom tools and one builtin:
+The secure code assistant demonstrates bidirectional information flow control using OmniAgent' policy engine. It has two custom tools and one builtin:
 
 - **`read_source`** -- Reads source files from the project directory. Triggers the `has_proprietary_code` label.
 
@@ -40,7 +40,7 @@ No database setup needed. The agent reads source files from the current working 
 ### 1. Configure credentials (one-time)
 
 ```bash
-omnigents setup
+omnigent setup
 ```
 
 ### 2. Export your API key
@@ -53,14 +53,14 @@ export $(grep ANTHROPIC_API_KEY .env | tr -d '"')
 
 ```bash
 # Default: Claude Sonnet via claude-sdk
-omnigents run examples/secure_code_assistant/
+omnigent run examples/secure_code_assistant/
 
 # Fresh session (no persistence)
-omnigents run examples/secure_code_assistant/ --no-session
+omnigent run examples/secure_code_assistant/ --no-session
 
 # Override model and harness
-omnigents run examples/secure_code_assistant/ --model gpt-4o --harness openai-agents
-omnigents run examples/secure_code_assistant/ --model ollama/llama-3 --harness openai-agents
+omnigent run examples/secure_code_assistant/ --model gpt-4o --harness openai-agents
+omnigent run examples/secure_code_assistant/ --model ollama/llama-3 --harness openai-agents
 ```
 
 ---
@@ -147,8 +147,8 @@ export $(grep ANTHROPIC_API_KEY .env | tr -d '"')
 export $(grep OPENAI_API_KEY .env | tr -d '"')
 
 # For the collaboration demo (Acts 4):
-omnigents server start    # Terminal A (background)
-omnigents host            # Terminal B (background)
+omnigent server start    # Terminal A (background)
+omnigent host            # Terminal B (background)
 # Pre-open browser to http://localhost:8000 (hidden tab)
 ```
 
@@ -156,7 +156,7 @@ omnigents host            # Terminal B (background)
 
 ### Act 1: The Hook (2 min) — "Agents as software"
 
-**Say:** "You already write great agents. Claude Code, Codex, OpenAI — you wire up tools, you ship. But I have three questions. Can you **govern** your agent — not with prompt engineering, but with enforcement the model can't override? Can your teammate **attach** to your live session from their browser? Can you **swap the brain** from Claude to GPT without changing a single tool? OmniAgents does all three. And the whole agent is a YAML file."
+**Say:** "You already write great agents. Claude Code, Codex, OpenAI — you wire up tools, you ship. But I have three questions. Can you **govern** your agent — not with prompt engineering, but with enforcement the model can't override? Can your teammate **attach** to your live session from their browser? Can you **swap the brain** from Claude to GPT without changing a single tool? OmniAgent does all three. And the whole agent is a YAML file."
 
 **Do:** Show `config.yaml` — scroll through three sections:
 - `executor:` — "Two lines: which model, which harness. Swap both without touching tools."
@@ -170,7 +170,7 @@ omnigents host            # Terminal B (background)
 
 ### Act 2: Policies — Information Flow (4 min) — THE WOW MOMENT
 
-**Do:** `omnigents run examples/secure_code_assistant/`
+**Do:** `omnigent run examples/secure_code_assistant/`
 
 **Turn 1 — web search works (no code read yet):**
 
@@ -194,13 +194,13 @@ Type: `Use web_search to find how other projects implement tool decorators`
 
 > **DENIED:** "Web search blocked — proprietary source code is in session context. Search queries could leak implementation details, API keys, or business logic to external search engines."
 
-**Say:** "Denied. The search query 'tool decorators' is generic — zero proprietary content. An API gateway would pass it. But OmniAgents knows this *session* loaded source code two turns ago. The query is clean, but the context window is not. This is **session-scoped information flow control** — not request-level scanning."
+**Say:** "Denied. The search query 'tool decorators' is generic — zero proprietary content. An API gateway would pass it. But OmniAgent knows this *session* loaded source code two turns ago. The query is clean, but the context window is not. This is **session-scoped information flow control** — not request-level scanning."
 
 **Say:** "And this isn't prompt engineering. The enforcement is in the framework layer. The model can't jailbreak around it because the tool call never reaches the harness."
 
 **Turn 4 — reverse flow (write blocked after web):**
 
-Start a new session: `omnigents run examples/secure_code_assistant/ --no-session`
+Start a new session: `omnigent run examples/secure_code_assistant/ --no-session`
 
 Type: `Search the web for the latest FastAPI middleware patterns`
 
@@ -221,7 +221,7 @@ Type: `Write a new middleware file at middleware.py with what you found`
 **Do:** Exit the REPL. Re-run with OpenAI:
 
 ```bash
-omnigents run examples/secure_code_assistant/ --model gpt-4o --harness openai-agents --no-session
+omnigent run examples/secure_code_assistant/ --model gpt-4o --harness openai-agents --no-session
 ```
 
 Type: `Read the file examples/secure_code_assistant/config.yaml`
@@ -240,12 +240,12 @@ Type: `Use web_search to find YAML schema validation libraries`
 
 ### Act 4: Collaboration — Session Sharing + Multi-Surface (3 min)
 
-**Say:** "You're investigating a bug. Your teammate needs context. In Claude Code, you copy-paste the transcript into Slack. In OmniAgents, they attach to your live session."
+**Say:** "You're investigating a bug. Your teammate needs context. In Claude Code, you copy-paste the transcript into Slack. In OmniAgent, they attach to your live session."
 
 **Terminal 1:**
 
 ```bash
-omnigents run examples/secure_code_assistant/
+omnigent run examples/secure_code_assistant/
 ```
 
 Type: `Read examples/secure_code_assistant/config.yaml and summarize the policy structure`
@@ -257,7 +257,7 @@ Note the session ID.
 **Terminal 2:**
 
 ```bash
-omnigents attach <session_id>
+omnigent attach <session_id>
 ```
 
 Full conversation history appears. Type: `What labels have been set in this session so far?`
@@ -270,7 +270,7 @@ Both terminals show the response in real time.
 
 **Say:** "Same session, in the browser. On a deployed instance, this URL works from your phone. The session is the unit of continuity, not the terminal."
 
-**Fork (if time):** `omnigents run --fork <session_id>` from Terminal 2.
+**Fork (if time):** `omnigent run --fork <session_id>` from Terminal 2.
 
 **Say:** "Fork branches the conversation. Like `git branch` for agent sessions."
 
@@ -284,7 +284,7 @@ Both terminals show the response in real time.
 - **Portability:** Same config.yaml, same Python tools, same policies. Claude, GPT, Ollama. Two CLI flags, zero code changes.
 - **Collaboration:** Persistent sessions. Attach, fork, access from CLI, browser, or mobile. Your work isn't trapped in one terminal.
 
-**Say:** "OmniAgents isn't replacing Claude Code or Codex. It's the governance, collaboration, and portability layer between your agents and the world. Write agents as software. Ship software as agents."
+**Say:** "OmniAgent isn't replacing Claude Code or Codex. It's the governance, collaboration, and portability layer between your agents and the world. Write agents as software. Ship software as agents."
 
 ---
 

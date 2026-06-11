@@ -3,7 +3,7 @@ name: impl_worker
 description: Claude coding implementer — reads, edits, and tests code.
 
 executor:
-  type: omnigents
+  type: omnigent
   model: databricks-claude-sonnet-4-6
   config:
     harness: claude-sdk

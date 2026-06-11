@@ -8,9 +8,9 @@
 
 These agents demonstrate the standalone YAML pattern -- no `tools/python/` directory, just a single `.yaml` file. They use either no tools (prompt-only) or builtin tools like `web_search`.
 
-OmniAgents supports two agent layouts. This directory showcases the simpler one:
+OmniAgent supports two agent layouts. This directory showcases the simpler one:
 
-- **Standalone YAML** -- everything lives in one `.yaml` file. No custom Python tools, no database setup, no directory structure. Good for prompt-only agents, agents that only use builtins (`web_search`), or agents that delegate to sub-agents. Zero setup -- just `omnigents run <file>.yaml`.
+- **Standalone YAML** -- everything lives in one `.yaml` file. No custom Python tools, no database setup, no directory structure. Good for prompt-only agents, agents that only use builtins (`web_search`), or agents that delegate to sub-agents. Zero setup -- just `omnigent run <file>.yaml`.
 
 - **Directory bundle** -- a folder with `config.yaml` + `tools/python/*.py` + optional `skills/`. The framework auto-discovers `@tool`-decorated functions from every `.py` file in `tools/python/` at load time. Required when you need custom tools (SQL queries, API calls, embeddings). Examples: [`fema_supervisor/`](../fema_supervisor/), [`telco_customer_agent/`](../telco_customer_agent/), [`greeter/`](../greeter/).
 
@@ -39,8 +39,8 @@ No setup required -- these agents have no database or API key dependencies (exce
 All YAML agents default to `databricks-claude-sonnet-4-6` via Databricks AI Gateway.
 
 ```bash
-omnigents login https://omnigents-<id>.aws.databricksapps.com
-omnigents run examples/yamls/greeter.yaml --server https://omnigents-<id>.aws.databricksapps.com
+omnigent login https://omnigent-<id>.aws.databricksapps.com
+omnigent run examples/yamls/greeter.yaml --server https://omnigent-<id>.aws.databricksapps.com
 ```
 
 ---
@@ -49,16 +49,16 @@ omnigents run examples/yamls/greeter.yaml --server https://omnigents-<id>.aws.da
 
 ```bash
 # One-time setup
-omnigents setup
+omnigent setup
 
 # Run any YAML agent
-omnigents run examples/yamls/greeter.yaml
-omnigents run examples/yamls/researcher.yaml
-omnigents run examples/yamls/code_assistant.yaml
-omnigents run examples/yamls/supervisor.yaml
-omnigents run examples/yamls/simple.yaml
+omnigent run examples/yamls/greeter.yaml
+omnigent run examples/yamls/researcher.yaml
+omnigent run examples/yamls/code_assistant.yaml
+omnigent run examples/yamls/supervisor.yaml
+omnigent run examples/yamls/simple.yaml
 
 # Override model at the command line
-omnigents run examples/yamls/greeter.yaml --model gpt-4o --harness openai-agents
+omnigent run examples/yamls/greeter.yaml --model gpt-4o --harness openai-agents
 ```
 

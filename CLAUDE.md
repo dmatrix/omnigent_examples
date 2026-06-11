@@ -2,11 +2,11 @@
 
 ## Project Overview
 
-Example agent configurations for the OmniAgents CLI. Flagship examples include a FEMA disaster response agent with text-to-SQL and semantic policy search tools, and a telco customer data agent demonstrating session-scoped PII/financial policy labels.
+Example agent configurations for the OmniAgent CLI. Flagship examples include a FEMA disaster response agent with text-to-SQL and semantic policy search tools, and a telco customer data agent demonstrating session-scoped PII/financial policy labels.
 
 ## Tech Stack
 
-- **OmniAgents CLI** -- runs agents from YAML configs
+- **OmniAgent CLI** -- runs agents from YAML configs
 - **Claude SDK harness** (`harness: claude-sdk`) -- all agents use `databricks-claude-sonnet-4-6`
 - **Python tools** -- `@tool` decorator from `omnigents_client.tools`, auto-discovered from `tools/python/`
 - **SQLite** -- `run_sql` tool queries `examples/tools/data/fema_disaster.db`; telco tools query `examples/tools/data/telco.db`
@@ -16,30 +16,30 @@ Example agent configurations for the OmniAgents CLI. Flagship examples include a
 
 ```bash
 # First-time setup (configure credentials)
-omnigents setup
+omnigent setup
 
 # Set up databases (once)
 python examples/tools/create_fema_db.py
 python examples/tools/create_telco_db.py
 
 # Run locally (auto-spawns background server, uses configured credentials)
-omnigents run examples/fema_supervisor/
-omnigents run examples/telco_customer_agent/
+omnigent run examples/fema_supervisor/
+omnigent run examples/telco_customer_agent/
 
 # Override model and harness at the command line
-omnigents run examples/fema_supervisor/ --model gpt-4o --harness openai-agents
-omnigents run examples/fema_supervisor/ --model claude-sonnet-4-6 --harness claude-sdk
+omnigent run examples/fema_supervisor/ --model gpt-4o --harness openai-agents
+omnigent run examples/fema_supervisor/ --model claude-sonnet-4-6 --harness claude-sdk
 
 # Run against Databricks-hosted server
-omnigents login https://omnigents-<id>.aws.databricksapps.com
-omnigents run examples/fema_supervisor/ --server https://omnigents-<id>.aws.databricksapps.com
+omnigent login https://omnigent-<id>.aws.databricksapps.com
+omnigent run examples/fema_supervisor/ --server https://omnigent-<id>.aws.databricksapps.com
 
 # Fresh session (no persistence)
-omnigents run examples/telco_customer_agent/ --no-session
+omnigent run examples/telco_customer_agent/ --no-session
 
 # Other agents
-omnigents run examples/greeter/
-omnigents run examples/yamls/greeter.yaml
+omnigent run examples/greeter/
+omnigent run examples/yamls/greeter.yaml
 ```
 
 ## Key Conventions

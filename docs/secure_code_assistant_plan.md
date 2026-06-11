@@ -1,8 +1,8 @@
-# OmniAgents Developer Demo: CUJ Plan (10-15 min)
+# OmniAgent Developer Demo: CUJ Plan (10-15 min)
 
 ## Context
 
-10-15 minute live demo targeting developers who already use coding agents (Claude Code, Codex, OpenAI). Pitch: **"OmniAgents helps agent developers write agents as software and software as agents."** Three pillars: **Policies, Collaboration, Portability across surfaces.** Open-source omnigents only — no Databricks.
+10-15 minute live demo targeting developers who already use coding agents (Claude Code, Codex, OpenAI). Pitch: **"OmniAgent helps agent developers write agents as software and software as agents."** Three pillars: **Policies, Collaboration, Portability across surfaces.** Open-source omnigent only — no Databricks.
 
 We design a NEW agent from scratch (not any existing example) to showcase the framework's capabilities.
 
@@ -36,7 +36,7 @@ description: >
   untrusted web content from being written to project files.
 
 executor:
-  type: omnigents
+  type: omnigent
   model: claude-sonnet-4-6
   config:
     harness: claude-sdk
@@ -205,8 +205,8 @@ export $(grep ANTHROPIC_API_KEY .env | tr -d '"')
 export $(grep OPENAI_API_KEY .env | tr -d '"')
 
 # Start server for collaboration demo
-omnigents server start    # Terminal A (background)
-omnigents host            # Terminal B (background)
+omnigent server start    # Terminal A (background)
+omnigent host            # Terminal B (background)
 
 # Pre-open browser to http://localhost:8000 (hidden tab)
 # Have Terminal 1 and Terminal 2 side-by-side
@@ -216,7 +216,7 @@ omnigents host            # Terminal B (background)
 
 ### ACT 1: The Hook (2 min) — "Agents as software"
 
-**Say:** "You already write great agents. Claude Code, Codex, OpenAI — you wire up tools, you ship. But I have three questions. Can you **govern** your agent — not with prompt engineering, but with enforcement the model can't override? Can your teammate **attach** to your live session from their browser? Can you **swap the brain** from Claude to GPT without changing a single tool? OmniAgents does all three. And the whole agent is a YAML file."
+**Say:** "You already write great agents. Claude Code, Codex, OpenAI — you wire up tools, you ship. But I have three questions. Can you **govern** your agent — not with prompt engineering, but with enforcement the model can't override? Can your teammate **attach** to your live session from their browser? Can you **swap the brain** from Claude to GPT without changing a single tool? OmniAgent does all three. And the whole agent is a YAML file."
 
 **Do:** Show `config.yaml` — scroll through the three sections:
 - `executor:` — "Two lines: which model, which harness. Swap both without touching tools."
@@ -230,7 +230,7 @@ omnigents host            # Terminal B (background)
 
 ### ACT 2: Policies — Information Flow + Cost (4 min) — THE WOW MOMENT
 
-**Do:** `omnigents run examples/secure_code_assistant/`
+**Do:** `omnigent run examples/secure_code_assistant/`
 
 #### Turn 1: Web search works (no code read yet)
 
@@ -254,7 +254,7 @@ Agent calls `read_source`. Returns the file contents and explains it. Framework 
 
 Agent attempts `web_search` → framework intercepts → **DENIED**: *"Web search blocked — proprietary source code is in session context. Search queries could leak implementation details, API keys, or business logic to external search engines."*
 
-**Say:** "Denied. The search query 'tool decorators' is generic — zero proprietary content. An API gateway would pass it. But OmniAgents knows this *session* loaded source code two turns ago. The query is clean, but the context window is not. This is **session-scoped information flow control** — not request-level scanning."
+**Say:** "Denied. The search query 'tool decorators' is generic — zero proprietary content. An API gateway would pass it. But OmniAgent knows this *session* loaded source code two turns ago. The query is clean, but the context window is not. This is **session-scoped information flow control** — not request-level scanning."
 
 **Say:** "And this isn't prompt engineering. The enforcement is in the framework layer. The model can't jailbreak around it because the tool call never reaches the harness."
 
@@ -262,7 +262,7 @@ Agent attempts `web_search` → framework intercepts → **DENIED**: *"Web searc
 
 Start a **new session** (exit, re-run with `--no-session`):
 
-**Do:** `omnigents run examples/secure_code_assistant/ --no-session`
+**Do:** `omnigent run examples/secure_code_assistant/ --no-session`
 
 **Type:** `Search the web for the latest FastAPI middleware patterns`
 
@@ -283,7 +283,7 @@ Agent attempts `sys_os_write` → **DENIED**: *"File write blocked — untrusted
 **Do:** Exit the REPL. Re-run with OpenAI:
 
 ```bash
-omnigents run examples/secure_code_assistant/ --model gpt-4o --harness openai-agents --no-session
+omnigent run examples/secure_code_assistant/ --model gpt-4o --harness openai-agents --no-session
 ```
 
 *(If CLI override bug applies: edit `config.yaml` executor block to `model: gpt-4o` / `harness: openai-agents` instead.)*
@@ -308,11 +308,11 @@ Exit the REPL. Restore `config.yaml` if edited.
 
 ### ACT 4: Collaboration — Session Sharing + Multi-Surface (3 min)
 
-**Say:** "You're investigating a bug. Your teammate needs context. In Claude Code, you copy-paste the transcript into Slack. In OmniAgents, they attach to your live session."
+**Say:** "You're investigating a bug. Your teammate needs context. In Claude Code, you copy-paste the transcript into Slack. In OmniAgent, they attach to your live session."
 
 #### Start a session (Terminal 1)
 
-**Do:** `omnigents run examples/secure_code_assistant/`
+**Do:** `omnigent run examples/secure_code_assistant/`
 
 **Type:** `Read examples/secure_code_assistant/config.yaml and summarize the policy structure`
 
@@ -322,7 +322,7 @@ Agent responds with a summary. Note the session ID.
 
 #### Co-attach (Terminal 2)
 
-**Do:** `omnigents attach <session_id>`
+**Do:** `omnigent attach <session_id>`
 
 Terminal 2 connects — full conversation history visible.
 
@@ -340,7 +340,7 @@ Switch to browser at `http://localhost:8000`. Click into the active session.
 
 #### Fork (if time)
 
-**Do:** `omnigents run --fork <session_id>` from Terminal 2.
+**Do:** `omnigent run --fork <session_id>` from Terminal 2.
 
 **Say:** "Fork branches the conversation. Your teammate explores independently without affecting your original. Like `git branch` for agent sessions."
 
@@ -354,7 +354,7 @@ Switch to browser at `http://localhost:8000`. Click into the active session.
 - **Portability:** Same config.yaml, same Python tools, same policies. Claude, GPT, Ollama. Two CLI flags, zero code changes.
 - **Collaboration:** Persistent sessions. Attach, fork, access from CLI, browser, or mobile. Your work isn't trapped in one terminal.
 
-**Say:** "OmniAgents isn't replacing Claude Code or Codex. It's the governance, collaboration, and portability layer between your agents and the world. Write agents as software. Ship software as agents."
+**Say:** "OmniAgent isn't replacing Claude Code or Codex. It's the governance, collaboration, and portability layer between your agents and the world. Write agents as software. Ship software as agents."
 
 ---
 
@@ -421,12 +421,12 @@ The full timed demo script from above, formatted for a presenter to follow.
 ## Verification
 
 Before the demo:
-1. `omnigents run examples/secure_code_assistant/` — confirm agent starts, read_source and search_docs tools are discovered
+1. `omnigent run examples/secure_code_assistant/` — confirm agent starts, read_source and search_docs tools are discovered
 2. Turn 1: web search succeeds (no taint)
 3. Turn 2: read_source sets `has_proprietary_code` taint
 4. Turn 3: web_search DENIED with the expected message
 5. New session: web search succeeds, then sys_os_write DENIED after web content taint
 6. `--model gpt-4o --harness openai-agents` — same DENY fires
-7. `omnigents attach <session_id>` — second terminal shows history, can type
+7. `omnigent attach <session_id>` — second terminal shows history, can type
 8. Web UI at localhost:8000 shows the session
 9. Full run times to 10-15 minutes

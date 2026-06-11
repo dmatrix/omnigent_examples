@@ -43,8 +43,8 @@ echo 'OPENAI_API_KEY="sk-..."' > .env
 Uses `databricks-claude-sonnet-4-6` via Databricks AI Gateway.
 
 ```bash
-omnigents login https://omnigents-<id>.aws.databricksapps.com
-omnigents run examples/fema_supervisor/ --server https://omnigents-<id>.aws.databricksapps.com
+omnigent login https://omnigent-<id>.aws.databricksapps.com
+omnigent run examples/fema_supervisor/ --server https://omnigent-<id>.aws.databricksapps.com
 ```
 
 The CLI opens an interactive REPL. A Web UI is also available at the Databricks Apps URL.
@@ -58,7 +58,7 @@ Runs fully on your machine with no Databricks dependency.
 ### 1. Configure credentials (one-time)
 
 ```bash
-omnigents setup
+omnigent setup
 ```
 
 ### 2. Export your API keys
@@ -75,16 +75,16 @@ export $(grep ANTHROPIC_API_KEY .env | tr -d '"')
 
 ```bash
 # Uses credentials configured in setup
-omnigents run examples/fema_supervisor/
+omnigent run examples/fema_supervisor/
 
 # Override model and harness at the command line
-omnigents run examples/fema_supervisor/ --model gpt-4o --harness openai-agents
+omnigent run examples/fema_supervisor/ --model gpt-4o --harness openai-agents
 
 # Anthropic Claude
-omnigents run examples/fema_supervisor/ --model claude-sonnet-4-6 --harness claude-sdk
+omnigent run examples/fema_supervisor/ --model claude-sonnet-4-6 --harness claude-sdk
 
 # Fresh session (no persistence)
-omnigents run examples/fema_supervisor/ --no-session
+omnigent run examples/fema_supervisor/ --no-session
 ```
 
 ### Tested Models

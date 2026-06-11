@@ -2,7 +2,7 @@
 
 ## Context
 
-The demo plan at `docs/secure_code_assistant_plan.md` specifies a new agent for a 10-15 min developer demo showcasing OmniAgents' policy engine. The agent demonstrates **session-scoped information flow control**: once proprietary code is read, web search is denied (preventing data leakage); once web content is ingested, file writes are denied (preventing injection). The telco_customer_agent provides the structural template — same policy machinery, same YAML patterns.
+The demo plan at `docs/secure_code_assistant_plan.md` specifies a new agent for a 10-15 min developer demo showcasing OmniAgent' policy engine. The agent demonstrates **session-scoped information flow control**: once proprietary code is read, web search is denied (preventing data leakage); once web content is ingested, file writes are denied (preventing injection). The telco_customer_agent provides the structural template — same policy machinery, same YAML patterns.
 
 ## Files to Create
 
@@ -44,7 +44,7 @@ Create the directory bundle with a working agent before adding any guardrails.
 - **No `guardrails:` section yet**
 
 **Verify:**
-1. `omnigents run examples/secure_code_assistant/` — agent starts
+1. `omnigent run examples/secure_code_assistant/` — agent starts
 2. `Read the file examples/secure_code_assistant/config.yaml` — read_source works
 3. `Search for Python asyncio best practices` — web_search works
 4. `Run ls -la` — shell access works
@@ -137,5 +137,5 @@ Run through the plan doc's verification checklist (lines 423-432):
 4. `web_search` DENIED with expected message
 5. New session: web search succeeds, then `sys_os_write` DENIED after web taint
 6. `--model gpt-4o --harness openai-agents` — same DENY fires (portability)
-7. `omnigents attach <session_id>` — second terminal shows history
+7. `omnigent attach <session_id>` — second terminal shows history
 8. Web UI at localhost:8000 shows the session

@@ -18,7 +18,7 @@ The telco agent demonstrates session-scoped policy enforcement over customer PII
 
 - **`web_search`** -- Builtin web search for external/competitor/market questions. Blocked after PII or financial data access.
 
-The agent works with OmniAgents' PolicyEngine for session-scoped governance: taint labels track what data the agent has seen, DENY policies block web search after PII/financial access, and ASK policies require human approval before outputting combined PII + financial data.
+The agent works with OmniAgent' PolicyEngine for session-scoped governance: taint labels track what data the agent has seen, DENY policies block web search after PII/financial access, and ASK policies require human approval before outputting combined PII + financial data.
 
 The agent also includes a **`customer-report` skill** (`skills/customer-report/SKILL.md`) that generates structured quarterly business reviews with PII redaction rules. The skill is loaded on demand via `load_skill` when the user requests a report.
 
@@ -47,7 +47,7 @@ The default config uses `gpt-5.4` via direct OpenAI API (`openai-agents` harness
 ### 1. Configure credentials (one-time)
 
 ```bash
-omnigents setup
+omnigent setup
 ```
 
 ### 2. Export your API key
@@ -60,22 +60,22 @@ export $(grep OPENAI_API_KEY .env | tr -d '"')
 
 ```bash
 # Uses credentials configured in setup (default: gpt-5.4)
-omnigents run examples/telco_customer_agent/
+omnigent run examples/telco_customer_agent/
 
 # Override model at the command line
-omnigents run examples/telco_customer_agent/ --model gpt-5.4
-omnigents run examples/telco_customer_agent/ --model gpt-5.3-codex
-omnigents run examples/telco_customer_agent/ --model gpt-4o
+omnigent run examples/telco_customer_agent/ --model gpt-5.4
+omnigent run examples/telco_customer_agent/ --model gpt-5.3-codex
+omnigent run examples/telco_customer_agent/ --model gpt-4o
 
 # Anthropic Claude (requires ANTHROPIC_API_KEY)
 export $(grep ANTHROPIC_API_KEY .env | tr -d '"')
-omnigents run examples/telco_customer_agent/ --model claude-sonnet-4-6 --harness claude-sdk
+omnigent run examples/telco_customer_agent/ --model claude-sonnet-4-6 --harness claude-sdk
 
 # Ollama (local, no API key needed)
-omnigents run examples/telco_customer_agent/ --model ollama/llama-3 --harness openai-agents
+omnigent run examples/telco_customer_agent/ --model ollama/llama-3 --harness openai-agents
 
 # Fresh session (no persistence)
-omnigents run examples/telco_customer_agent/ --no-session
+omnigent run examples/telco_customer_agent/ --no-session
 ```
 
 ---

@@ -2,7 +2,7 @@ name: supervisor
 description: A supervisor that delegates coding tasks to a Claude sub-agent.
 
 executor:
-  type: omnigents
+  type: omnigent
   model: databricks-claude-sonnet-4-6
   config:
     harness: claude-sdk
@@ -27,7 +27,7 @@ tools:
       make targeted changes, run tests to verify, and report back what you
       changed and how you verified it.
     executor:
-      type: omnigents
+      type: omnigent
       model: databricks-claude-sonnet-4-6
       config:
         harness: claude-sdk
