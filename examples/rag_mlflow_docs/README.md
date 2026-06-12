@@ -30,20 +30,20 @@ echo 'OPENAI_API_KEY="sk-..."' > .env
 
 ## Run on Databricks
 
-Uses `databricks-gpt-5-5` via Databricks AI Gateway.
+Override the model to route through Databricks AI Gateway:
 
 ```bash
 omnigent login https://omnigent-<id>.aws.databricksapps.com
-omnigent run examples/rag_mlflow_docs/ --server https://omnigent-<id>.aws.databricksapps.com
+omnigent run examples/rag_mlflow_docs/ --model databricks-gpt-5-5 --server https://omnigent-<id>.aws.databricksapps.com
 ```
 
 The CLI opens an interactive REPL. A Web UI is also available at the Databricks Apps URL.
 
 ---
 
-## Run Locally (Non-Databricks)
+## Run Locally
 
-Runs fully on your machine with no Databricks dependency.
+The default config uses `gpt-4o` via direct OpenAI API. Runs fully on your machine with no Databricks dependency.
 
 ### 1. Configure credentials (one-time)
 
@@ -107,4 +107,4 @@ Semantic search over the embedded documents using OpenAI embeddings (`text-embed
 
 ## Known Limitation
 
-The `search_docs` tool correctly filters out-of-scope queries (returns no documents below the relevance threshold), but `databricks-gpt-5-5` ignores the "refuse to answer" prompt instruction and answers from training data anyway. For strict RAG-only behavior where the agent declines out-of-scope questions, use a Claude model (`databricks-claude-sonnet-4-6` with the `claude-sdk` harness) which follows system prompt constraints more reliably.
+The `search_docs` tool correctly filters out-of-scope queries (returns no documents below the relevance threshold), but GPT models tend to ignore the "refuse to answer" prompt instruction and answer from training data anyway. For strict RAG-only behavior where the agent declines out-of-scope questions, use a Claude model (`claude-sonnet-4-6` with the `claude-sdk` harness) which follows system prompt constraints more reliably.

@@ -36,16 +36,18 @@ No setup required -- these agents have no database or API key dependencies (exce
 
 ## Run on Databricks
 
-All YAML agents default to `databricks-claude-sonnet-4-6` via Databricks AI Gateway.
+Override the model to route through Databricks AI Gateway:
 
 ```bash
 omnigent login https://omnigent-<id>.aws.databricksapps.com
-omnigent run examples/yamls/greeter.yaml --server https://omnigent-<id>.aws.databricksapps.com
+omnigent run examples/yamls/greeter.yaml --model databricks-claude-sonnet-4-6 --server https://omnigent-<id>.aws.databricksapps.com
 ```
 
 ---
 
-## Run Locally (Non-Databricks)
+## Run Locally
+
+All YAML agents default to `claude-sonnet-4-6` via direct Anthropic API. No Databricks dependency.
 
 ```bash
 # One-time setup

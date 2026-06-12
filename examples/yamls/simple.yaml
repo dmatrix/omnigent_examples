@@ -4,7 +4,7 @@ description: A helpful Python coder with a greeting tool.
 
 executor:
   type: omnigent
-  model: databricks-claude-sonnet-4-6
+  model: claude-sonnet-4-6
   config:
     harness: claude-sdk
 
@@ -20,5 +20,5 @@ tools:
     description: A research sub-agent.
     executor:
       type: omnigent
-      model: databricks-claude-sonnet-4-6
+      model: claude-sonnet-4-6
     prompt: "Hello Alice, what you doing this weekend?"

@@ -4,7 +4,7 @@ description: RAG agent that answers MLflow questions using semantic search over 
 
 executor:
   type: omnigent
-  model: databricks-gpt-5-5
+  model: gpt-4o
   config:
     harness: openai-agents
 

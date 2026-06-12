@@ -8,7 +8,7 @@ Example agent configurations for the OmniAgent CLI. Flagship examples include a 
 
 - **OmniAgent CLI** -- runs agents from YAML configs
 - **Claude SDK harness** (`harness: claude-sdk`) -- all agents use `databricks-claude-sonnet-4-6`
-- **Python tools** -- `@tool` decorator from `omnigents_client.tools`, auto-discovered from `tools/python/`
+- **Python tools** -- `@tool` decorator from `omnigent_client.tools`, auto-discovered from `tools/python/`
 - **SQLite** -- `run_sql` tool queries `examples/tools/data/fema_disaster.db`; telco tools query `examples/tools/data/telco.db`
 - **OpenAI embeddings** -- `search_policies` tool uses `text-embedding-3-small` for semantic search
 

@@ -40,20 +40,20 @@ echo 'OPENAI_API_KEY="sk-..."' > .env
 
 ## Run on Databricks
 
-Uses `databricks-claude-sonnet-4-6` via Databricks AI Gateway.
+Override the model to route through Databricks AI Gateway:
 
 ```bash
 omnigent login https://omnigent-<id>.aws.databricksapps.com
-omnigent run examples/fema_supervisor/ --server https://omnigent-<id>.aws.databricksapps.com
+omnigent run examples/fema_supervisor/ --model databricks-claude-sonnet-4-6 --server https://omnigent-<id>.aws.databricksapps.com
 ```
 
 The CLI opens an interactive REPL. A Web UI is also available at the Databricks Apps URL.
 
 ---
 
-## Run Locally (Non-Databricks)
+## Run Locally
 
-Runs fully on your machine with no Databricks dependency.
+The default config uses `claude-sonnet-4-6` via direct Anthropic API. Runs fully on your machine with no Databricks dependency.
 
 ### 1. Configure credentials (one-time)
 
@@ -91,8 +91,8 @@ omnigent run examples/fema_supervisor/ --no-session
 
 | Model | Harness | Status |
 |---|---|---|
-| `databricks-claude-sonnet-4-6` | `claude-sdk` | Works (default on Databricks) |
-| `claude-sonnet-4-6` | `claude-sdk` | Works -- accurate SQL and policy search on all query types |
+| `databricks-claude-sonnet-4-6` | `claude-sdk` | Works (via Databricks AI Gateway) |
+| `claude-sonnet-4-6` | `claude-sdk` | Works (default) -- accurate SQL and policy search on all query types |
 | `gpt-4o` | `openai-agents` | Works -- self-corrects SQL, accurate policy search |
 | `gpt-4.1-mini` | `openai-agents` | Works -- occasional SQL column name errors |
 

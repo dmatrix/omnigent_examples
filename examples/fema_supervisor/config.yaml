@@ -4,7 +4,7 @@ description: FEMA disaster response agent with SQL and policy search tools.
 
 executor:
   type: omnigent
-  model: databricks-claude-sonnet-4-6
+  model: claude-sonnet-4-6
   config:
     harness: claude-sdk
 

@@ -413,7 +413,7 @@ When asked to produce a customer report:
 
 ```bash
 python examples/tools/create_telco_db.py
-omniagent run examples/telco_customer_agent/
+omnigent run examples/telco_customer_agent/
 ```
 
 ```
@@ -466,7 +466,7 @@ Build and test incrementally. Each stage adds one capability and is tested befor
 **Test:**
 ```bash
 python examples/tools/create_telco_db.py
-omniagent run examples/telco_customer_agent/
+omnigent run examples/telco_customer_agent/
 ```
 ```
 What plans are available and what do they cost?
@@ -709,16 +709,13 @@ Stage 10 (docs)
 
 Each stage is independently testable. If Stage 6 (DENY) fails, you still have a working 3-tool agent from Stage 4. If Stage 7 (ASK) fails, DENY enforcement from Stage 6 still works. The skill and strict prompt are additive — they enhance but don't break the core functionality.
 
-## Testing with Non-Databricks OpenAI Models
+## Testing with OpenAI Models
 
-The telco agent config defaults to `databricks-gpt-5-5`, but you can test every stage with direct OpenAI models using CLI overrides — no separate project structure needed.
+The telco agent config defaults to `claude-sonnet-4-6` with `claude-sdk`, but you can test every stage with OpenAI models using CLI overrides:
 
 ### Prerequisites (one-time)
 
 ```bash
-# Disable Databricks global config (prevents forced Databricks routing)
-mv ~/.omniagent/config.yaml ~/.omniagent/config.yaml.bak
-
 # Export OpenAI API key from .env
 export $(grep OPENAI_API_KEY .env | tr -d '"')
 ```
@@ -728,19 +725,18 @@ export $(grep OPENAI_API_KEY .env | tr -d '"')
 Same `config.yaml`, different model — override at the command line:
 
 ```bash
-omniagent run examples/telco_customer_agent/ --server "" --model gpt-4o --harness openai-agents
+omnigent run examples/telco_customer_agent/ --model gpt-4o --harness openai-agents
 ```
 
-- `--server ""` — disables Databricks-hosted server, runs fully local
 - `--model gpt-4o` — overrides `executor.model` in config.yaml
-- `--harness openai-agents` — overrides `executor.config.harness` (already `openai-agents` by default, but explicit is clearer)
+- `--harness openai-agents` — overrides `executor.config.harness`
 
 ### Per-stage test commands
 
 The command is the same for every stage — what changes is the tools and policies present in `config.yaml` at each stage:
 
 ```bash
-omniagent run examples/telco_customer_agent/ --server "" --model gpt-4o --harness openai-agents
+omnigent run examples/telco_customer_agent/ --model gpt-4o --harness openai-agents
 ```
 
 **Stage 1** (plans tool only):
@@ -776,12 +772,6 @@ What plans are available?   ← should route to query_plans, not web_search
 | `gpt-4o` | `--model gpt-4o` | Recommended — accurate SQL, good tool routing |
 | `gpt-4.1-mini` | `--model gpt-4.1-mini` | Budget option — occasional SQL column name errors |
 | `gpt-5.4` | `--model gpt-5.4` | Latest — untested with telco agent |
-
-### Restore Databricks config
-
-```bash
-mv ~/.omniagent/config.yaml.bak ~/.omniagent/config.yaml
-```
 
 ## Verification Checklist (cumulative)
 

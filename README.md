@@ -54,20 +54,20 @@ python examples/tools/create_telco_db.py   # Telco agent (5 tables, 125 records)
 
 ## Run on Databricks
 
-Connect to a Databricks-hosted OmniAgent server. Models route through Databricks AI Gateway.
+Connect to a Databricks-hosted OmniAgent server. Override the model to route through Databricks AI Gateway:
 
 ```bash
 # Authenticate with the remote server
 omnigent login https://omnigent-<id>.aws.databricksapps.com
 
-# FEMA disaster agent (databricks-claude-sonnet-4-6)
-omnigent run examples/fema_supervisor/ --server https://omnigent-<id>.aws.databricksapps.com
+# FEMA disaster agent
+omnigent run examples/fema_supervisor/ --model databricks-claude-sonnet-4-6 --server https://omnigent-<id>.aws.databricksapps.com
 
-# MLflow docs RAG agent (databricks-gpt-5-5)
-omnigent run examples/rag_mlflow_docs/ --server https://omnigent-<id>.aws.databricksapps.com
+# MLflow docs RAG agent
+omnigent run examples/rag_mlflow_docs/ --model databricks-gpt-5-5 --server https://omnigent-<id>.aws.databricksapps.com
 
-# Telco customer agent (gpt-5.4)
-omnigent run examples/telco_customer_agent/ --server https://omnigent-<id>.aws.databricksapps.com
+# Telco customer agent
+omnigent run examples/telco_customer_agent/ --model databricks-claude-sonnet-4-6 --server https://omnigent-<id>.aws.databricksapps.com
 ```
 
 The CLI opens an interactive REPL. A Web UI is also available at the Databricks Apps URL.
@@ -80,9 +80,9 @@ omnigent config set --global server=https://omnigent-<id>.aws.databricksapps.com
 
 ---
 
-## Run Locally (Non-Databricks)
+## Run Locally
 
-Runs fully on your machine with no Databricks dependency. The CLI auto-spawns a local background server.
+All example configs default to direct API models (Anthropic or OpenAI). Runs fully on your machine with no Databricks dependency. The CLI auto-spawns a local background server.
 
 ### 1. Configure credentials (one-time)
 
@@ -164,9 +164,9 @@ Each example README has a full list of queries:
 
 ## Alternative LLM Providers
 
-By default the agent uses `databricks-claude-sonnet-4-6` via Databricks AI Gateway. You can swap the LLM provider while keeping the same tools and prompts.
+By default each agent uses a direct API model (Anthropic or OpenAI). You can swap the LLM provider while keeping the same tools and prompts.
 
-**Note:** When using the default Databricks-hosted server (no `--server` flag), `databricks auth login` is required for the runner infrastructure, regardless of which LLM provider you choose. Use `--server ""` to run fully locally -- see [Run Locally](#run-locally-non-databricks) above.
+**Note:** When using a Databricks-hosted server (`--server` flag), `databricks auth login` is required. Without `--server`, the CLI runs fully locally -- see [Run Locally](#run-locally) above.
 
 To use a different model, change the `executor` block in `config.yaml`:
 
@@ -227,7 +227,7 @@ omnigent run examples/fema_supervisor/ --model gpt-5 --harness openai-agents
 | **Gateway** | Any model via OpenRouter, LiteLLM, vLLM, Azure | `openai-agents` or `claude-sdk` | Gateway `base_url` + key |
 | **Ollama (local)** | `ollama/llama-3` | `openai-agents` | None |
 
-Databricks AI Gateway models require `databricks auth login`. Non-Databricks models (Anthropic, OpenAI, Ollama) can run fully locally with `--server ""` -- see [Run Locally](#run-locally-non-databricks). `OPENAI_API_KEY` is always required regardless of LLM provider (the `search_policies` tool uses it for embeddings).
+Databricks AI Gateway models require `databricks auth login` and `--server`. Non-Databricks models (Anthropic, OpenAI, Ollama) run fully locally -- see [Run Locally](#run-locally). `OPENAI_API_KEY` is always required regardless of LLM provider (the `search_policies` tool uses it for embeddings).
 
 No Python tool code changes are needed -- the tools are provider-independent.
 
@@ -259,7 +259,7 @@ description: FEMA disaster response agent with SQL and policy search tools.
 
 executor:
   type: omnigent
-  model: databricks-claude-sonnet-4-6
+  model: claude-sonnet-4-6
   config:
     harness: claude-sdk
 

@@ -35,7 +35,22 @@ No database setup needed. The agent reads source files from the current working 
 
 ---
 
+## Run on Databricks
+
+Override the model to route through Databricks AI Gateway:
+
+```bash
+omnigent login https://omnigent-<id>.aws.databricksapps.com
+omnigent run examples/secure_code_assistant/ --model databricks-claude-sonnet-4-6 --server https://omnigent-<id>.aws.databricksapps.com
+```
+
+The CLI opens an interactive REPL. A Web UI is also available at the Databricks Apps URL.
+
+---
+
 ## Run Locally
+
+The default config uses `claude-sonnet-4-6` via direct Anthropic API. No Databricks dependency.
 
 ### 1. Configure credentials (one-time)
 

@@ -68,7 +68,7 @@ guardrails:
     taint_code_read:
       type: function
       function:
-        path: omnigents.policies.function.make_fixed_action_callable
+        path: omnigent.policies.function.make_fixed_action_callable
         arguments:
           action: allow
           set_labels:
@@ -80,7 +80,7 @@ guardrails:
     taint_web_search:
       type: function
       function:
-        path: omnigents.policies.function.make_fixed_action_callable
+        path: omnigent.policies.function.make_fixed_action_callable
         arguments:
           action: allow
           set_labels:
@@ -96,7 +96,7 @@ guardrails:
       condition:
         has_proprietary_code: "True"
       function:
-        path: omnigents.policies.function.make_fixed_action_callable
+        path: omnigent.policies.function.make_fixed_action_callable
         arguments:
           action: deny
           reason: |
@@ -111,7 +111,7 @@ guardrails:
       condition:
         has_external_content: "True"
       function:
-        path: omnigents.policies.function.make_fixed_action_callable
+        path: omnigent.policies.function.make_fixed_action_callable
         arguments:
           action: deny
           reason: |
@@ -127,7 +127,7 @@ guardrails:
     cost_guard:
       type: function
       function:
-        path: omnigents.policies.builtins.cost.cost_budget
+        path: omnigent.policies.builtins.cost.cost_budget
         arguments:
           max_cost_usd: 5.0
           ask_thresholds_usd: [1.0]
@@ -150,7 +150,7 @@ prompt: |
 
 **`tools/python/read_source.py`** — Simple file reader:
 ```python
-from omnigents_client.tools import tool
+from omnigent_client.tools import tool
 
 @tool
 def read_source(file_path: str) -> str:
@@ -170,7 +170,7 @@ def read_source(file_path: str) -> str:
 
 **`tools/python/search_docs.py`** — Web doc search (thin wrapper around web search, for taint separation):
 ```python
-from omnigents_client.tools import tool
+from omnigent_client.tools import tool
 
 @tool
 def search_docs(query: str) -> str:

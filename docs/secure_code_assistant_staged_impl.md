@@ -27,7 +27,7 @@ examples/secure_code_assistant/
 Create the directory bundle with a working agent before adding any guardrails.
 
 **Create `examples/secure_code_assistant/tools/python/read_source.py`**
-- Follow the tool pattern from `examples/greeter/tools/python/greet.py`: module docstring, `from __future__ import annotations`, `from omnigents_client.tools import tool`, `@tool` decorator, `:param`/`:returns:` docstring
+- Follow the tool pattern from `examples/greeter/tools/python/greet.py`: module docstring, `from __future__ import annotations`, `from omnigent_client.tools import tool`, `@tool` decorator, `:param`/`:returns:` docstring
 - Use `os.getcwd()` not `__file__` (per CLAUDE.md known issue about temp paths)
 - Implementation from plan doc lines 152-169
 
@@ -58,7 +58,7 @@ Add the two monotonic labels and the two taint policies. Everything still allowe
 **Update `config.yaml`** — add `guardrails:` section with:
 - `labels:` — `has_proprietary_code` and `has_external_content` (both initial `"False"`, values `["False", "True"]`, monotonic `increasing`)
 - `policies:` — `taint_code_read` (sets `has_proprietary_code` on `read_source`) and `taint_web_search` (sets `has_external_content` on `web_search, search_docs`)
-- Pattern: `omnigents.policies.function.make_fixed_action_callable` with `action: allow`, `set_labels`, `on_phases: [tool_call]`, `on_tools: [...]`
+- Pattern: `omnigent.policies.function.make_fixed_action_callable` with `action: allow`, `set_labels`, `on_phases: [tool_call]`, `on_tools: [...]`
 - Each policy needs top-level `set_labels: [label_name]` (framework convention from telco config)
 
 **Verify:**
@@ -104,7 +104,7 @@ Add `block_write_after_web` — completes bidirectional control.
 Add `cost_guard` policy.
 
 **Update `config.yaml`** — add to `policies:`:
-- `omnigents.policies.builtins.cost.cost_budget` with `max_cost_usd: 5.0`, `ask_thresholds_usd: [1.0]`
+- `omnigent.policies.builtins.cost.cost_budget` with `max_cost_usd: 5.0`, `ask_thresholds_usd: [1.0]`
 - Known risk: ASK threshold may not fire on claude-sdk (CLAUDE.md known issue). The $5 hard cap still works.
 
 **Verify:** Run several queries. If the $1 ASK fires, approve and continue. If it doesn't, note as known limitation.

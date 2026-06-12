@@ -4,7 +4,7 @@ description: Claude coding implementer — reads, edits, and tests code.
 
 executor:
   type: omnigent
-  model: databricks-claude-sonnet-4-6
+  model: claude-sonnet-4-6
   config:
     harness: claude-sdk
 
