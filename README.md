@@ -1,4 +1,4 @@
-# OmniAgent Harness
+# OmniAgent Harness Examples
 
 **YAML-defined AI agents for the OmniAgent CLI -- from single-tool assistants to multi-tool disaster response agents and secure code assistants.**
 
