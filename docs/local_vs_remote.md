@@ -12,17 +12,14 @@
 
 ### Available Harnesses
 
-| Harness | CLI shorthand | LLM |
-|---------|---------------|-----|
-| `claude-sdk` | -- | Claude (Anthropic / Databricks / Gateway), headless |
-| `claude-native` | `omnigent claude` | Claude Code TUI (native terminal) |
-| `openai-agents` | -- | GPT / OpenAI-compatible (OpenAI / Databricks / Gateway) |
-| `codex` | -- | GPT / OpenAI-compatible, headless (Codex app-server protocol) |
-| `codex-native` | `omnigent codex` | Codex TUI (native terminal) |
-| `pi` | -- | Pi coding agent (`@earendil-works/pi-coding-agent`) |
-| `databricks_supervisor` | -- | Databricks Agent Bricks Supervisor API (HTTP/SSE, no third-party SDK) |
+| Harness | LLM |
+|---------|-----|
+| `claude-sdk` | Claude (Anthropic / Databricks / Gateway) |
+| `openai-agents` | GPT / OpenAI-compatible (OpenAI / Databricks / Gateway) |
+| `codex` | GPT / OpenAI-compatible (Codex app-server protocol) |
+| `pi` | Pi coding agent (`@earendil-works/pi-coding-agent`) |
 
-Aliases: `claude` → `claude-sdk`, `openai-agents-sdk` → `openai-agents`. The reversed spellings `native-claude` and `native-codex` are also accepted.
+These are the harnesses used by the example agents in this repo. Omnigent supports additional harnesses (`claude-native`, `codex-native`, `databricks_supervisor`) — see the [omnigent repo](https://github.com/omnigent-ai/omnigent) for the full list.
 
 ### Wire Protocols
 
