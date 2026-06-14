@@ -203,10 +203,30 @@ executor:
       base_url: http://localhost:11434/v1
 ```
 
+**Codex harness** (requires `OPENAI_API_KEY` in `.env`):
+```yaml
+executor:
+  type: omnigent
+  model: gpt-4o
+  config:
+    harness: codex
+```
+
+**Pi harness** (requires Pi CLI: `npm i -g @earendil-works/pi-coding-agent`):
+```yaml
+executor:
+  type: omnigent
+  model: databricks-claude-sonnet-4-6
+  config:
+    harness: pi
+```
+
 Or override at the command line without editing the YAML:
 ```bash
 omnigent run examples/fema_supervisor/ --model claude-sonnet-4-6 --harness claude-sdk
 omnigent run examples/fema_supervisor/ --model gpt-5 --harness openai-agents
+omnigent run examples/fema_supervisor/ --model gpt-4o --harness codex
+omnigent run examples/fema_supervisor/ --harness pi
 ```
 
 ### Supported models
@@ -216,19 +236,21 @@ omnigent run examples/fema_supervisor/ --model gpt-5 --harness openai-agents
 | **Databricks AI Gateway** | `databricks-claude-sonnet-4-6` | `claude-sdk` | -- (Databricks auth only) |
 | | `databricks-claude-opus-4-7` | `claude-sdk` | -- |
 | | `databricks-claude-opus-4-8` | `claude-sdk` | -- |
-| | `databricks-gpt-5-5` | `openai-agents` | -- |
-| | `databricks-gpt-5-4` | `openai-agents` | -- |
-| | `databricks-gpt-5-4-mini` | `openai-agents` | -- |
+| | `databricks-gpt-5-5` | `openai-agents` or `codex` | -- |
+| | `databricks-gpt-5-4` | `openai-agents` or `codex` | -- |
+| | `databricks-gpt-5-4-mini` | `openai-agents` or `codex` | -- |
 | | `databricks-kimi-k2-6` | `openai-agents` | -- |
 | | `databricks-meta-llama-3.3-70b-instruct` | `openai-agents` | -- |
+| | `databricks-claude-sonnet-4-6` | `pi` | -- |
 | **Anthropic (direct)** | `claude-sonnet-4-6` | `claude-sdk` | `ANTHROPIC_API_KEY` in `.env` |
 | | `claude-opus-4-7` | `claude-sdk` | `ANTHROPIC_API_KEY` in `.env` |
 | | `claude-haiku-4-5` | `claude-sdk` | `ANTHROPIC_API_KEY` in `.env` |
-| **OpenAI (direct)** | `gpt-4o` | `openai-agents` | `OPENAI_API_KEY` in `.env` |
-| | `gpt-5.3-codex` | `openai-agents` | `OPENAI_API_KEY` in `.env` |
-| | `gpt-5.4` | `openai-agents` | `OPENAI_API_KEY` in `.env` |
-| | `gpt-5.4-mini` | `openai-agents` | `OPENAI_API_KEY` in `.env` |
-| **Gateway** | Any model via OpenRouter, LiteLLM, vLLM, Azure | `openai-agents` or `claude-sdk` | Gateway `base_url` + key |
+| **OpenAI (direct)** | `gpt-4o` | `openai-agents` or `codex` | `OPENAI_API_KEY` in `.env` |
+| | `gpt-5.3-codex` | `openai-agents` or `codex` | `OPENAI_API_KEY` in `.env` |
+| | `gpt-5.4` | `openai-agents` or `codex` | `OPENAI_API_KEY` in `.env` |
+| | `gpt-5.4-mini` | `openai-agents` or `codex` | `OPENAI_API_KEY` in `.env` |
+| **Gateway** | Any model via OpenRouter, LiteLLM, vLLM, Azure | `openai-agents`, `claude-sdk`, `codex`, or `pi` | Gateway `base_url` + key |
+| **Pi** | Claude or OpenAI models via Pi agent | `pi` | Pi CLI (`@earendil-works/pi-coding-agent`) |
 | **Ollama (local)** | `ollama/llama-3` | `openai-agents` | None |
 
 Databricks AI Gateway models require `databricks auth login` and `--server`. Non-Databricks models (Anthropic, OpenAI, Ollama) run fully locally -- see [Run Locally](#run-locally). `OPENAI_API_KEY` is always required regardless of LLM provider (the `search_policies` tool uses it for embeddings).
