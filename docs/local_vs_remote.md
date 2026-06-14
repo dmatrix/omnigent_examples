@@ -14,12 +14,15 @@
 
 | Harness | CLI shorthand | LLM |
 |---------|---------------|-----|
-| `claude-sdk` | -- | Claude (Anthropic / Databricks), headless |
-| `native-claude` | `omnigent claude` | Claude Code TUI (native terminal) |
+| `claude-sdk` | -- | Claude (Anthropic / Databricks / Gateway), headless |
+| `claude-native` | `omnigent claude` | Claude Code TUI (native terminal) |
 | `openai-agents` | -- | GPT / OpenAI-compatible (OpenAI / Databricks / Gateway) |
-| `codex` | -- | Codex CLI |
-| `native-codex` | `omnigent codex` | Codex TUI (native terminal) |
-| `pi` | -- | Perplexity |
+| `codex` | -- | GPT / OpenAI-compatible, headless (Codex app-server protocol) |
+| `codex-native` | `omnigent codex` | Codex TUI (native terminal) |
+| `pi` | -- | Pi coding agent (`@earendil-works/pi-coding-agent`) |
+| `databricks_supervisor` | -- | Databricks Agent Bricks Supervisor API (HTTP/SSE, no third-party SDK) |
+
+Aliases: `claude` → `claude-sdk`, `openai-agents-sdk` → `openai-agents`. The reversed spellings `native-claude` and `native-codex` are also accepted.
 
 ### Wire Protocols
 
