@@ -18,7 +18,7 @@ The telco agent demonstrates session-scoped policy enforcement over customer PII
 
 - **`web_search`** -- Builtin web search for external/competitor/market questions. Blocked after PII or financial data access.
 
-The agent works with OmniAgent' PolicyEngine for session-scoped governance: taint labels track what data the agent has seen, DENY policies block web search after PII/financial access, and ASK policies require human approval before outputting combined PII + financial data.
+The agent works with OmniAgent's PolicyEngine for session-scoped governance: taint labels track what data the agent has seen, DENY policies block web search after PII/financial access, and ASK policies require human approval before outputting combined PII + financial data.
 
 The agent also includes a **`customer-report` skill** (`skills/customer-report/SKILL.md`) that generates structured quarterly business reviews with PII redaction rules. The skill is loaded on demand via `load_skill` when the user requests a report.
 

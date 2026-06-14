@@ -2,7 +2,7 @@
 
 ## Context
 
-The demo plan at `docs/secure_code_assistant_plan.md` specifies a new agent for a 10-15 min developer demo showcasing OmniAgent' policy engine. The agent demonstrates **session-scoped information flow control**: once proprietary code is read, web search is denied (preventing data leakage); once web content is ingested, file writes are denied (preventing injection). The telco_customer_agent provides the structural template — same policy machinery, same YAML patterns.
+The demo plan at `docs/secure_code_assistant_plan.md` specifies a new agent for a 10-15 min developer demo showcasing Omnigent's policy engine. The agent demonstrates **session-scoped information flow control**: once proprietary code is read, web search is denied (preventing data leakage); once web content is ingested, file writes are denied (preventing injection). The telco_customer_agent provides the structural template — same policy machinery, same YAML patterns.
 
 ## Files to Create
 

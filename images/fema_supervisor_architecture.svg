@@ -68,7 +68,7 @@
   <circle cx="150" cy="600" r="50" fill="#48c9b0" opacity="0.04"/>
 
   <!-- Title -->
-  <text x="450" y="38" text-anchor="middle" fill="#fff" font-size="18" font-weight="700" letter-spacing="1">FEMA Disaster Supervisor — OmniAgents Architecture</text>
+  <text x="450" y="38" text-anchor="middle" fill="#fff" font-size="18" font-weight="700" letter-spacing="1">FEMA Disaster Supervisor — Omnigent Architecture</text>
   <text x="450" y="58" text-anchor="middle" fill="#8899aa" font-size="11">YAML-Defined Multi-Agent Orchestration with Claude SDK Harness</text>
 
   <!-- ============ MLflow Trace Backdrop ============ -->
@@ -168,7 +168,7 @@
   <!-- ============ Footer Badges ============ -->
   <g transform="translate(0, 700)">
     <rect x="95" y="0" width="110" height="20" rx="10" fill="#e94560" opacity="0.25"/>
-    <text x="150" y="14" text-anchor="middle" fill="#e94560" font-size="9" font-weight="600">OmniAgents CLI</text>
+    <text x="150" y="14" text-anchor="middle" fill="#e94560" font-size="9" font-weight="600">Omnigent CLI</text>
 
     <rect x="220" y="0" width="100" height="20" rx="10" fill="#4fc3f7" opacity="0.25"/>
     <text x="270" y="14" text-anchor="middle" fill="#4fc3f7" font-size="9" font-weight="600">Claude SDK</text>

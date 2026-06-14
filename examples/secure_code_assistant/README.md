@@ -8,7 +8,7 @@
 
 ## Overview
 
-The secure code assistant demonstrates bidirectional information flow control using OmniAgent' policy engine. It has two custom tools and one builtin:
+The secure code assistant demonstrates bidirectional information flow control using OmniAgent's policy engine. It has two custom tools and one builtin:
 
 - **`read_source`** -- Reads source files from the project directory. Triggers the `has_proprietary_code` label.
 

@@ -108,7 +108,7 @@
   <circle cx="636" cy="91" r="4" fill="#e74c3c" opacity="0.7"/>
   <circle cx="650" cy="91" r="4" fill="#f5a623" opacity="0.7"/>
   <!-- Content -->
-  <text x="740" y="122" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">OmniAgents Web UI</text>
+  <text x="740" y="122" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">Omnigent Web UI</text>
   <text x="740" y="140" text-anchor="middle" fill="#85c1e9" font-size="8">Same session, in the browser</text>
   <text x="740" y="158" text-anchor="middle" fill="#5dade2" font-size="8">Full conversation + label state</text>
   <text x="740" y="176" text-anchor="middle" fill="#4fc3f7" font-size="8">Works from phone on deployed instance</text>
@@ -130,9 +130,9 @@
   <polygon points="735,266 745,266 740,276" fill="#5dade2" opacity="0.6"/>
   <text x="752" y="245" fill="#5dade2" font-size="7">HTTP</text>
 
-  <!-- ============ OmniAgents Server (auto-spawned) ============ -->
+  <!-- ============ Omnigent Server (auto-spawned) ============ -->
   <rect x="60" y="276" width="780" height="50" rx="10" fill="url(#serverG)" filter="url(#shadow)"/>
-  <text x="450" y="298" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">OmniAgents Server</text>
+  <text x="450" y="298" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">Omnigent Server</text>
   <text x="450" y="314" text-anchor="middle" fill="#a8e6cf" font-size="9">Auto-spawned by `omnigents run`  |  Manages sessions  |  Serves Web UI at localhost:8000</text>
 
   <!-- ============ Arrow: Server → Session ============ -->

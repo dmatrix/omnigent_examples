@@ -51,7 +51,7 @@
   <circle cx="820" cy="450" r="55" fill="#bb86fc" opacity="0.04"/>
 
   <!-- Title -->
-  <text x="450" y="38" text-anchor="middle" fill="#fff" font-size="18" font-weight="700" letter-spacing="1">MLflow Docs RAG Agent — OmniAgents Architecture</text>
+  <text x="450" y="38" text-anchor="middle" fill="#fff" font-size="18" font-weight="700" letter-spacing="1">MLflow Docs RAG Agent — Omnigent Architecture</text>
   <text x="450" y="58" text-anchor="middle" fill="#8899aa" font-size="11">Self-Building RAG Pipeline with Databricks OpenAI (gpt-5.5)</text>
 
   <!-- ============ User Query ============ -->
@@ -121,7 +121,7 @@
   <!-- ============ Footer Badges ============ -->
   <g transform="translate(0, 558)">
     <rect x="145" y="0" width="130" height="20" rx="10" fill="#2980b9" opacity="0.25"/>
-    <text x="210" y="14" text-anchor="middle" fill="#2980b9" font-size="9" font-weight="600">OmniAgents CLI</text>
+    <text x="210" y="14" text-anchor="middle" fill="#2980b9" font-size="9" font-weight="600">Omnigent CLI</text>
 
     <rect x="290" y="0" width="120" height="20" rx="10" fill="#f5a623" opacity="0.25"/>
     <text x="350" y="14" text-anchor="middle" fill="#f5a623" font-size="9" font-weight="600">OpenAI Agents</text>

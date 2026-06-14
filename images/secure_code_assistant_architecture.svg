@@ -65,7 +65,7 @@
   <circle cx="750" cy="100" r="35" fill="#48c9b0" opacity="0.04"/>
 
   <!-- Title -->
-  <text x="450" y="38" text-anchor="middle" fill="#fff" font-size="18" font-weight="700" letter-spacing="1">Secure Code Assistant — OmniAgents with Information Flow Control</text>
+  <text x="450" y="38" text-anchor="middle" fill="#fff" font-size="18" font-weight="700" letter-spacing="1">Secure Code Assistant — Omnigent with Information Flow Control</text>
   <text x="450" y="58" text-anchor="middle" fill="#8899aa" font-size="11">Bidirectional Taint Tracking  |  Code Leakage Prevention  |  Injection Protection</text>
 
   <!-- ============ User Query ============ -->
@@ -208,7 +208,7 @@
   <!-- ============ Footer Badges ============ -->
   <g transform="translate(0, 762)">
     <rect x="95" y="0" width="120" height="16" rx="8" fill="#2980b9" opacity="0.25"/>
-    <text x="155" y="12" text-anchor="middle" fill="#2980b9" font-size="8" font-weight="600">OmniAgents CLI</text>
+    <text x="155" y="12" text-anchor="middle" fill="#2980b9" font-size="8" font-weight="600">Omnigent CLI</text>
 
     <rect x="230" y="0" width="110" height="16" rx="8" fill="#e94560" opacity="0.25"/>
     <text x="285" y="12" text-anchor="middle" fill="#e94560" font-size="8" font-weight="600">PolicyEngine</text>

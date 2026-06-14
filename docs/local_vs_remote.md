@@ -1,14 +1,14 @@
-# OmniAgent: Local vs Remote — All Components Explained
+# Omnigent: Local vs Remote — All Components Explained
 
 ## The 5 Components
 
 | Component | Role | Source File | Framework |
 |-----------|------|-------------|-----------|
-| **OmniAgent Server** | Agent registry, conversation persistence, session/label state, policy orchestration, sub-agent dispatch, runner tunnel routing | `omniagent/server/app.py` | FastAPI + Uvicorn |
-| **Runner** | Spawns and manages harness subprocesses, resolves tool calls (priorities 1-5), manages OS environments/sandboxes, streams SSE events to server | `omniagent/runner/app.py` | FastAPI |
-| **Harness** | Drives the LLM-tool loop for one SDK — translates SDK events into standard SSE format, per-conversation in-memory state | `omniagent/inner/*_harness.py` | FastAPI wrappers |
+| **Omnigent Server** | Agent registry, conversation persistence, session/label state, policy orchestration, sub-agent dispatch, runner tunnel routing | `omnigent/server/app.py` | FastAPI + Uvicorn |
+| **Runner** | Spawns and manages harness subprocesses, resolves tool calls (priorities 1-5), manages OS environments/sandboxes, streams SSE events to server | `omnigent/runner/app.py` | FastAPI |
+| **Harness** | Drives the LLM-tool loop for one SDK — translates SDK events into standard SSE format, per-conversation in-memory state | `omnigent/inner/*_harness.py` | FastAPI wrappers |
 | **Web UI** | Browser-based chat interface with terminal emulation (xterm.js) and code editor (Monaco), connects to server via HTTP/SSE | Built into the server (or `ap-web/` for development) | React 19 + Vite |
-| **PolicyEngine** | Per-session policy evaluation — checks labels, enforces ALLOW/DENY/ASK verdicts, persists labels to `conversation_labels` table | `omniagent/runtime/policies/engine.py` | Python class (in runner) |
+| **PolicyEngine** | Per-session policy evaluation — checks labels, enforces ALLOW/DENY/ASK verdicts, persists labels to `conversation_labels` table | `omnigent/runtime/policies/engine.py` | Python class (in runner) |
 
 ### Available Harnesses
 
@@ -30,18 +30,18 @@
 | Runner to Harness | REST/SSE subset | UDS (Unix Domain Socket) |
 | Harness to LLM | SDK-native | Claude SDK / OpenAI Agents SDK |
 
-**UDS (Unix Domain Socket):** A local inter-process communication channel that uses a file path (e.g. `/tmp/omniagent-harness-abc123.sock`) instead of a TCP port. The runner spawns each harness as a subprocess and communicates with it over a UDS — faster and more secure than TCP because the traffic never touches the network stack. It stays entirely within the laptop's kernel.
+**UDS (Unix Domain Socket):** A local inter-process communication channel that uses a file path (e.g. `/tmp/omnigent-harness-abc123.sock`) instead of a TCP port. The runner spawns each harness as a subprocess and communicates with it over a UDS — faster and more secure than TCP because the traffic never touches the network stack. It stays entirely within the laptop's kernel.
 
 ---
 
 ## Remote Mode (Default — Databricks-Hosted)
 
-![Remote Architecture](../images/omniagent_remote_architecture.svg)
+![Remote Architecture](../images/omnigent_remote_architecture.svg)
 
 ### How it works
 
 ```
-Browser ──HTTPS──▶ Databricks App (OmniAgent Server + Web UI)
+Browser ──HTTPS──▶ Databricks App (Omnigent Server + Web UI)
                           │
                     WebSocket Tunnel
                           │
@@ -56,7 +56,7 @@ Terminal REPL ──▶ Runner (laptop) ──▶ Harness (laptop) ──▶ AI 
 
 | Component | Location | Address |
 |-----------|----------|---------|
-| **OmniAgent Server** | Databricks App | `omnigent-3272836215725701.aws.databricksapps.com` |
+| **Omnigent Server** | Databricks App | `omnigent-3272836215725701.aws.databricksapps.com` |
 | **Web UI** | Built into the Databricks App | Same URL |
 | **Database** | PostgreSQL on Databricks | Managed |
 | **Runner** | User's laptop | Outbound WebSocket tunnel to server |
@@ -119,12 +119,12 @@ Override with `--model <name>`, e.g. `--model databricks-claude-sonnet-4-6`. Sti
 
 ## Fully Local Mode
 
-![Local Architecture](../images/omniagent_local_architecture.svg)
+![Local Architecture](../images/omnigent_local_architecture.svg)
 
 ### How it works
 
 ```
-Browser ──HTTP──▶ OmniAgent Server + Web UI (localhost:8000)
+Browser ──HTTP──▶ Omnigent Server + Web UI (localhost:8000)
                           │
                      localhost
                           │
@@ -139,7 +139,7 @@ Terminal REPL ──▶ Runner (localhost) ──▶ Harness ──▶ Direct AP
 
 | Component | Location | Address |
 |-----------|----------|---------|
-| **OmniAgent Server** | localhost | `localhost:8000` |
+| **Omnigent Server** | localhost | `localhost:8000` |
 | **Web UI** | Built into server | `localhost:8000` |
 | **Database** | Local SQLite | `~/.omnigent/omnigent.db` |
 | **Runner** | localhost | Connects to `localhost:8000` |

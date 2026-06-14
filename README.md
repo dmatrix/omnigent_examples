@@ -1,6 +1,9 @@
-# OmniAgent Harness Examples
+# Omnigent Examples
 
-**YAML-defined AI agents for the OmniAgent CLI -- from single-tool assistants to multi-tool disaster response agents and secure code assistants.**
+**YAML-defined AI agents for the Omnigent Meta Harness -- from single-tool assistants to multi-tool disaster response agents, telco customer support, and secure code assistants.**
+
+These examples help you get started and learn the nuances of what omnigent offers. Both
+versions can run locally or with a Databricks hosted Omnigent Server. 
 
 [![omnigent.ai](https://img.shields.io/badge/omnigent.ai-Visit-00C853)](https://omnigent.ai)
 ![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
@@ -12,10 +15,10 @@
 
 ## Overview
 
-This repository contains example agent configurations for the [OmniAgent](https://github.com/databricks/omniagent) CLI. Each example defines an AI agent in YAML -- specifying the executor, system prompt, and tools. Three flagship examples demonstrate different patterns:
+This repository contains example agent configurations for the [Omnigent](https://github.com/omnigent) meta-harness. Each example defines an AI agent in YAML -- specifying the executor, system prompt, and tools. Four flagship examples demonstrate different patterns:
 
-1. **[Telco Customer Agent](examples/telco_customer_agent/)** -- multi-tool customer data agent with PII/financial policy labels
-2. **[Secure Code Assistant](examples/secure_code_assistant/)** -- information flow control (blocks web search after code read, blocks file writes after web 
+1. **[Secure Code Assistant](examples/secure_code_assistant/)** -- information flow control blocks web search after private code read, blocks file writes after web content reads, and enforces ALLOW, DENY, ASK policy guardrails, and budget control costs at session level. 
+2. **[Telco Customer Agent](examples/telco_customer_agent/)** -- multi-tool customer data agent with PII/financial policy labels and control
 3. **[FEMA Disaster Agent](examples/fema_supervisor/)** -- multi-tool routing (text-to-SQL + semantic policy search)
 4. **[MLflow Docs RAG Agent](examples/rag_mlflow_docs/)** -- self-building RAG pipeline (embeds documents, then searches them)
 ---
@@ -25,11 +28,11 @@ This repository contains example agent configurations for the [OmniAgent](https:
 ### Prerequisites
 
 - Python 3.12+
-- The `omnigent` CLI installed (`pip install omnigent` or editable from `agent-framework`)
+- The `omnigent` CLI installed (`pip install omnigent`)
 - `OPENAI_API_KEY` in a `.env` file at the repo root (needed for embeddings in the FEMA and RAG agents)
 
 ```bash
-echo 'OPENAI_API_KEY="sk-..."' > .env
+echo 'ANTHROPIC_API_KEY="sk-..."' > .env
 ```
 
 ### First-time setup
@@ -40,7 +43,7 @@ Run the interactive setup to configure your model credentials:
 omnigent setup
 ```
 
-This walks you through choosing providers for each harness (Claude, OpenAI, Ollama, etc.) and stores credentials in `~/.omnigent/config.yaml`. View your configuration at any time with `omnigent config list`.
+This walks you through choosing providers for each harness (Claude, OpenAI, Ollama, etc.) and stores configurations in `~/.omnigent/config.yaml`. View your configuration at any time with `omnigent config list`.
 
 ### Set up databases
 
@@ -105,6 +108,21 @@ export $(grep ANTHROPIC_API_KEY .env | tr -d '"')
 ### 3. Run an agent
 
 ```bash
+# Secure Code Assistant -- information flow policies (Claude)
+omnigent run examples/secure_code_assistant/
+
+# Secure Code Assistant -- override model
+omnigent run examples/secure_code_assistant/ --model claude-sonnet-4-6 --harness claude-sdk
+
+# Telco -- uses credentials configured in setup
+omnigent run examples/telco_customer_agent/
+
+# Telco -- OpenAI
+omnigent run examples/telco_customer_agent/ --model gpt-4o --harness openai-agents
+
+# Fresh session (no persistence)
+omnigent run examples/telco_customer_agent/ --no-session
+
 # FEMA -- uses credentials configured in setup
 omnigent run examples/fema_supervisor/
 
@@ -113,15 +131,9 @@ omnigent run examples/fema_supervisor/ --model gpt-4o --harness openai-agents
 
 # Anthropic Claude
 omnigent run examples/fema_supervisor/ --model claude-sonnet-4-6 --harness claude-sdk
-
-# Telco -- OpenAI
-omnigent run examples/telco_customer_agent/ --model gpt-4o --harness openai-agents
-
-# Fresh session (no persistence)
-omnigent run examples/telco_customer_agent/ --no-session
 ```
 
-Each example README has detailed local setup instructions -- see [FEMA](examples/fema_supervisor/), [RAG](examples/rag_mlflow_docs/), [Telco](examples/telco_customer_agent/).
+Each example README has detailed local setup instructions -- see [Secure Code Assistant](examples/secure_code_assistant/), [Telco](examples/telco_customer_agent/), [FEMA](examples/fema_supervisor/), [RAG](examples/rag_mlflow_docs/).
 
 ### Local Web UI
 
@@ -146,19 +158,11 @@ omnigent server stop      # stop server and local host daemon
 
 ---
 
-## Example Queries
-
-```
-What were the top 5 states by federal aid in 2024?
-What are the evacuation protocols for hurricanes?
-How much aid did California get from wildfires and what safety guidelines apply?
-```
-
 Each example README has a full list of queries:
+- [Secure Code Assistant queries](examples/secure_code_assistant/#example-queries)
+- [Telco Customer Agent queries](examples/telco_customer_agent/#example-queries)
 - [FEMA Disaster Agent queries](examples/fema_supervisor/#example-queries)
 - [MLflow Docs RAG queries](examples/rag_mlflow_docs/#example-queries)
-- [Telco Customer Agent queries](examples/telco_customer_agent/#example-queries)
-- [Secure Code Assistant queries](examples/secure_code_assistant/#example-queries)
 
 ---
 
@@ -237,10 +241,10 @@ No Python tool code changes are needed -- the tools are provider-independent.
 
 Each flagship agent has its own architecture diagram in its README:
 
+- [Secure Code Assistant](examples/secure_code_assistant/)
+- [Telco Customer Agent architecture](examples/telco_customer_agent/)
 - [FEMA Disaster Agent architecture](examples/fema_supervisor/)
 - [MLflow Docs RAG Agent architecture](examples/rag_mlflow_docs/)
-- [Telco Customer Agent architecture](examples/telco_customer_agent/)
-
 Reference docs:
 
 - [Local vs Remote modes](docs/local_vs_remote.md) -- how all OmniAgent components (server, runner, harness, Web UI, PolicyEngine) fit together in Databricks-hosted and fully-local deployments
@@ -372,8 +376,8 @@ omniagent_harness/
     |-- fema_supervisor_architecture.svg
     |-- rag_mlflow_docs_architecture.svg
     |-- telco_customer_agent_architecture.svg
-    |-- omniagent_local_architecture.svg
-    +-- omniagent_remote_architecture.svg
+    |-- omnigent_local_architecture.svg
+    +-- omnigent_remote_architecture.svg
 ```
 
 ---

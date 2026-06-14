@@ -80,7 +80,7 @@
   <circle cx="750" cy="100" r="35" fill="#48c9b0" opacity="0.04"/>
 
   <!-- Title -->
-  <text x="450" y="38" text-anchor="middle" fill="#fff" font-size="18" font-weight="700" letter-spacing="1">OmniAgents Architecture &#x2014; Remote Mode (Databricks-Hosted)</text>
+  <text x="450" y="38" text-anchor="middle" fill="#fff" font-size="18" font-weight="700" letter-spacing="1">Omnigent Architecture &#x2014; Remote Mode (Databricks-Hosted)</text>
   <text x="450" y="58" text-anchor="middle" fill="#8899aa" font-size="11">Default: omnigents run examples/telco_customer_agent/</text>
 
   <!-- ==================== CLOUD ZONE ==================== -->
@@ -114,9 +114,9 @@
   <polygon points="308,195 308,205 318,200" fill="#8e44ad" opacity="0.7"/>
   <text x="260" y="193" fill="#8899aa" font-size="7">HTTP/SSE</text>
 
-  <!-- OmniAgents Server -->
+  <!-- Omnigent Server -->
   <rect x="320" y="165" width="280" height="70" rx="10" fill="url(#serverG)" filter="url(#shadow)"/>
-  <text x="460" y="192" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">OmniAgents Server</text>
+  <text x="460" y="192" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">Omnigent Server</text>
   <text x="460" y="207" text-anchor="middle" fill="#a8d8ea" font-size="9">FastAPI + Uvicorn  |  Port 8000</text>
   <text x="460" y="220" text-anchor="middle" fill="#7ec8e3" font-size="7">Agent Registry  |  Sessions  |  Policies  |  Sub-agents</text>
   <text x="460" y="230" text-anchor="middle" fill="#5dade2" font-size="7">omnigents/server/app.py</text>
@@ -201,7 +201,7 @@
   <!-- ============ Footer Badges ============ -->
   <g transform="translate(0, 688)">
     <rect x="30" y="0" width="140" height="20" rx="10" fill="#2980b9" opacity="0.25"/>
-    <text x="100" y="14" text-anchor="middle" fill="#2980b9" font-size="9" font-weight="600">OmniAgents Server</text>
+    <text x="100" y="14" text-anchor="middle" fill="#2980b9" font-size="9" font-weight="600">Omnigent Server</text>
 
     <rect x="165" y="0" width="80" height="20" rx="10" fill="#8e44ad" opacity="0.25"/>
     <text x="205" y="14" text-anchor="middle" fill="#8e44ad" font-size="9" font-weight="600">Web UI</text>

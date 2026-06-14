@@ -72,7 +72,7 @@
   <circle cx="750" cy="100" r="35" fill="#48c9b0" opacity="0.04"/>
 
   <!-- Title -->
-  <text x="450" y="38" text-anchor="middle" fill="#fff" font-size="18" font-weight="700" letter-spacing="1">OmniAgents Architecture &#x2014; Fully Local Mode</text>
+  <text x="450" y="38" text-anchor="middle" fill="#fff" font-size="18" font-weight="700" letter-spacing="1">Omnigent Architecture &#x2014; Fully Local Mode</text>
   <text x="450" y="58" text-anchor="middle" fill="#8899aa" font-size="11">1&#x2013;2 Terminals  |  No Databricks  |  Direct LLM API Keys</text>
 
   <!-- ==================== ALL LOCAL ZONE ==================== -->
@@ -96,9 +96,9 @@
   <polygon points="308,205 308,215 318,210" fill="#48c9b0" opacity="0.8"/>
   <text x="200" y="185" fill="#8899aa" font-size="7">localhost:8000</text>
 
-  <!-- OmniAgents Server (with Web UI built in) -->
+  <!-- Omnigent Server (with Web UI built in) -->
   <rect x="310" y="190" width="300" height="90" rx="10" fill="url(#serverG)" filter="url(#shadow)"/>
-  <text x="460" y="215" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">OmniAgents Server</text>
+  <text x="460" y="215" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">Omnigent Server</text>
   <text x="460" y="232" text-anchor="middle" fill="#a8d8ea" font-size="9">FastAPI + Uvicorn  |  localhost:8000</text>
   <text x="460" y="248" text-anchor="middle" fill="#5dade2" font-size="7">omnigents server start</text>
 
@@ -184,7 +184,7 @@
   <!-- ============ Footer Badges ============ -->
   <g transform="translate(0, 688)">
     <rect x="50" y="0" width="140" height="20" rx="10" fill="#2980b9" opacity="0.25"/>
-    <text x="120" y="14" text-anchor="middle" fill="#2980b9" font-size="9" font-weight="600">OmniAgents Server</text>
+    <text x="120" y="14" text-anchor="middle" fill="#2980b9" font-size="9" font-weight="600">Omnigent Server</text>
 
     <rect x="185" y="0" width="80" height="20" rx="10" fill="#8e44ad" opacity="0.25"/>
     <text x="225" y="14" text-anchor="middle" fill="#8e44ad" font-size="9" font-weight="600">Web UI</text>
