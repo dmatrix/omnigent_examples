@@ -281,17 +281,6 @@ OMNIGENT_AUTH_ENABLED=1 omnigent server start
 
 With auth on, the first run prints an admin password. Invite teammates via **Admin > Members > Invite** in the Web UI — no email server needed.
 
-### SSO (Google, GitHub, Okta, Microsoft)
-
-Add OIDC configuration to your server environment:
-
-```bash
-OMNIGENT_OIDC_ISSUER=https://accounts.google.com   # or github.com / your Okta URL
-OMNIGENT_DOMAIN=agents.yourcompany.com
-OMNIGENT_OIDC_CLIENT_ID=...
-OMNIGENT_OIDC_CLIENT_SECRET=...
-```
-
 ---
 
 ## Self-Hosted Deploy
