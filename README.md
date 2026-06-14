@@ -13,11 +13,10 @@
 
 This repository contains example agent configurations for the [OmniAgent](https://github.com/databricks/omniagent) CLI. Each example defines an AI agent in YAML -- specifying the executor, system prompt, and tools. Three flagship examples demonstrate different patterns:
 
-1. **[FEMA Disaster Agent](examples/fema_supervisor/)** -- multi-tool routing (text-to-SQL + semantic policy search)
-2. **[MLflow Docs RAG Agent](examples/rag_mlflow_docs/)** -- self-building RAG pipeline (embeds documents, then searches them)
-3. **[Telco Customer Agent](examples/telco_customer_agent/)** -- multi-tool customer data agent with PII/financial policy labels
-4. **[Secure Code Assistant](examples/secure_code_assistant/)** -- information flow control (blocks web search after code read, blocks file writes after web search)
-
+1. **[Telco Customer Agent](examples/telco_customer_agent/)** -- multi-tool customer data agent with PII/financial policy labels
+2. **[Secure Code Assistant](examples/secure_code_assistant/)** -- information flow control (blocks web search after code read, blocks file writes after web 
+3. **[FEMA Disaster Agent](examples/fema_supervisor/)** -- multi-tool routing (text-to-SQL + semantic policy search)
+4. **[MLflow Docs RAG Agent](examples/rag_mlflow_docs/)** -- self-building RAG pipeline (embeds documents, then searches them)
 ---
 
 ## Get Started
