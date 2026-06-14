@@ -57,7 +57,7 @@ python examples/tools/create_telco_db.py   # Telco agent (5 tables, 125 records)
 
 ## Run on Databricks
 
-Connect to a Databricks-hosted OmniAgent server. Override the model to route through Databricks AI Gateway:
+Connect to a Databricks-hosted Omnigent server. Override the model to route through Databricks AI Gateway:
 
 ```bash
 # Authenticate with the remote server
@@ -269,12 +269,12 @@ Each flagship agent has its own architecture diagram in its README:
 - [MLflow Docs RAG Agent architecture](examples/rag_mlflow_docs/)
 Reference docs:
 
-- [Local vs Remote modes](docs/local_vs_remote.md) -- how all OmniAgent components (server, runner, harness, Web UI, PolicyEngine) fit together in Databricks-hosted and fully-local deployments
+- [Local vs Remote modes](docs/local_vs_remote.md) -- how all Omnigent components (server, runner, harness, Web UI, PolicyEngine) fit together in Databricks-hosted and fully-local deployments
 - [Telco agent design doc](examples/telco_customer_agent/design.md) -- policy rationale, database schema, and staged implementation plan
 
 ---
 
-## The OmniAgent YAML Pattern
+## The Omnigent YAML Pattern
 
 Every agent is defined in a `config.yaml` with three core sections:
 
@@ -340,14 +340,14 @@ Tools are auto-discovered from `tools/python/` in the agent's directory. Each `.
 ## Project Structure
 
 ```
-omniagent_harness/
+omnigent_examples/
 |-- README.md
 |-- CLAUDE.md
 |-- LICENSE                                  # Apache-2.0
 |-- .env                                     # OPENAI_API_KEY (not committed)
 |-- pyproject.toml
 |-- docs/
-|   +-- local_vs_remote.md                   # OmniAgent local vs remote architecture
+|   +-- local_vs_remote.md                   # Omnigent local vs remote architecture
 |-- examples/
 |   |-- fema_supervisor/                     # FEMA disaster agent
 |   |   |-- README.md

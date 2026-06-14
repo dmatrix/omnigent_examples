@@ -1,16 +1,16 @@
 # Telco Customer Data Agent with PII/Financial Policy Labels
 
-Implemented  here: https://github.com/dmatrix/omniagent_harness (A private repo)
+Implemented  here: https://github.com/dmatrix/omnigent_examples (A private repo)
 
-## Why OmniAgent Is the Right Framework for This
+## Why Omnigent Is the Right Framework for This
 
-An agent that touches customer PII, financial records, and credit data cannot rely on the LLM to self-regulate. We discovered this when building a RAG with Omniagent: GPT-5.5 ignores every prompt instruction to refuse answering, even when the tool explicitly returns "no relevant documents found," for our use case RAG example. Prompt engineering is not a compliance strategy.
+An agent that touches customer PII, financial records, and credit data cannot rely on the LLM to self-regulate. We discovered this when building a RAG with Omnigent: GPT-5.5 ignores every prompt instruction to refuse answering, even when the tool explicitly returns "no relevant documents found," for our use case RAG example. Prompt engineering is not a compliance strategy.
 
-OmniAgent solves this by adding a **policy enforcement layer between the harness and the user**. The `PolicyEngine` intercepts tool calls (on the runner) and input/output (on the server) before they reach or leave the session. Function-type policies on tool_call and tool_result phases run on the runner; label and prompt policies on request and response phases run server-side. Either way, the LLM never gets a vote on whether a policy is enforced.
+Omnigent solves this by adding a **policy enforcement layer between the harness and the user**. The `PolicyEngine` intercepts tool calls (on the runner) and input/output (on the server) before they reach or leave the session. Function-type policies on tool_call and tool_result phases run on the runner; label and prompt policies on request and response phases run server-side. Either way, the LLM never gets a vote on whether a policy is enforced.
 
 ### What the framework layer adds over bare harnesses
 
-| Capability | Claude Code / Codex alone | OmniAgent framework |
+| Capability | Claude Code / Codex alone | Omnigent framework |
 |---|---|---|
 | **Session-scoped labels** | No — no concept of taint tracking across tool calls | Yes — labels like `has_pii` persist for the entire session and cannot be unset (monotonic) |
 | **Conditional tool gating** | No — permissions are static (allow/deny per tool globally) | Yes — "allow `web_search` unless `has_pii` is true" is a one-line YAML policy |
@@ -31,11 +31,11 @@ OmniAgent solves this by adding a **policy enforcement layer between the harness
 
 The harness (claude-sdk, openai-agents, codex) runs step 1 and 3 — it executes the LLM calls. The framework runs steps 2, 4, and 5 — it enforces governance. The harness also has policy callback hooks at LLM request/response boundaries (injected by the server adapter), but the harness owns no policy state, no labels, and no PolicyEngine — it just executes callbacks that the framework provides. The design doc (`POLICIES.md`) states: "No changes to the Executor contract, Tool API, or existing stores." The separation is clear: **the harness executes, the framework governs.**
 
-### Operational benefits of the OmniAgent layer for this use case
+### Operational benefits of the Omnigent layer for this use case
 
 **1. Model swap without rewriting policies.** A telco compliance team writes policies once in YAML. The engineering team can switch from `databricks-claude-sonnet-4-6` to `databricks-gpt-5-5` or `databricks-kimi-k2-6` without touching a single policy. The guardrails are decoupled from the model. With bare harnesses, every model switch means re-validating whether the new model follows the prompt instructions.
 
-**2. Tool sandboxing at the kernel level.** On Linux, OmniAgent runs every `sys_os_shell` and `sys_os_write` call inside a Landlock + seccomp sandbox. The agent physically cannot write outside the project directory or call forbidden syscalls (ptrace, mount, reboot). Claude Code has a bash sandbox but it's opt-in and not kernel-enforced. For a telco agent with access to billing data, kernel-level isolation means a prompt injection attack cannot exfiltrate data via shell commands — the OS blocks it, not the LLM.
+**2. Tool sandboxing at the kernel level.** On Linux, Omnigent runs every `sys_os_shell` and `sys_os_write` call inside a Landlock + seccomp sandbox. The agent physically cannot write outside the project directory or call forbidden syscalls (ptrace, mount, reboot). Claude Code has a bash sandbox but it's opt-in and not kernel-enforced. For a telco agent with access to billing data, kernel-level isolation means a prompt injection attack cannot exfiltrate data via shell commands — the OS blocks it, not the LLM.
 
 **3. Multi-harness orchestration.** The framework architecture supports sub-agents with different harnesses — each sub-agent has its own `ExecutorConfig` and can specify a different model and harness. For example, a supervisor on `claude-sdk` could dispatch to a sub-agent on `openai-agents`. The Nessie example (`examples/nessie/`) demonstrates multi-agent orchestration with `claude_code` and `codex` sub-agents. Note: in v1, sub-agents start with labels from their own spec, not inherited from the parent. Cross-session label propagation is planned for a future release.
 
@@ -49,14 +49,14 @@ The harness (claude-sdk, openai-agents, codex) runs step 1 and 3 — it executes
 
 ### Why not just use Databricks AI Gateway for Policy/Governance?
 
-AI Gateway and OmniAgent policies sit at different layers in the stack and solve fundamentally different problems. They are complementary, not competing.
+AI Gateway and Omnigent policies sit at different layers in the stack and solve fundamentally different problems. They are complementary, not competing.
 
 #### Where each layer sits
 
 ```
 User
   ↓
-OmniAgent Runner              ← SESSION-SCOPED (stateful across turns)
+Omnigent Runner              ← SESSION-SCOPED (stateful across turns)
   │  policies, labels,            "This session has seen PII — block web search"
   │  skills, sub-agents           "PII + financial data — require human approval"
   ↓
@@ -73,7 +73,7 @@ Model API (Claude / GPT / Kimi)
 
 **AI Gateway is stateless per-request.** It sees each API call in isolation. It can detect PII in a single request, rate-limit by RPM, filter toxic content, and log everything. But it has no concept of a "session." It doesn't know that the request at 14:32 is related to the request at 14:31. Each request is evaluated independently with zero memory of previous requests.
 
-**OmniAgent policies are stateful per-session.** They track what the agent has done across multiple turns and tool calls via monotonic labels that persist in a SQL table (`conversation_labels`). Policies gate future actions based on the accumulated state of the entire session — not just the current request.
+**Omnigent policies are stateful per-session.** They track what the agent has done across multiple turns and tool calls via monotonic labels that persist in a SQL table (`conversation_labels`). Policies gate future actions based on the accumulated state of the entire session — not just the current request.
 
 #### What AI Gateway CAN do
 
@@ -101,14 +101,14 @@ AI Gateway has no concept of a "session" or "conversation." It cannot:
 Turn 1: User asks "List all customers in California"
   → Agent calls query_customers()
   → AI Gateway: sees a normal API call, passes it through ✓
-  → OmniAgent: sets has_pii=true on the session ✓
+  → Omnigent: sets has_pii=true on the session ✓
 
 Turn 2: User asks "Search the web for T-Mobile pricing"
   → Agent tries to call web_search("T-Mobile pricing")
   → AI Gateway: sees a clean request — the query "T-Mobile pricing"
     contains ZERO PII. No SSN, no email, no phone number.
     AI Gateway passes it through. ✓ (from Gateway's perspective, correct)
-  → OmniAgent: checks session labels, sees has_pii=true from Turn 1,
+  → Omnigent: checks session labels, sees has_pii=true from Turn 1,
     DENIES web_search before it ever reaches the gateway. ✓
     WHY: the agent's LLM context now contains customer names, emails,
     and phone numbers from Turn 1. Even though THIS request is clean,
@@ -121,19 +121,19 @@ Turn 3: User asks "Generate a billing report for our enterprise customers"
     But the user explicitly asked for a customer report — redacting the
     customer names makes the report useless. Gateway's per-request PII
     filter is too blunt for this use case.
-  → OmniAgent: checks labels, sees has_pii=true AND has_financial=true,
+  → Omnigent: checks labels, sees has_pii=true AND has_financial=true,
     returns ASK — execution pauses. Human reviews the complete output
     in context and approves (this is an authorized report) or rejects
     (this output contains data that shouldn't leave the session). ✓
 ```
 
-**Turn 2 is the critical difference.** The web search query "T-Mobile pricing" is completely clean — AI Gateway has no reason to block it. But OmniAgent knows that 30 seconds ago, this same session loaded customer names, phone numbers, and SSN last-4 digits. The session-scoped label catches what the request-scoped gateway cannot.
+**Turn 2 is the critical difference.** The web search query "T-Mobile pricing" is completely clean — AI Gateway has no reason to block it. But Omnigent knows that 30 seconds ago, this same session loaded customer names, phone numbers, and SSN last-4 digits. The session-scoped label catches what the request-scoped gateway cannot.
 
-**Turn 3 is the nuance.** AI Gateway's PII redaction is binary — it either blocks/redacts or doesn't. It can't distinguish "this is an authorized report the user asked for" from "the agent is leaking data." OmniAgent' ASK flow puts a human in the loop to make that judgment call.
+**Turn 3 is the nuance.** AI Gateway's PII redaction is binary — it either blocks/redacts or doesn't. It can't distinguish "this is an authorized report the user asked for" from "the agent is leaking data." Omnigent's ASK flow puts a human in the loop to make that judgment call.
 
 #### Capability comparison
 
-| Capability | AI Gateway | OmniAgent Policies |
+| Capability | AI Gateway | Omnigent Policies |
 |---|---|---|
 | Scope | Per-request (stateless) | Per-session (stateful) |
 | PII detection in text | Yes (regex, NER) | No (not its job) |
@@ -147,12 +147,12 @@ Turn 3: User asks "Generate a billing report for our enterprise customers"
 
 #### Use both
 
-The right architecture uses AI Gateway AND OmniAgent policies together:
+The right architecture uses AI Gateway AND Omnigent policies together:
 
 - **AI Gateway** is the **last line of defense** at the API boundary — catches PII that slips through, enforces rate limits, logs everything for audit
-- **OmniAgent policies** are the **first line of defense** at the agent session level — tracks information flow, gates tool access based on accumulated state, requires human approval for sensitive outputs
+- **Omnigent policies** are the **first line of defense** at the agent session level — tracks information flow, gates tool access based on accumulated state, requires human approval for sensitive outputs
 
-Neither alone is sufficient. AI Gateway can't enforce session-scoped information flow. OmniAgent policies can't scan output text for regex PII patterns. Together they provide defense in depth.
+Neither alone is sufficient. AI Gateway can't enforce session-scoped information flow. Omnigent policies can't scan output text for regex PII patterns. Together they provide defense in depth.
 
 ## Architecture
 
@@ -791,5 +791,5 @@ After all stages:
 ## README Update
 
 - Add to examples table
-- Add "Why OmniAgent?" section with the policy label explanation
+- Add "Why Omnigent?" section with the policy label explanation
 - Link to this plan for the full data model

@@ -2,11 +2,11 @@
 
 ## Project Overview
 
-Example agent configurations for the OmniAgent CLI. Flagship examples include a FEMA disaster response agent with text-to-SQL and semantic policy search tools, and a telco customer data agent demonstrating session-scoped PII/financial policy labels.
+Example agent configurations for the Omnigent CLI. Flagship examples include a FEMA disaster response agent with text-to-SQL and semantic policy search tools, and a telco customer data agent demonstrating session-scoped PII/financial policy labels.
 
 ## Tech Stack
 
-- **OmniAgent CLI** -- runs agents from YAML configs
+- **Omnigent CLI** -- runs agents from YAML configs
 - **Claude SDK harness** (`harness: claude-sdk`) -- all agents use `databricks-claude-sonnet-4-6`
 - **Python tools** -- `@tool` decorator from `omnigent_client.tools`, auto-discovered from `tools/python/`
 - **SQLite** -- `run_sql` tool queries `examples/tools/data/fema_disaster.db`; telco tools query `examples/tools/data/telco.db`

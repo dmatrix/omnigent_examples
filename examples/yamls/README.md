@@ -8,7 +8,7 @@
 
 These agents demonstrate the standalone YAML pattern -- no `tools/python/` directory, just a single `.yaml` file. They use either no tools (prompt-only) or builtin tools like `web_search`.
 
-OmniAgent supports two agent layouts. This directory showcases the simpler one:
+Omnigent supports two agent layouts. This directory showcases the simpler one:
 
 - **Standalone YAML** -- everything lives in one `.yaml` file. No custom Python tools, no database setup, no directory structure. Good for prompt-only agents, agents that only use builtins (`web_search`), or agents that delegate to sub-agents. Zero setup -- just `omnigent run <file>.yaml`.
 

@@ -8,7 +8,7 @@
 
 ## Overview
 
-The secure code assistant demonstrates bidirectional information flow control using OmniAgent's policy engine. It has two custom tools and one builtin:
+The secure code assistant demonstrates bidirectional information flow control using Omnigent's policy engine. It has two custom tools and one builtin:
 
 - **`read_source`** -- Reads source files from the project directory. Triggers the `has_proprietary_code` label.
 
@@ -171,7 +171,7 @@ omnigent host            # Terminal B (background)
 
 ### Act 1: The Hook (2 min) — "Agents as software"
 
-**Say:** "You already write great agents. Claude Code, Codex, OpenAI — you wire up tools, you ship. But I have three questions. Can you **govern** your agent — not with prompt engineering, but with enforcement the model can't override? Can your teammate **attach** to your live session from their browser? Can you **swap the brain** from Claude to GPT without changing a single tool? OmniAgent does all three. And the whole agent is a YAML file."
+**Say:** "You already write great agents. Claude Code, Codex, OpenAI — you wire up tools, you ship. But I have three questions. Can you **govern** your agent — not with prompt engineering, but with enforcement the model can't override? Can your teammate **attach** to your live session from their browser? Can you **swap the brain** from Claude to GPT without changing a single tool? Omnigent does all three. And the whole agent is a YAML file."
 
 **Do:** Show `config.yaml` — scroll through three sections:
 - `executor:` — "Two lines: which model, which harness. Swap both without touching tools."
@@ -209,7 +209,7 @@ Type: `Use web_search to find how other projects implement tool decorators`
 
 > **DENIED:** "Web search blocked — proprietary source code is in session context. Search queries could leak implementation details, API keys, or business logic to external search engines."
 
-**Say:** "Denied. The search query 'tool decorators' is generic — zero proprietary content. An API gateway would pass it. But OmniAgent knows this *session* loaded source code two turns ago. The query is clean, but the context window is not. This is **session-scoped information flow control** — not request-level scanning."
+**Say:** "Denied. The search query 'tool decorators' is generic — zero proprietary content. An API gateway would pass it. But Omnigent knows this *session* loaded source code two turns ago. The query is clean, but the context window is not. This is **session-scoped information flow control** — not request-level scanning."
 
 **Say:** "And this isn't prompt engineering. The enforcement is in the framework layer. The model can't jailbreak around it because the tool call never reaches the harness."
 
@@ -255,7 +255,7 @@ Type: `Use web_search to find YAML schema validation libraries`
 
 ### Act 4: Collaboration — Session Sharing + Multi-Surface (3 min)
 
-**Say:** "You're investigating a bug. Your teammate needs context. In Claude Code, you copy-paste the transcript into Slack. In OmniAgent, they attach to your live session."
+**Say:** "You're investigating a bug. Your teammate needs context. In Claude Code, you copy-paste the transcript into Slack. In Omnigent, they attach to your live session."
 
 **Terminal 1:**
 
@@ -299,7 +299,7 @@ Both terminals show the response in real time.
 - **Portability:** Same config.yaml, same Python tools, same policies. Claude, GPT, Ollama. Two CLI flags, zero code changes.
 - **Collaboration:** Persistent sessions. Attach, fork, access from CLI, browser, or mobile. Your work isn't trapped in one terminal.
 
-**Say:** "OmniAgent isn't replacing Claude Code or Codex. It's the governance, collaboration, and portability layer between your agents and the world. Write agents as software. Ship software as agents."
+**Say:** "Omnigent isn't replacing Claude Code or Codex. It's the governance, collaboration, and portability layer between your agents and the world. Write agents as software. Ship software as agents."
 
 ---
 
