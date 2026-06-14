@@ -189,7 +189,9 @@ omnigent host            # Terminal B (background)
 
 **Turn 1 — web search works (no code read yet):**
 
-Type: `Search the web for Python asyncio best practices`
+```
+Search the web for Python asyncio best practices
+```
 
 Agent calls `web_search` or `search_docs`. Returns results.
 
@@ -197,7 +199,9 @@ Agent calls `web_search` or `search_docs`. Returns results.
 
 **Turn 2 — read proprietary source code (sets taint):**
 
-Type: `Read the file examples/secure_code_assistant/tools/python/read_source.py and explain it`
+```
+Read the file examples/secure_code_assistant/tools/python/read_source.py and explain it
+```
 
 Agent calls `read_source`, returns contents. Framework silently sets `has_proprietary_code: True`.
 
@@ -205,7 +209,9 @@ Agent calls `read_source`, returns contents. Framework silently sets `has_propri
 
 **Turn 3 — THE WOW MOMENT — web search denied:**
 
-Type: `Use web_search to find how other projects implement tool decorators`
+```
+Use web_search to find how other projects implement tool decorators
+```
 
 > **DENIED:** "Web search blocked — proprietary source code is in session context. Search queries could leak implementation details, API keys, or business logic to external search engines."
 
@@ -217,11 +223,15 @@ Type: `Use web_search to find how other projects implement tool decorators`
 
 Start a new session: `omnigent run examples/secure_code_assistant/ --no-session`
 
-Type: `Search the web for the latest FastAPI middleware patterns`
+```
+Search the web for the latest FastAPI middleware patterns
+```
 
 Web search works. Sets `has_external_content: True`.
 
-Type: `Write a new middleware file at middleware.py with what you found`
+```
+Write a new middleware file at middleware.py with what you found
+```
 
 > **DENIED:** "File write blocked — untrusted web content is in session context."
 
@@ -239,11 +249,15 @@ Type: `Write a new middleware file at middleware.py with what you found`
 omnigent run examples/secure_code_assistant/ --model gpt-4o --harness openai-agents --no-session
 ```
 
-Type: `Read the file examples/secure_code_assistant/config.yaml`
+```
+Read the file examples/secure_code_assistant/config.yaml
+```
 
 Agent calls `read_source`, returns config. Taint fires.
 
-Type: `Use web_search to find YAML schema validation libraries`
+```
+Use web_search to find YAML schema validation libraries
+```
 
 > **Same DENY.** "Web search blocked — proprietary source code is in session context."
 
@@ -263,7 +277,9 @@ Type: `Use web_search to find YAML schema validation libraries`
 omnigent run examples/secure_code_assistant/
 ```
 
-Type: `Read examples/secure_code_assistant/config.yaml and summarize the policy structure`
+```
+Read examples/secure_code_assistant/config.yaml and summarize the policy structure
+```
 
 Note the session ID.
 
@@ -275,7 +291,11 @@ Note the session ID.
 omnigent attach <session_id>
 ```
 
-Full conversation history appears. Type: `What labels have been set in this session so far?`
+Full conversation history appears.
+
+```
+What labels have been set in this session so far?
+```
 
 Both terminals show the response in real time.
 
