@@ -2,6 +2,7 @@
 
 **YAML-defined AI agents for the OmniAgent CLI -- from single-tool assistants to multi-tool disaster response agents and secure code assistants.**
 
+[![omnigent.ai](https://img.shields.io/badge/omnigent.ai-Visit-00C853)](https://omnigent.ai)
 ![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
 ![Databricks](https://img.shields.io/badge/Databricks-FF3621?logo=databricks&logoColor=white)
 ![Claude](https://img.shields.io/badge/Claude-Anthropic-6B4FBB)
