@@ -28,10 +28,6 @@ guardrails:
       initial: "False"
       values: ["False", "True"]
       monotonic: increasing
-    has_credit:
-      initial: "False"
-      values: ["False", "True"]
-      monotonic: increasing
     used_web:
       initial: "False"
       values: ["False", "True"]
@@ -63,18 +59,6 @@ guardrails:
           on_phases: [tool_call]
           on_tools: [query_billing]
       set_labels: [has_financial]
-
-    taint_credit:
-      type: function
-      function:
-        path: omnigent.policies.function.make_fixed_action_callable
-        arguments:
-          action: allow
-          set_labels:
-            has_credit: "True"
-          on_phases: [tool_call]
-          on_tools: [query_customers]
-      set_labels: [has_credit]
 
     taint_web:
       type: function
@@ -117,35 +101,6 @@ guardrails:
             payment status) is in session context.
           on_phases: [tool_call]
           on_tools: [web_search]
-
-    # --- Ask policies: human approval before sensitive output ---
-
-    approve_pii_financial_output:
-      type: function
-      condition:
-        has_pii: "True"
-        has_financial: "True"
-      function:
-        path: omnigent.policies.function.make_fixed_action_callable
-        arguments:
-          action: ask
-          reason: |
-            Output contains both customer PII and financial data.
-            Human review required before this information leaves the session.
-          on_phases: [response]
-
-    approve_credit_output:
-      type: function
-      condition:
-        has_credit: "True"
-      function:
-        path: omnigent.policies.function.make_fixed_action_callable
-        arguments:
-          action: ask
-          reason: |
-            Output contains credit classification or collections data.
-            This is regulated under FDCPA. Human review required.
-          on_phases: [response]
 
 prompt: |
   You are a telco customer data agent. You MUST use your tools to answer
