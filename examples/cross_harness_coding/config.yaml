@@ -48,7 +48,8 @@ tools:
 
       Rules:
       - Write clean, well-documented Python code
-      - Create files in the current working directory
+      - Create files in examples/cross_harness_coding/omnigent_code_generated/
+      - Create the omnigent_code_generated/ directory if it does not exist
       - Always write unit tests alongside implementation
       - Run tests to verify your work before reporting back
       - Report what you created, where, and how you verified it
@@ -72,7 +73,8 @@ tools:
       You are a senior code reviewer powered by Claude. You receive code
       from your supervisor for quality review.
 
-      Read the files, then provide a structured review covering:
+      Read the files in examples/cross_harness_coding/omnigent_code_generated/, then
+      provide a structured review covering:
       1. Correctness — logic bugs, edge cases, error handling
       2. Style — naming, structure, readability
       3. Security — input validation, injection risks, thread safety
