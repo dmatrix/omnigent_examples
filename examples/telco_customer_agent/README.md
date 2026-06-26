@@ -18,7 +18,7 @@ The telco agent demonstrates session-scoped policy enforcement over customer PII
 
 - **`web_search`** -- Builtin web search for external/competitor/market questions. Blocked after PII or financial data access.
 
-The agent works with Omnigent's PolicyEngine for session-scoped governance: taint labels track what data the agent has seen, DENY policies block web search after PII/financial access, and ASK policies require human approval before outputting combined PII + financial data.
+The agent works with Omnigent's PolicyEngine for session-scoped governance: taint labels track what data the agent has seen, and DENY policies block web search after PII or financial data access.
 
 The agent also includes a **`customer-report` skill** (`skills/customer-report/SKILL.md`) that generates structured quarterly business reviews with PII redaction rules. The skill is loaded on demand via `load_skill` when the user requests a report.
 
@@ -120,18 +120,6 @@ Search the web for competitor pricing on unlimited family plans
 → BLOCKED: "Web search blocked — customer PII is in session context."
 ```
 
-**Human approval required** (combined PII + financial output):
-```
-Show me all past-due customers with their names, phone numbers, and amounts owed
-→ PAUSED: "Output contains both PII and financial data. Human review required."
-```
-
-**Credit data approval** (FDCPA-regulated output):
-```
-Show me customers with credit class D and their payment history
-→ PAUSED: "Output contains credit/collections data. Regulated under FDCPA."
-```
-
 **Skill** (on-demand structured report):
 ```
 Use the customer-report skill to produce a quarterly business review
@@ -155,7 +143,6 @@ The agent's `config.yaml` defines session-scoped guardrails:
 |---|---|---|
 | `has_pii` | `query_customers` | Yes (once set, cannot be unset) |
 | `has_financial` | `query_billing` | Yes |
-| `has_credit` | `query_customers` | Yes |
 | `used_web` | `web_search` | Yes |
 
 ### Policies
@@ -164,8 +151,6 @@ The agent's `config.yaml` defines session-scoped guardrails:
 |---|---|---|---|
 | `block_web_after_pii` | `has_pii = True` | DENY `web_search` | PII in session could leak via search queries |
 | `block_web_after_financial` | `has_financial = True` | DENY `web_search` | Financial data in session could leak |
-| `approve_pii_financial_output` | `has_pii = True` AND `has_financial = True` | ASK (human approval) | Combined PII + financial output requires review |
-| `approve_credit_output` | `has_credit = True` | ASK (human approval) | Credit/collections data regulated under FDCPA |
 
 ---
 

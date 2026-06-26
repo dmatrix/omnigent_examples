@@ -14,9 +14,7 @@ Omnigent solves this by adding a **policy enforcement layer between the harness 
 |---|---|---|
 | **Session-scoped labels** | No — no concept of taint tracking across tool calls | Yes — labels like `has_pii` persist for the entire session and cannot be unset (monotonic) |
 | **Conditional tool gating** | No — permissions are static (allow/deny per tool globally) | Yes — "allow `web_search` unless `has_pii` is true" is a one-line YAML policy |
-| **Output-phase interception** | AI Gateway filters input and output per-request (prompt injection, toxicity, PII redaction) but stateless — cannot condition on what the agent did in previous turns | Yes — policies inspect output conditioned on accumulated session labels (e.g., "require approval because agent has both PII and financial data") and can DENY or ASK |
-| **Human approval flows (ASK)** | No — no framework-level pause-and-approve mechanism | Yes — policy returns ASK, execution pauses, human reviews, then continues or rejects |
-| **Information flow control** | No — the LLM decides what to share | Yes — "if agent has both PII and financial data, output requires human review" is declarative YAML |
+| **Information flow control** | No — the LLM decides what to share | Yes — "if agent has seen PII, block web search" is declarative YAML |
 | **Harness portability** | N/A — locked to one LLM | Yes — same policies work on `claude-sdk`, `openai-agents`, or `codex` because enforcement is in the runner, not the harness |
 | **Rate limiting per turn** | AI Gateway rate-limits by clock time (RPM) but can't distinguish agent turns — 50 fast tool calls in 3 seconds stays within RPM limits | Yes — a stateful policy counts tool calls per turn (one user message → agent response cycle), DENIES after a configurable limit (e.g., 15), and the framework automatically resets the counter when the next turn starts. Caps the blast radius of runaway loops or prompt injection within a single interaction |
 | **On-demand skills** | No — everything in the system prompt upfront | Yes — `load_skill` loads instructions only when needed, reducing token overhead |
@@ -26,10 +24,9 @@ Omnigent solves this by adding a **policy enforcement layer between the harness 
 1. Agent calls `query_customers` → runner's PolicyEngine sets `has_pii: true` (taint policy)
 2. Agent tries `web_search` → runner checks labels, sees `has_pii: true`, returns DENY before the harness ever sees the request
 3. Agent calls `query_billing` → runner sets `has_financial: true`
-4. Agent generates output → runner checks labels, sees both `has_pii` and `has_financial` are true, returns ASK — execution pauses for human approval
-5. Human approves or rejects → runner forwards or blocks the output
+4. Agent tries `web_search` again → runner checks labels, sees `has_financial: true`, returns DENY
 
-The harness (claude-sdk, openai-agents, codex) runs step 1 and 3 — it executes the LLM calls. The framework runs steps 2, 4, and 5 — it enforces governance. The harness also has policy callback hooks at LLM request/response boundaries (injected by the server adapter), but the harness owns no policy state, no labels, and no PolicyEngine — it just executes callbacks that the framework provides. The design doc (`POLICIES.md`) states: "No changes to the Executor contract, Tool API, or existing stores." The separation is clear: **the harness executes, the framework governs.**
+The harness (claude-sdk, openai-agents, codex) runs step 1 and 3 — it executes the LLM calls. The framework runs steps 2 and 4 — it enforces governance. The harness also has policy callback hooks at LLM request/response boundaries (injected by the server adapter), but the harness owns no policy state, no labels, and no PolicyEngine — it just executes callbacks that the framework provides. The design doc (`POLICIES.md`) states: "No changes to the Executor contract, Tool API, or existing stores." The separation is clear: **the harness executes, the framework governs.**
 
 ### Operational benefits of the Omnigent layer for this use case
 
@@ -58,7 +55,7 @@ User
   ↓
 Omnigent Runner              ← SESSION-SCOPED (stateful across turns)
   │  policies, labels,            "This session has seen PII — block web search"
-  │  skills, sub-agents           "PII + financial data — require human approval"
+  │  skills, sub-agents           "PII in session — block web search"
   ↓
 Harness (claude-sdk / openai-agents / codex)
   ↓
@@ -89,11 +86,9 @@ Model API (Claude / GPT / Kimi)
 AI Gateway has no concept of a "session" or "conversation." It cannot:
 
 - Track that the agent read customer PII 3 turns ago and restrict subsequent tool calls
-- Correlate that the agent has accumulated both PII and financial data across 5 separate tool calls and require human approval before output
 - Carry security restrictions across model switches (Claude → GPT mid-session)
 - Conditionally allow a tool based on what happened earlier — gateway rules are static, not state-dependent
 - Rate limit per logical agent turn (gateway counts by time window, not by turn boundary)
-- Pause execution mid-session, wait for human approval, and resume or reject
 
 #### The Turn 2 scenario: why this matters
 
@@ -115,21 +110,9 @@ Turn 2: User asks "Search the web for T-Mobile pricing"
     the agent might leak PII in follow-up search queries or include
     customer details in the search context window.
 
-Turn 3: User asks "Generate a billing report for our enterprise customers"
-  → Agent generates output with customer names + revenue numbers
-  → AI Gateway: COULD detect PII in the output and redact names/emails.
-    But the user explicitly asked for a customer report — redacting the
-    customer names makes the report useless. Gateway's per-request PII
-    filter is too blunt for this use case.
-  → Omnigent: checks labels, sees has_pii=true AND has_financial=true,
-    returns ASK — execution pauses. Human reviews the complete output
-    in context and approves (this is an authorized report) or rejects
-    (this output contains data that shouldn't leave the session). ✓
 ```
 
 **Turn 2 is the critical difference.** The web search query "T-Mobile pricing" is completely clean — AI Gateway has no reason to block it. But Omnigent knows that 30 seconds ago, this same session loaded customer names, phone numbers, and SSN last-4 digits. The session-scoped label catches what the request-scoped gateway cannot.
-
-**Turn 3 is the nuance.** AI Gateway's PII redaction is binary — it either blocks/redacts or doesn't. It can't distinguish "this is an authorized report the user asked for" from "the agent is leaking data." Omnigent's ASK flow puts a human in the loop to make that judgment call.
 
 #### Capability comparison
 
@@ -139,8 +122,6 @@ Turn 3: User asks "Generate a billing report for our enterprise customers"
 | PII detection in text | Yes (regex, NER) | No (not its job) |
 | Rate limiting | Yes (RPM, per-user) | Yes (per-turn, per-tool) |
 | "Agent saw PII → block web search" | No (no session memory) | Yes (label tracking) |
-| "PII + financial → require approval" | No (can't correlate across requests) | Yes (multi-label conditions) |
-| Pause for human approval (ASK) | No (pass-through proxy) | Yes (first-class flow) |
 | Cross-model label propagation | No (per-endpoint) | Yes (labels carry across harnesses) |
 | Conditional tool gating by session state | No (rules are static) | Yes (labels are dynamic) |
 | Fail-closed on policy error | N/A | Yes (timeout/exception → DENY) |
@@ -150,7 +131,7 @@ Turn 3: User asks "Generate a billing report for our enterprise customers"
 The right architecture uses AI Gateway AND Omnigent policies together:
 
 - **AI Gateway** is the **last line of defense** at the API boundary — catches PII that slips through, enforces rate limits, logs everything for audit
-- **Omnigent policies** are the **first line of defense** at the agent session level — tracks information flow, gates tool access based on accumulated state, requires human approval for sensitive outputs
+- **Omnigent policies** are the **first line of defense** at the agent session level — tracks information flow and gates tool access based on accumulated state
 
 Neither alone is sufficient. AI Gateway can't enforce session-scoped information flow. Omnigent policies can't scan output text for regex PII patterns. Together they provide defense in depth.
 
@@ -287,7 +268,6 @@ examples/tools/
 labels:
   has_pii: "false"
   has_financial: "false"
-  has_credit: "false"
   used_web: "false"
 
 label_schema:
@@ -297,15 +277,12 @@ label_schema:
   has_financial:
     values: ["false", "true"]
     monotonic: max
-  has_credit:
-    values: ["false", "true"]
-    monotonic: max
   used_web:
     values: ["false", "true"]
     monotonic: max
 ```
 
-## Policies (8 total)
+## Policies (5 total)
 
 ```yaml
 policies:
@@ -326,15 +303,6 @@ policies:
     action: allow
     set_labels:
       has_financial: "true"
-
-  taint_credit:
-    type: label
-    on: [tool_call]
-    condition: {}
-    match_tools: [query_customers]
-    action: allow
-    set_labels:
-      has_credit: "true"
 
   taint_web:
     type: label
@@ -368,26 +336,6 @@ policies:
       Web search blocked — financial data (billing, revenue, discounts,
       payment status) is in session context.
 
-  approve_pii_financial_output:
-    type: label
-    on: [output]
-    condition:
-      has_pii: "true"
-      has_financial: "true"
-    action: ask
-    reason: |
-      Output contains both customer PII and financial data.
-      Human review required before this information leaves the session.
-
-  approve_credit_output:
-    type: label
-    on: [output]
-    condition:
-      has_credit: "true"
-    action: ask
-    reason: |
-      Output contains credit classification or collections data.
-      This is regulated under FDCPA. Human review required.
 ```
 
 ## Skill: customer-report/SKILL.md
@@ -435,14 +383,6 @@ What's our total monthly revenue across all plans?
 Which customers have overage charges this month?
 Show me all past-due accounts with amounts owed
 What discount codes are we giving out and to whom?
-
-# ASK: output with PII + financial
-Generate a churn risk report with customer names and payment history
-→ PAUSED: "Output contains both PII and financial data. Human review required."
-
-# ASK: credit data output
-Show me customers with credit class D and their payment history
-→ PAUSED: "Output contains credit/collections data. Regulated under FDCPA."
 
 # Combined with skill
 Use the customer-report skill to produce a quarterly business review
@@ -527,8 +467,8 @@ What plans are available? (should use query_plans, not web)
 ### Stage 5: Add taint labels (no enforcement yet)
 
 **Build:**
-- Add `labels:` and `label_schema:` to config.yaml (has_pii, has_financial, has_credit, used_web — all start false, monotonic max)
-- Add 4 taint policies: `taint_pii`, `taint_financial`, `taint_credit`, `taint_web` — all `action: allow` with `set_labels`
+- Add `labels:` and `label_schema:` to config.yaml (has_pii, has_financial, used_web — all start false, monotonic max)
+- Add 3 taint policies: `taint_pii`, `taint_financial`, `taint_web` — all `action: allow` with `set_labels`
 
 **Test:**
 ```
@@ -589,59 +529,7 @@ Turn 3:  Use web_search to find average churn rates in telecom
 
 ---
 
-### Stage 7: Add ASK policies (human approval)
-
-**Build:**
-- Add `approve_pii_financial_output` policy — ASK on output when has_pii AND has_financial
-- Add `approve_credit_output` policy — ASK on output when has_credit
-
-**Test:**
-
-**Scenario A: PII + financial → output paused for approval**
-```
-Turn 1:  List all customers in California
-         → agent calls query_customers → taint_pii fires → has_pii = true ✓
-
-Turn 2:  What's our total monthly revenue?
-         → agent calls query_billing → taint_financial fires → has_financial = true ✓
-
-Turn 3:  Generate a billing report for enterprise customers
-         → agent produces output → approve_pii_financial_output fires
-         → PAUSED: "Output contains both PII and financial data. Human review required."
-         → Human approves → output delivered ✓
-         → Human rejects → output blocked ✗
-```
-
-**Scenario B: Credit data → output paused for approval**
-```
-Turn 1:  Show me customers with credit class D and their payment history
-         → agent calls query_customers → taint_pii + taint_credit fire
-         → has_pii = true, has_credit = true ✓
-
-Turn 2:  Which of those customers are in collections?
-         → agent calls query_billing → taint_financial fires → has_financial = true ✓
-         → agent produces output → approve_credit_output fires
-         → PAUSED: "Output contains credit/collections data. Regulated under FDCPA."
-```
-
-**Scenario C: PII alone does NOT trigger ASK (contrast)**
-```
-Turn 1:  List all customers in California with their phone numbers
-         → agent calls query_customers → has_pii = true ✓
-
-Turn 2:  How many of those are on the Experience Beyond plan?
-         → agent calls query_plans (no new labels) ✓
-         → agent produces output → approve_pii_financial_output does NOT fire
-           (condition requires BOTH has_pii AND has_financial) → output delivered normally ✓
-```
-
-> **Note:** ASK policies fire on `[output]`, not `[tool_call]`. The pause happens when the agent tries to send its response to the user, not when it calls a tool. This means the agent completes all its reasoning and tool calls first — the human reviews the final assembled answer.
-
-**Validates:** ASK flow works — execution pauses, user approves or rejects, agent continues or stops. Scenario C confirms that PII alone is not enough to trigger the combined PII+financial approval gate — both labels must be true.
-
----
-
-### Stage 8: Add the skill
+### Stage 7: Add the skill
 
 **Build:**
 - `examples/telco_customer_agent/skills/customer-report/SKILL.md` — on-demand report template with redaction rules
@@ -655,7 +543,7 @@ Use the customer-report skill to produce a quarterly business review
 
 ---
 
-### Stage 9: Update prompt for strict tool usage
+### Stage 8: Update prompt for strict tool usage
 
 **Build:**
 - Update the agent prompt to enforce "MUST use tools, FORBIDDEN from training data" (same pattern as FEMA agent)
@@ -673,7 +561,7 @@ What's the weather in San Francisco?
 
 ---
 
-### Stage 10: README and documentation
+### Stage 9: README and documentation
 
 **Build:**
 - Add to examples table in README
@@ -698,16 +586,14 @@ Stage 5 (+ taint labels — tagging only)
   ↓
 Stage 6 (+ DENY policies — enforcement)
   ↓
-Stage 7 (+ ASK policies — human approval)
+Stage 7 (+ skill)
   ↓
-Stage 8 (+ skill)
+Stage 8 (+ strict prompt)
   ↓
-Stage 9 (+ strict prompt)
-  ↓
-Stage 10 (docs)
+Stage 9 (docs)
 ```
 
-Each stage is independently testable. If Stage 6 (DENY) fails, you still have a working 3-tool agent from Stage 4. If Stage 7 (ASK) fails, DENY enforcement from Stage 6 still works. The skill and strict prompt are additive — they enhance but don't break the core functionality.
+Each stage is independently testable. If Stage 6 (DENY) fails, you still have a working 3-tool agent from Stage 4. The skill and strict prompt are additive — they enhance but don't break the core functionality.
 
 ## Testing with OpenAI Models
 
@@ -778,15 +664,13 @@ What plans are available?   ← should route to query_plans, not web_search
 After all stages:
 
 1. Plan queries work freely — no labels triggered
-2. Customer queries set `has_pii` and `has_credit` labels
+2. Customer queries set `has_pii` label
 3. Billing queries set `has_financial` label
 4. Web search works before any data access
 5. Web search DENIED after customer or billing data access
-6. Output with PII + financial triggers ASK for human approval
-7. Output with credit data triggers separate ASK
-8. Skill loads on demand and produces structured report
-9. Labels visible in runner logs
-10. All policies work regardless of harness (claude-sdk, openai-agents)
+6. Skill loads on demand and produces structured report
+7. Labels visible in runner logs
+8. All policies work regardless of harness (claude-sdk, openai-agents)
 
 ## README Update
 
