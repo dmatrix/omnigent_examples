@@ -1,4 +1,4 @@
-# Supervisor Delegation
+# Supervisor Delegation with Omnigent <img src="../../images/omnigent_icon.svg" alt="Omnigent" height="32" align="top">
 
 **Same-harness sub-agent delegation — a supervisor dispatches coding tasks to an implementation sub-agent.**
 
