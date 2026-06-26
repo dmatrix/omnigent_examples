@@ -2,7 +2,7 @@
 
 **Coding assistant with session-scoped information flow control — blocks web search after code read, blocks file writes after web search.**
 
-![Secure Code Assistant Architecture](../../images/secure_code_assistant_architecture.svg)
+![Secure Code Assistant Architecture](images/secure_code_assistant_architecture.svg)
 
 ---
 
@@ -153,7 +153,7 @@ The agent's `config.yaml` defines session-scoped guardrails:
 
 ## How to Demo (10-15 min)
 
-![Demo Setup](../../images/secure_code_assistant_demo_setup.svg)
+![Demo Setup](images/secure_code_assistant_demo_setup.svg)
 
 ### Pre-demo setup
 
@@ -171,12 +171,20 @@ omnigent host            # Terminal B (background)
 
 ### Act 1: The Hook (2 min) — "Agents as software"
 
-**Say:** "You already write great agents. Claude Code, Codex, OpenAI — you wire up tools, you ship. But I have three questions. Can you **govern** your agent — not with prompt engineering, but with enforcement the model can't override? Can your teammate **attach** to your live session from their browser? Can you **swap the brain** from Claude to GPT without changing a single tool? Omnigent does all three. And the whole agent is a YAML file."
+**Say:** "You already write great agents. Claude Code, Codex, OpenAI — you wire up tools, you ship. But I have three questions. 
+
+1. Can you **govern** your agent — not with prompt engineering, but with enforcement the model can't override? 
+2. Can your teammate **attach** to your live session from their browser? 
+3. Can you **swap the brain** from Claude to GPT without changing a single tool? 
+
+Omnigent does all three. And the whole agent is a YAML file."
 
 **Do:** Show `config.yaml` — scroll through three sections:
 - `executor:` — "Two lines: which model, which harness. Swap both without touching tools."
 - `tools:` — "Python functions auto-discovered from `tools/python/`. Web search as a builtin."
-- `guardrails:` — "This is the new thing. Two taint labels, two deny policies, a cost budget. All declarative. The model never gets a vote."
+- `guardrails:` — "This is the new thing. Two taint labels, two deny policies, a cost budget. 
+
+All declarative. The model never gets a vote."
 
 **Pause on `block_search_after_code`:**
 > "If the session has seen proprietary source code, web search is denied. Not 'please don't search' — DENIED. The framework intercepts the call before it reaches the model's tools."
