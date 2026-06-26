@@ -223,3 +223,18 @@ No code is executed — the pipeline is purely write and review. All three agent
 - **Sequential dispatch**: Supervisor enforces implement→review ordering to avoid file conflicts
 - **Harness portability**: Swap any agent's harness without changing tools or prompts
 - **No custom tools**: Both sub-agents use shell access via `os_env` — no `tools/python/` directory needed
+
+---
+
+## See Also: Polly
+
+For a production-grade orchestrator, see [**Polly**](https://github.com/omnigent-ai/omnigent/tree/main/examples/polly/) in the Omnigent framework. Polly is a built-in multi-agent supervisor that extends this pattern with:
+
+- **Three sub-agents** — Claude Code, Codex, and Pi, each in isolated git worktrees
+- **Parallel fanout** — independent tasks run concurrently with automatic worktree isolation
+- **Cross-vendor review** — every PR is reviewed by a different LLM provider than the one that wrote it
+- **Investigation skills** — read-only exploration and debugging delegated to sub-agents
+
+```bash
+omnigent run examples/polly/
+```

@@ -8,7 +8,9 @@
 
 ## Overview
 
-The secure code assistant demonstrates bidirectional information flow control using Omnigent's policy engine. It has two custom tools and one builtin:
+The secure code assistant demonstrates **governance** — Omnigent's ability to enforce security boundaries that the LLM cannot override. Where bare harnesses rely on prompt instructions the model can ignore, Omnigent's PolicyEngine intercepts tool calls at the framework layer and enforces DENY decisions before they reach the model. This example also demonstrates **portability** — the same policies fire identically whether the agent runs on Claude or GPT, because enforcement lives in the runner, not the harness.
+
+The agent has two custom tools and one builtin:
 
 - **`read_source`** -- Reads source files from the project directory. Triggers the `has_proprietary_code` label.
 
@@ -75,7 +77,6 @@ omnigent run examples/secure_code_assistant/ --no-session
 
 # Override model and harness
 omnigent run examples/secure_code_assistant/ --model gpt-4o --harness openai-agents
-omnigent run examples/secure_code_assistant/ --model ollama/llama-3 --harness openai-agents
 ```
 
 ---
@@ -269,9 +270,7 @@ Use web_search to find YAML schema validation libraries
 
 > **Same DENY.** "Web search blocked — proprietary source code is in session context."
 
-**Say:** "Same denial. The policy doesn't care which model issued the call. Claude, GPT, Llama — enforcement is in the framework, not the harness. Your compliance rules survive model migrations."
-
-**Mention:** "For fully local: `--model ollama/llama-3 --harness openai-agents`. Zero cloud, zero API keys for the LLM. Same policies."
+**Say:** "Same denial. The policy doesn't care which model issued the call. Claude, GPT — enforcement is in the framework, not the harness. Your compliance rules survive model migrations."
 
 ---
 
@@ -324,7 +323,7 @@ Both terminals show the response in real time.
 **Say:** "Three pillars in twelve minutes."
 
 - **Governance:** YAML policy engine with taint labels, monotonic state, DENY enforcement the model can't override. Session-scoped information flow control — not prompt engineering, not API gateway scanning.
-- **Portability:** Same config.yaml, same Python tools, same policies. Claude, GPT, Ollama. Two CLI flags, zero code changes.
+- **Portability:** Same config.yaml, same Python tools, same policies. Claude, GPT. Two CLI flags, zero code changes.
 - **Collaboration:** Persistent sessions. Attach, fork, access from CLI, browser, or mobile. Your work isn't trapped in one terminal.
 
 **Say:** "Omnigent isn't replacing Claude Code or Codex. It's the governance, collaboration, and portability layer between your agents and the world. Write agents as software. Ship software as agents."

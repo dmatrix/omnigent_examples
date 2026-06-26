@@ -8,7 +8,9 @@
 
 ## Overview
 
-The telco agent demonstrates session-scoped policy enforcement over customer PII and financial data. It has three database tools and one builtin:
+The telco agent demonstrates **governance** — Omnigent's ability to enforce data access boundaries that the LLM cannot override. When the agent reads customer PII or financial data, the session is tainted with monotonic labels, and the PolicyEngine blocks web search to prevent data leakage. Unlike prompt-based guardrails, these policies are enforced at the framework layer — the tool call is denied before it reaches the model. The agent also demonstrates **portability** — the same taint labels and DENY policies fire identically on Claude, GPT, or any supported harness.
+
+It has three database tools and one builtin:
 
 - **`query_plans`** -- Queries public plan/pricing data (5 plans mirroring real carrier tiers). Does not trigger any policy labels.
 
@@ -84,9 +86,6 @@ omnigent run examples/telco_customer_agent/ --model gpt-4o
 export $(grep ANTHROPIC_API_KEY .env | tr -d '"')
 omnigent run examples/telco_customer_agent/ --model claude-sonnet-4-6 --harness claude-sdk
 
-# Ollama (local, no API key needed)
-omnigent run examples/telco_customer_agent/ --model ollama/llama-3 --harness openai-agents
-
 # Fresh session (no persistence)
 omnigent run examples/telco_customer_agent/ --no-session
 ```
@@ -151,6 +150,111 @@ The agent's `config.yaml` defines session-scoped guardrails:
 |---|---|---|---|
 | `block_web_after_pii` | `has_pii = True` | DENY `web_search` | PII in session could leak via search queries |
 | `block_web_after_financial` | `has_financial = True` | DENY `web_search` | Financial data in session could leak |
+
+---
+
+## How to Demo (10-12 min)
+
+### Act 1: The YAML (2 min) — "Three labels, two denials, one file"
+
+**Show** `config.yaml` — scroll through the labels and policies:
+
+**Say:** "This agent has three tools that query a telco database — plans, customers, and billing. The YAML defines three session-scoped labels and two DENY policies. When the agent reads customer PII, the session is tainted. From that point on, web search is blocked — the framework enforces it, not the LLM."
+
+**Pause on the `block_web_after_pii` policy:**
+> "This is one YAML block. It says: if `has_pii` is true, deny `web_search`. The LLM never gets a vote."
+
+---
+
+### Act 2: Safe queries (2 min) — "Public data, no restrictions"
+
+**Run:** `omnigent run examples/telco_customer_agent/ --no-session`
+
+**Prompt:**
+```
+What plans are available and what do they cost?
+```
+
+**Watch:** The agent calls `query_plans` and returns pricing data. No labels triggered.
+
+**Say:** "Plan data is public — no PII, no financial data. The agent answers freely. No policies fire."
+
+---
+
+### Act 3: The taint (4 min) — "One query changes everything"
+
+**Prompt:**
+```
+List all customers in California with their phone numbers
+```
+
+**Watch:** The agent calls `query_customers`. The `has_pii` label is now set.
+
+**Say:** "The agent just read customer names, emails, phone numbers, and SSN last-4. The session is now tainted with PII. Watch what happens next."
+
+**Prompt:**
+```
+Use web_search to find T-Mobile's current pricing
+```
+
+**Watch:** The agent attempts `web_search` → DENIED.
+
+**Say:** "The search query 'T-Mobile pricing' is completely clean — no PII in it. But Omnigent knows this session has seen customer data. The framework blocks the call before it reaches the LLM. This is what session-scoped governance means — AI Gateway can't do this because it's stateless per-request."
+
+---
+
+### Act 4: The contrast (3 min) — "Order matters"
+
+**Start a fresh session:** `omnigent run examples/telco_customer_agent/ --no-session`
+
+**Prompt:**
+```
+Use web_search to find T-Mobile's current unlimited plan prices
+```
+
+**Watch:** Web search succeeds — no taint yet.
+
+**Say:** "Same query, same agent, same session. But this time we searched before touching customer data — so it works."
+
+**Prompt:**
+```
+Show me CUST-1002's billing history
+```
+
+**Then:**
+```
+Use web_search to find average churn rates in telecom
+```
+
+**Watch:** Web search DENIED — financial taint now set.
+
+**Say:** "One billing query, and the session is locked. Labels are monotonic — once set, they can't be unset. The order matters: search first, then data. Not the other way around."
+
+---
+
+### Act 5: Strict tool enforcement (1 min) — "Out of scope"
+
+**Prompt:**
+```
+What's the weather in San Francisco?
+```
+
+**Watch:** The agent declines — "I can only help with telco customer data questions."
+
+**Say:** "The agent won't answer from training data. Every answer must come from a tool. Out-of-scope questions are declined, not hallucinated."
+
+---
+
+### Timing Summary
+
+| Act | Duration | Focus |
+|-----|----------|-------|
+| 1. The YAML | 2 min | Three labels, two denials, declarative governance |
+| 2. Safe queries | 2 min | Public plan data — no restrictions |
+| 3. The taint | 4 min | PII taint → web search denied |
+| 4. The contrast | 3 min | Web search works before data access, blocked after |
+| 5. Out of scope | 1 min | Strict tool enforcement — declines unrelated questions |
+| **Total** | **12 min** | |
 
 ---
 
