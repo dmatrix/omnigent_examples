@@ -27,7 +27,7 @@ examples/secure_code_assistant/
 Create the directory bundle with a working agent before adding any guardrails.
 
 **Create `examples/secure_code_assistant/tools/python/read_source.py`**
-- Follow the tool pattern from `examples/greeter/tools/python/greet.py`: module docstring, `from __future__ import annotations`, `from omnigent_client.tools import tool`, `@tool` decorator, `:param`/`:returns:` docstring
+- Follow the standard tool pattern: module docstring, `from __future__ import annotations`, `from omnigent_client.tools import tool`, `@tool` decorator, `:param`/`:returns:` docstring
 - Use `os.getcwd()` not `__file__` (per CLAUDE.md known issue about temp paths)
 - Implementation from plan doc lines 152-169
 
@@ -119,7 +119,7 @@ Add `cost_guard` policy.
 
 **Update `README.md`**
 - Add row to "All Examples" table (~line 301): `| **Secure Code Assistant** | examples/secure_code_assistant/ | Information flow control — blocks web search after code read, blocks file writes after web search |`
-- Add entry to "Project Structure" tree (~line 335) between `rag_mlflow_docs/` and `telco_customer_agent/`
+- Add entry to "Project Structure" tree (~line 335) before `telco_customer_agent/`
 
 **Update `CLAUDE.md`**
 - Add `secure_code_assistant/` entry to "Directory Structure" section (~line 74)

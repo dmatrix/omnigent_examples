@@ -1,0 +1,196 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 700" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <linearGradient id="userG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#48c9b0"/>
+      <stop offset="100%" stop-color="#1abc9c"/>
+    </linearGradient>
+    <linearGradient id="supervisorG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2980b9"/>
+      <stop offset="100%" stop-color="#1a5276"/>
+    </linearGradient>
+    <linearGradient id="codexG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e97c00"/>
+      <stop offset="100%" stop-color="#f5a623"/>
+    </linearGradient>
+    <linearGradient id="claudeG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#533483"/>
+      <stop offset="100%" stop-color="#6c3d9e"/>
+    </linearGradient>
+    <linearGradient id="sessionG" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1abc9c"/>
+      <stop offset="100%" stop-color="#48c9b0"/>
+    </linearGradient>
+    <linearGradient id="cwdG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0f3460"/>
+      <stop offset="100%" stop-color="#1a5276"/>
+    </linearGradient>
+    <linearGradient id="flowG" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#e97c00"/>
+      <stop offset="100%" stop-color="#6c3d9e"/>
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+    <marker id="arrowCodex" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#f5a623" opacity="0.7"/>
+    </marker>
+    <marker id="arrowClaude" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#6c3d9e" opacity="0.7"/>
+    </marker>
+    <marker id="arrowCodexReturn" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#f5a623" opacity="0.5"/>
+    </marker>
+    <marker id="arrowClaudeReturn" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#6c3d9e" opacity="0.5"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="700" fill="url(#bg)"/>
+
+  <!-- Subtle grid -->
+  <g opacity="0.03" stroke="#fff" stroke-width="0.5">
+    <line x1="0" y1="100" x2="900" y2="100"/><line x1="0" y1="200" x2="900" y2="200"/>
+    <line x1="0" y1="300" x2="900" y2="300"/><line x1="0" y1="400" x2="900" y2="400"/>
+    <line x1="0" y1="500" x2="900" y2="500"/><line x1="0" y1="600" x2="900" y2="600"/>
+    <line x1="150" y1="0" x2="150" y2="700"/><line x1="300" y1="0" x2="300" y2="700"/>
+    <line x1="450" y1="0" x2="450" y2="700"/><line x1="600" y1="0" x2="600" y2="700"/>
+    <line x1="750" y1="0" x2="750" y2="700"/>
+  </g>
+
+  <!-- Decorative circles -->
+  <circle cx="80" cy="120" r="40" fill="#f5a623" opacity="0.04"/>
+  <circle cx="820" cy="500" r="55" fill="#6c3d9e" opacity="0.04"/>
+  <circle cx="750" cy="100" r="35" fill="#48c9b0" opacity="0.04"/>
+
+  <!-- Title -->
+  <text x="450" y="38" text-anchor="middle" fill="#fff" font-size="18" font-weight="700" letter-spacing="1">Cross-Harness Coding — Omnigent Multi-Harness Orchestration</text>
+  <text x="450" y="58" text-anchor="middle" fill="#8899aa" font-size="11">Codex Implements  |  Claude Reviews  |  One Shared Session</text>
+
+  <!-- ============ User Query ============ -->
+  <rect x="330" y="75" width="240" height="44" rx="22" fill="url(#userG)" filter="url(#shadow)"/>
+  <text x="370" y="102" fill="#fff" font-size="14" font-weight="600">Coding Request</text>
+  <text x="520" y="100" fill="#fff" font-size="16">&#x1F464;</text>
+
+  <!-- Arrow: User -> Supervisor -->
+  <line x1="450" y1="119" x2="450" y2="148" stroke="#48c9b0" stroke-width="2" opacity="0.8"/>
+  <polygon points="445,146 455,146 450,156" fill="#48c9b0" opacity="0.8"/>
+
+  <!-- ============ Supervisor ============ -->
+  <rect x="200" y="156" width="500" height="65" rx="12" fill="url(#supervisorG)" filter="url(#shadow)"/>
+  <text x="450" y="183" text-anchor="middle" fill="#fff" font-size="16" font-weight="700">Supervisor — Coordinator</text>
+  <text x="450" y="200" text-anchor="middle" fill="#a8d8ea" font-size="10">claude-sdk  |  claude-sonnet-4-6  |  Never writes code</text>
+  <text x="450" y="213" text-anchor="middle" fill="#7ec8e3" font-size="8" font-style="italic">Decomposes tasks, dispatches to sub-agents, synthesizes results</text>
+
+  <!-- ============ Session Banner ============ -->
+  <rect x="80" y="240" width="740" height="35" rx="8" fill="url(#sessionG)" filter="url(#shadow)" opacity="0.2"/>
+  <rect x="80" y="240" width="740" height="35" rx="8" fill="none" stroke="#48c9b0" stroke-width="1.2" opacity="0.6"/>
+  <text x="450" y="262" text-anchor="middle" fill="#48c9b0" font-size="12" font-weight="700">&#x1F517; One Shared Session — All Agents Share Context, Files, and State</text>
+
+  <!-- ============ Flow Step Labels ============ -->
+  <!-- Step 1: Supervisor -> impl_worker -->
+  <text x="260" y="300" text-anchor="middle" fill="#f5a623" font-size="10" font-weight="600">&#x2460; Dispatch Implementation</text>
+
+  <!-- Step 3: Supervisor -> review_worker -->
+  <text x="640" y="300" text-anchor="middle" fill="#6c3d9e" font-size="10" font-weight="600">&#x2462; Dispatch Review</text>
+
+  <!-- Arrows: Supervisor -> Sub-agents -->
+  <line x1="350" y1="221" x2="260" y2="310" stroke="#f5a623" stroke-width="2" opacity="0.7" marker-end="url(#arrowCodex)"/>
+  <line x1="550" y1="221" x2="640" y2="310" stroke="#6c3d9e" stroke-width="2" opacity="0.7" marker-end="url(#arrowClaude)"/>
+
+  <!-- ============ impl_worker (Codex) ============ -->
+  <rect x="80" y="315" width="350" height="130" rx="12" fill="url(#codexG)" filter="url(#shadow)"/>
+  <text x="255" y="342" text-anchor="middle" fill="#fff" font-size="15" font-weight="700">impl_worker</text>
+  <text x="255" y="362" text-anchor="middle" fill="#ffecd2" font-size="10">Codex Harness  |  gpt-5.4</text>
+  <line x1="100" y1="372" x2="410" y2="372" stroke="#fff" stroke-width="0.5" opacity="0.2"/>
+  <text x="255" y="392" text-anchor="middle" fill="#fff" font-size="10">Implementation Specialist (OpenAI)</text>
+  <text x="255" y="410" text-anchor="middle" fill="#ffd5a0" font-size="9">Writes code, creates tests, runs verification</text>
+  <text x="255" y="428" text-anchor="middle" fill="#e8c07a" font-size="8" font-style="italic">Shell access via os_env — reads/writes project files</text>
+
+  <!-- ============ review_worker (Claude) ============ -->
+  <rect x="470" y="315" width="350" height="130" rx="12" fill="url(#claudeG)" filter="url(#shadow)"/>
+  <text x="645" y="342" text-anchor="middle" fill="#fff" font-size="15" font-weight="700">review_worker</text>
+  <text x="645" y="362" text-anchor="middle" fill="#d7bde2" font-size="10">Claude SDK  |  claude-sonnet-4-6</text>
+  <line x1="490" y1="372" x2="800" y2="372" stroke="#fff" stroke-width="0.5" opacity="0.2"/>
+  <text x="645" y="392" text-anchor="middle" fill="#fff" font-size="10">Senior Code Reviewer (Anthropic)</text>
+  <text x="645" y="410" text-anchor="middle" fill="#c39bd3" font-size="9">Correctness, security, style, performance</text>
+  <text x="645" y="428" text-anchor="middle" fill="#af7ac5" font-size="8" font-style="italic">Verdict: PASS / REVISE / REJECT</text>
+
+  <!-- Return arrows: Sub-agents -> Supervisor -->
+  <line x1="260" y1="315" x2="350" y2="225" stroke="#f5a623" stroke-width="1.5" opacity="0.5" marker-end="url(#arrowCodexReturn)"/>
+  <text x="280" y="275" fill="#ffd5a0" font-size="8" font-weight="600">&#x2461; Code ready</text>
+
+  <line x1="640" y1="315" x2="550" y2="225" stroke="#6c3d9e" stroke-width="1.5" opacity="0.5" marker-end="url(#arrowClaudeReturn)"/>
+  <text x="610" y="275" fill="#c39bd3" font-size="8" font-weight="600">&#x2463; Review verdict</text>
+
+  <!-- ============ Revision Loop ============ -->
+  <path d="M430,420 C430,480 470,480 470,420" fill="none" stroke="#e74c3c" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.6"/>
+  <text x="450" y="490" text-anchor="middle" fill="#e74c3c" font-size="9" font-weight="600">REVISE loop</text>
+  <text x="450" y="503" text-anchor="middle" fill="#f5b7b1" font-size="7">If review finds issues, supervisor</text>
+  <text x="450" y="514" text-anchor="middle" fill="#f5b7b1" font-size="7">sends feedback back to impl_worker</text>
+
+  <!-- ============ Shared CWD ============ -->
+  <rect x="160" y="465" width="580" height="45" rx="8" fill="url(#cwdG)" filter="url(#shadow)" opacity="0.7"/>
+  <text x="450" y="487" text-anchor="middle" fill="#a8d8ea" font-size="11" font-weight="700">&#x1F4C2; Shared Working Directory</text>
+  <text x="450" y="501" text-anchor="middle" fill="#7ec8e3" font-size="8">Both sub-agents read and write the same project files — rate_limiter.py, test_rate_limiter.py, etc.</text>
+
+  <!-- ============ Pipeline Flow ============ -->
+  <text x="450" y="540" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">Cross-Harness Pipeline</text>
+
+  <!-- Flow boxes -->
+  <rect x="40" y="555" width="155" height="50" rx="8" fill="url(#userG)" filter="url(#shadow)" opacity="0.8"/>
+  <text x="117" y="577" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">User Request</text>
+  <text x="117" y="593" text-anchor="middle" fill="#d5f5e3" font-size="7">"Write a rate limiter"</text>
+
+  <line x1="195" y1="580" x2="215" y2="580" stroke="#fff" stroke-width="1.5" opacity="0.4"/>
+  <polygon points="213,576 213,584 221,580" fill="#fff" opacity="0.4"/>
+
+  <rect x="222" y="555" width="130" height="50" rx="8" fill="url(#supervisorG)" filter="url(#shadow)" opacity="0.8"/>
+  <text x="287" y="577" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">Supervisor</text>
+  <text x="287" y="593" text-anchor="middle" fill="#a8d8ea" font-size="7">Decomposes task</text>
+
+  <line x1="352" y1="580" x2="372" y2="580" stroke="#fff" stroke-width="1.5" opacity="0.4"/>
+  <polygon points="370,576 370,584 378,580" fill="#fff" opacity="0.4"/>
+
+  <rect x="379" y="555" width="130" height="50" rx="8" fill="url(#codexG)" filter="url(#shadow)" opacity="0.8"/>
+  <text x="444" y="577" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">impl_worker</text>
+  <text x="444" y="593" text-anchor="middle" fill="#ffecd2" font-size="7">Codex writes code</text>
+
+  <line x1="509" y1="580" x2="529" y2="580" stroke="#fff" stroke-width="1.5" opacity="0.4"/>
+  <polygon points="527,576 527,584 535,580" fill="#fff" opacity="0.4"/>
+
+  <rect x="536" y="555" width="130" height="50" rx="8" fill="url(#claudeG)" filter="url(#shadow)" opacity="0.8"/>
+  <text x="601" y="577" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">review_worker</text>
+  <text x="601" y="593" text-anchor="middle" fill="#d7bde2" font-size="7">Claude reviews code</text>
+
+  <line x1="666" y1="580" x2="686" y2="580" stroke="#fff" stroke-width="1.5" opacity="0.4"/>
+  <polygon points="684,576 684,584 692,580" fill="#fff" opacity="0.4"/>
+
+  <rect x="693" y="555" width="155" height="50" rx="8" fill="url(#userG)" filter="url(#shadow)" opacity="0.8"/>
+  <text x="770" y="577" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">Final Response</text>
+  <text x="770" y="593" text-anchor="middle" fill="#d5f5e3" font-size="7">Code + review verdict</text>
+
+  <!-- ============ Harness Portability Callout ============ -->
+  <rect x="160" y="625" width="580" height="40" rx="8" fill="#0d3b1f" opacity="0.4" stroke="#2ecc71" stroke-width="1"/>
+  <text x="450" y="645" text-anchor="middle" fill="#2ecc71" font-size="10" font-weight="700">&#x1F504; Harness Portability — Swap codex &#x2194; openai-agents &#x2194; claude-sdk &#x2194; ollama without changing tools or prompts</text>
+  <text x="450" y="658" text-anchor="middle" fill="#7dcea0" font-size="8">One YAML change per sub-agent. Same delegation logic. Same shared session.</text>
+
+  <!-- ============ Footer Badges ============ -->
+  <g transform="translate(0, 680)">
+    <rect x="130" y="0" width="120" height="16" rx="8" fill="#2980b9" opacity="0.25"/>
+    <text x="190" y="12" text-anchor="middle" fill="#2980b9" font-size="8" font-weight="600">Omnigent CLI</text>
+
+    <rect x="265" y="0" width="120" height="16" rx="8" fill="#f5a623" opacity="0.25"/>
+    <text x="325" y="12" text-anchor="middle" fill="#f5a623" font-size="8" font-weight="600">Codex Harness</text>
+
+    <rect x="400" y="0" width="120" height="16" rx="8" fill="#6c3d9e" opacity="0.25"/>
+    <text x="460" y="12" text-anchor="middle" fill="#6c3d9e" font-size="8" font-weight="600">Claude SDK</text>
+
+    <rect x="535" y="0" width="120" height="16" rx="8" fill="#48c9b0" opacity="0.25"/>
+    <text x="595" y="12" text-anchor="middle" fill="#48c9b0" font-size="8" font-weight="600">Shared Session</text>
+  </g>
+</svg>

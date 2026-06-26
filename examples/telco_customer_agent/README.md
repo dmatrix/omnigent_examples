@@ -2,7 +2,7 @@
 
 **Multi-tool customer data agent with session-scoped PII and financial policy enforcement.**
 
-![Telco Customer Agent Architecture](../../images/telco_customer_agent_architecture.svg)
+![Telco Customer Agent Architecture](images/telco_customer_agent_architecture.svg)
 
 ---
 
