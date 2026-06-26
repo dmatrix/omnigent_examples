@@ -1,4 +1,4 @@
-# Telco Customer Agent
+# Telco Customer Agent with Omnigent <img src="../../images/omnigent_icon.svg" alt="Omnigent" height="32" align="top">
 
 **Multi-tool customer data agent with session-scoped PII and financial policy enforcement.**
 

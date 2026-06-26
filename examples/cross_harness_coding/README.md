@@ -1,4 +1,4 @@
-# Cross-Harness Coding
+# Cross-Harness Coding with Omnigent <img src="../../images/omnigent_icon.svg" alt="Omnigent" height="32" align="top">
 
 **Codex implements, Claude reviews, one session — multi-harness orchestration in a single YAML.**
 
@@ -199,6 +199,20 @@ Put it in rate_limiter.py with unit tests in test_rate_limiter.py.
 | **review_worker** | `claude-sdk` | `claude-sonnet-4-6` | Review — correctness, security, style, performance analysis |
 
 All three agents share the same `os_env` (filesystem and CWD). The supervisor dispatches sequentially: implement first, then review. If the review returns REVISE, the cycle repeats.
+
+### Request flow
+
+```
+1. User sends a coding task (e.g. "write a rate limiter")
+2. Supervisor (Claude) breaks down the request, dispatches to impl_worker
+3. impl_worker (Codex) writes code files to the shared filesystem
+4. Supervisor takes the result, dispatches to review_worker
+5. review_worker (Claude) reviews the code → returns PASS, REVISE, or REJECT
+6. If REVISE → Supervisor sends feedback back to impl_worker for another pass
+7. Supervisor synthesizes the final result and responds to the user
+```
+
+No code is executed — the pipeline is purely write and review. All three agents operate on the same working directory.
 
 ---
 

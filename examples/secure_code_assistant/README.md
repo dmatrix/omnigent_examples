@@ -1,4 +1,4 @@
-# Secure Code Assistant
+# Secure Code Assistant with Omnigent <img src="../../images/omnigent_icon.svg" alt="Omnigent" height="32" align="top">
 
 **Coding assistant with session-scoped information flow control — blocks web search after code read, blocks file writes after web search.**
 
