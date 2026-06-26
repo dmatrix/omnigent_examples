@@ -90,9 +90,11 @@ authentication. Review it for security issues before we ship.
 
 **Refactor + review:**
 ```
-Read app.py, refactor the request handler to use async/await,
+Read rate_limiter.py, refactor it to use async/await,
 then review the refactor for correctness.
 ```
+
+All generated code is written to `examples/cross_harness_coding/omnigent_code_generated/`.
 
 ---
 
