@@ -136,6 +136,6 @@ Run through the plan doc's verification checklist (lines 423-432):
 3. `read_source` sets `has_proprietary_code` taint
 4. `web_search` DENIED with expected message
 5. New session: web search succeeds, then `sys_os_write` DENIED after web taint
-6. `--model gpt-4o --harness openai-agents` — same DENY fires (portability)
+6. `--model gpt-5.5 --harness openai-agents` — same DENY fires (portability)
 7. `omnigent attach <session_id>` — second terminal shows history
 8. Web UI at localhost:8000 shows the session

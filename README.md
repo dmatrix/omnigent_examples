@@ -109,7 +109,7 @@ omnigent run examples/secure_code_assistant/ --model claude-sonnet-4-6 --harness
 omnigent run examples/telco_customer_agent/
 
 # Telco -- OpenAI
-omnigent run examples/telco_customer_agent/ --model gpt-4o --harness openai-agents
+omnigent run examples/telco_customer_agent/ --model gpt-5.5 --harness openai-agents
 
 # Fresh session (no persistence)
 omnigent run examples/telco_customer_agent/ --no-session
@@ -191,7 +191,7 @@ executor:
 ```yaml
 executor:
   type: omnigent
-  model: gpt-4o
+  model: gpt-5.5
   config:
     harness: codex
 ```
@@ -209,7 +209,7 @@ Or override at the command line without editing the YAML:
 ```bash
 omnigent run examples/secure_code_assistant/ --model claude-sonnet-4-6 --harness claude-sdk
 omnigent run examples/telco_customer_agent/ --model gpt-5 --harness openai-agents
-omnigent run examples/cross_harness_coding/ --model gpt-4o --harness codex
+omnigent run examples/cross_harness_coding/ --model gpt-5.5 --harness codex
 omnigent run examples/telco_customer_agent/ --harness pi
 ```
 
@@ -229,7 +229,7 @@ omnigent run examples/telco_customer_agent/ --harness pi
 | **Anthropic (direct)** | `claude-sonnet-4-6` | `claude-sdk` | `ANTHROPIC_API_KEY` in `.env` |
 | | `claude-opus-4-7` | `claude-sdk` | `ANTHROPIC_API_KEY` in `.env` |
 | | `claude-haiku-4-5` | `claude-sdk` | `ANTHROPIC_API_KEY` in `.env` |
-| **OpenAI (direct)** | `gpt-4o` | `openai-agents` or `codex` | `OPENAI_API_KEY` in `.env` |
+| **OpenAI (direct)** | `gpt-5.5` | `openai-agents` or `codex` | `OPENAI_API_KEY` in `.env` |
 | | `gpt-5.3-codex` | `openai-agents` or `codex` | `OPENAI_API_KEY` in `.env` |
 | | `gpt-5.4` | `openai-agents` or `codex` | `OPENAI_API_KEY` in `.env` |
 | | `gpt-5.4-mini` | `openai-agents` or `codex` | `OPENAI_API_KEY` in `.env` |
@@ -294,8 +294,7 @@ Tools are auto-discovered from `tools/python/` in the agent's directory. Each `.
 
 | Layout | Use when | Examples |
 |---|---|---|
-| **Standalone YAML** | No custom tools. Prompt-only agents or agents using builtins like `web_search`. | `supervisor.yaml` |
-| **Directory bundle** | Custom Python tools in `tools/python/`. The framework auto-discovers `@tool` functions. | `secure_code_assistant/`, `telco_customer_agent/` |
+| **Directory bundle** | All examples. Custom Python tools in `tools/python/` are auto-discovered. | `secure_code_assistant/`, `telco_customer_agent/`, `cross_harness_coding/` |
 
 ---
 
@@ -306,7 +305,6 @@ Tools are auto-discovered from `tools/python/` in the agent's directory. Each `.
 | **Secure Code Assistant** | [`examples/secure_code_assistant/`](examples/secure_code_assistant/) | Information flow control — blocks web search after code read, blocks file writes after web search |
 | **Telco Customer** | [`examples/telco_customer_agent/`](examples/telco_customer_agent/) | Customer data agent with PII/financial policy labels (supports Databricks, OpenAI, Claude) |
 | **Cross-Harness Coding** | [`examples/cross_harness_coding/`](examples/cross_harness_coding/) | Multi-harness delegation — Codex implements, Claude reviews, one shared session |
-| **Coding Supervisor** | [`examples/supervisor_delegation/`](examples/supervisor_delegation/) | Delegates coding tasks to an implementation sub-agent |
 
 ---
 
@@ -348,12 +346,6 @@ omnigent_examples/
 |   |   |-- create_telco_db.py               #   Telco database setup script
 |   |   |-- data/telco.db                    #   Pre-built telco database (5 tables, 125 records)
 |   |   +-- python/                          #   Shared tool library
-|   |       |-- greet.py                     #   Greeting tool
-|   |       +-- summarize.py                 #   Summarization tool
-|   +-- supervisor_delegation/                # Same-harness sub-agent delegation
-|       |-- README.md
-|       |-- supervisor.yaml
-|       +-- agents/impl_worker/config.yaml
 +-- images/                                  # System-wide diagrams only
     |-- omnigent_local_architecture.svg
     |-- omnigent_local_architecture.png

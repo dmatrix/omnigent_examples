@@ -27,7 +27,7 @@ The policy engine enforces two key boundaries:
 
 Labels are **monotonic** -- once set, they cannot be unset for the session. This is session-scoped information flow control, not request-level scanning.
 
-A **cost budget** guardrail caps total spend at $5 with a $1 approval threshold.
+A **cost budget** guardrail caps total spend at $1 with a $0.05 approval threshold.
 
 ---
 
@@ -76,7 +76,7 @@ omnigent run examples/secure_code_assistant/
 omnigent run examples/secure_code_assistant/ --no-session
 
 # Override model and harness
-omnigent run examples/secure_code_assistant/ --model gpt-4o --harness openai-agents
+omnigent run examples/secure_code_assistant/ --model gpt-5.5 --harness openai-agents
 ```
 
 ---
@@ -138,7 +138,7 @@ The agent's `config.yaml` defines session-scoped guardrails:
 | `taint_web_search` | *(always)* | ALLOW `web_search`/`search_docs`, set label | Track external content ingestion |
 | `block_search_after_code` | `has_proprietary_code = True` | DENY `web_search`, `search_docs` | Prevent code leakage via search queries |
 | `block_write_after_web` | `has_external_content = True` | DENY `sys_os_write`, `sys_os_edit` | Prevent injection of untrusted web content |
-| `cost_guard` | *(always)* | Budget: $5 max, $1 ASK | Cap session cost |
+| `cost_guard` | *(always)* | Budget: $1 max, $0.05 ASK | Cap session cost |
 
 ---
 
@@ -255,7 +255,7 @@ Write a new middleware file at middleware.py with what you found
 **Do:** Exit the REPL. Re-run with OpenAI:
 
 ```bash
-omnigent run examples/secure_code_assistant/ --model gpt-4o --harness openai-agents --no-session
+omnigent run examples/secure_code_assistant/ --model gpt-5.5 --harness openai-agents --no-session
 ```
 
 ```
@@ -336,7 +336,7 @@ Both terminals show the response in real time.
 |-----|----------|--------|
 | 1. The Hook | 2 min | Walk through YAML, frame the three questions |
 | 2. Policies | 4 min | Taint + DENY both directions (wow moment) |
-| 3. Portability | 3 min | Same agent on GPT-4o, same DENY fires |
+| 3. Portability | 3 min | Same agent on GPT-5.5, same DENY fires |
 | 4. Collaboration | 3 min | Attach, co-drive, Web UI, fork |
 | 5. Close | 1 min | Recap three pillars |
 | **Total** | **13 min** | |

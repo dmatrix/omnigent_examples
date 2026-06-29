@@ -190,7 +190,7 @@ omnigent host
 omnigent run examples/telco_customer_agent/
 
 # Override model and harness at the command line
-omnigent run examples/telco_customer_agent/ --model gpt-4o --harness openai-agents
+omnigent run examples/telco_customer_agent/ --model gpt-5.5 --harness openai-agents
 omnigent run examples/telco_customer_agent/ --model claude-sonnet-4-6 --harness claude-sdk
 ```
 

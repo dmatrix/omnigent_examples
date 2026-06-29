@@ -283,10 +283,10 @@ Agent attempts `sys_os_write` → **DENIED**: *"File write blocked — untrusted
 **Do:** Exit the REPL. Re-run with OpenAI:
 
 ```bash
-omnigent run examples/secure_code_assistant/ --model gpt-4o --harness openai-agents --no-session
+omnigent run examples/secure_code_assistant/ --model gpt-5.5 --harness openai-agents --no-session
 ```
 
-*(If CLI override bug applies: edit `config.yaml` executor block to `model: gpt-4o` / `harness: openai-agents` instead.)*
+*(If CLI override bug applies: edit `config.yaml` executor block to `model: gpt-5.5` / `harness: openai-agents` instead.)*
 
 #### Quick verification
 
@@ -413,7 +413,7 @@ The full timed demo script from above, formatted for a presenter to follow.
 | **ASK policies (response phase) known broken on claude-sdk** | Demo only uses DENY on tool_call phase (proven). Cost budget ASK on tool_call phase should be tested — if it doesn't fire, mention it verbally instead. |
 | **LLM routes around denied tool** | Use explicit phrasing: "Use web_search to..." per design.md convention |
 | **CLI `--model`/`--harness` flags may be ignored by global config** | Test beforehand. Fallback: edit YAML executor block live (shows "agents as software" narrative) |
-| **OpenAI API key lacks gpt-4o access** | Verify beforehand. Fallback: show YAML edit + explain, run only on Claude |
+| **OpenAI API key lacks gpt-5.5 access** | Verify beforehand. Fallback: show YAML edit + explain, run only on Claude |
 | **Web UI session creation flaky** | Create session via CLI, then show in browser |
 | **`search_docs` tool may not provide real search results** | OK for demo — the tool call is what matters, not the content. The DENY fires on the tool call, before any search happens |
 | **Server crash** | Pre-record a backup of each act |
@@ -426,7 +426,7 @@ Before the demo:
 3. Turn 2: read_source sets `has_proprietary_code` taint
 4. Turn 3: web_search DENIED with the expected message
 5. New session: web search succeeds, then sys_os_write DENIED after web content taint
-6. `--model gpt-4o --harness openai-agents` — same DENY fires
+6. `--model gpt-5.5 --harness openai-agents` — same DENY fires
 7. `omnigent attach <session_id>` — second terminal shows history, can type
 8. Web UI at localhost:8000 shows the session
 9. Full run times to 10-15 minutes

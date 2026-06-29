@@ -611,10 +611,10 @@ export $(grep OPENAI_API_KEY .env | tr -d '"')
 Same `config.yaml`, different model — override at the command line:
 
 ```bash
-omnigent run examples/telco_customer_agent/ --model gpt-4o --harness openai-agents
+omnigent run examples/telco_customer_agent/ --model gpt-5.5 --harness openai-agents
 ```
 
-- `--model gpt-4o` — overrides `executor.model` in config.yaml
+- `--model gpt-5.5` — overrides `executor.model` in config.yaml
 - `--harness openai-agents` — overrides `executor.config.harness`
 
 ### Per-stage test commands
@@ -622,7 +622,7 @@ omnigent run examples/telco_customer_agent/ --model gpt-4o --harness openai-agen
 The command is the same for every stage — what changes is the tools and policies present in `config.yaml` at each stage:
 
 ```bash
-omnigent run examples/telco_customer_agent/ --model gpt-4o --harness openai-agents
+omnigent run examples/telco_customer_agent/ --model gpt-5.5 --harness openai-agents
 ```
 
 **Stage 1** (plans tool only):
@@ -655,7 +655,7 @@ What plans are available?   ← should route to query_plans, not web_search
 
 | Model | Flag | Notes |
 |---|---|---|
-| `gpt-4o` | `--model gpt-4o` | Recommended — accurate SQL, good tool routing |
+| `gpt-5.5` | `--model gpt-5.5` | Recommended — accurate SQL, good tool routing |
 | `gpt-4.1-mini` | `--model gpt-4.1-mini` | Budget option — occasional SQL column name errors |
 | `gpt-5.4` | `--model gpt-5.4` | Latest — untested with telco agent |
 

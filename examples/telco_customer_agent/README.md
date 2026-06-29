@@ -80,7 +80,7 @@ omnigent run examples/telco_customer_agent/
 # Override model at the command line
 omnigent run examples/telco_customer_agent/ --model gpt-5.4
 omnigent run examples/telco_customer_agent/ --model gpt-5.3-codex
-omnigent run examples/telco_customer_agent/ --model gpt-4o
+omnigent run examples/telco_customer_agent/ --model gpt-5.5
 
 # Anthropic Claude (requires ANTHROPIC_API_KEY)
 export $(grep ANTHROPIC_API_KEY .env | tr -d '"')

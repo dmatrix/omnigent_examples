@@ -21,7 +21,7 @@ os_env:
 tools:
   builtins:
     - web_search
-
+# --- Session state tracking ---
 guardrails:
   labels:
     has_proprietary_code:
@@ -35,7 +35,6 @@ guardrails:
 
   policies:
     # --- Taint policies: track what data the agent has seen ---
-
     taint_code_read:
       type: function
       function:
@@ -61,7 +60,6 @@ guardrails:
       set_labels: [has_external_content]
 
     # --- Deny policies: enforce information flow boundaries ---
-
     block_search_after_code:
       type: function
       condition:
@@ -94,14 +92,13 @@ guardrails:
           on_tools: [sys_os_write, sys_os_edit]
 
     # --- Cost policy: budget guardrail ---
-
     cost_guard:
       type: function
       function:
         path: omnigent.policies.builtins.cost.cost_budget
         arguments:
-          max_cost_usd: 5.0
-          ask_thresholds_usd: [1.0]
+          max_cost_usd: 1.0
+          ask_thresholds_usd: [0.05]
 
 prompt: |
   You are a secure code assistant. You help developers understand

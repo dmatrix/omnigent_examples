@@ -220,6 +220,9 @@ __marimo__/
 # Private docs
 DEVELOPER_EXPERIENCE.md
 
+# Omnigent generated code output
+omnigent_generated_code/
+
 # OmniAgents runtime files
 omniagents.db
 omniagents.db-shm

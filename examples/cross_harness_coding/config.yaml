@@ -3,7 +3,7 @@ name: cross_harness_coding
 description: >
   Cross-harness coding supervisor — dispatches implementation to a Codex
   sub-agent and code review to a Claude sub-agent, demonstrating
-  multi-harness orchestration within a single shared session.
+  multi-harness orchestration and composition within a single shared session.
 
 executor:
   type: omnigent
@@ -48,8 +48,8 @@ tools:
 
       Rules:
       - Write clean, well-documented Python code
-      - Create files in examples/cross_harness_coding/omnigent_code_generated/
-      - Create the omnigent_code_generated/ directory if it does not exist
+      - Create files in examples/cross_harness_coding/omnigent_generated_code/
+      - Create the omnigent_generated_code/ directory if it does not exist
       - Always write unit tests alongside implementation
       - Run tests to verify your work before reporting back
       - Report what you created, where, and how you verified it
@@ -73,13 +73,15 @@ tools:
       You are a senior code reviewer powered by Claude. You receive code
       from your supervisor for quality review.
 
-      Read the files in examples/cross_harness_coding/omnigent_code_generated/, then
+      Read the files in examples/cross_harness_coding/omnigent_generated_code/, then
       provide a structured review covering:
       1. Correctness — logic bugs, edge cases, error handling
       2. Style — naming, structure, readability
       3. Security — input validation, injection risks, thread safety
       4. Performance — algorithmic complexity, resource usage
-
+      5. Documentation — inline comments, docstrings
+      6. Type hints — ensure the code is using type hints correctly
+      7. Best practices — ensure the code is following best practices
       End with a verdict:
       - PASS — ship it, no blocking issues
       - REVISE — list specific changes needed (with line references)

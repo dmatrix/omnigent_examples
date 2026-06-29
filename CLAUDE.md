@@ -26,7 +26,7 @@ omnigent run examples/telco_customer_agent/
 omnigent run examples/cross_harness_coding/
 
 # Override model and harness at the command line
-omnigent run examples/secure_code_assistant/ --model gpt-4o --harness openai-agents
+omnigent run examples/secure_code_assistant/ --model gpt-5.5 --harness openai-agents
 omnigent run examples/secure_code_assistant/ --model claude-sonnet-4-6 --harness claude-sdk
 
 # Run against Databricks-hosted server
@@ -89,7 +89,6 @@ examples/
 |   |-- create_telco_db.py        # Telco database setup script
 |   |-- data/telco.db             # Pre-built telco database (5 tables, 125 records) 
 |   +-- python/                   # Shared tool library
-+-- supervisor_delegation/         # Same-harness sub-agent delegation
 ```
 
 ## Known Issues
@@ -97,4 +96,4 @@ examples/
 - **Module-level heavy imports hang auto-discovery.** The framework imports every `.py` in `tools/python/` at agent load time. Module-level `import pandas` or `import mlflow` blocks indefinitely. Use lazy imports inside function bodies.
 - **Tool subprocesses don't inherit shell env vars.** Tools run in isolated subprocesses. Use a `.env` file at the repo root for API keys -- the tool must load it explicitly.
 - **Tool subprocesses use temp `__file__` paths.** The agent bundle is copied to a temp directory. Use `os.getcwd()` to find repo-root files (database, `.env`), not `Path(__file__).parent`.
-- **GPT-5.5 reasoning models don't work with `openai-agents` harness.** GPT-5.x reasoning models require every `function_call` in conversation history to be paired with its `reasoning` item. The executor sets `reasoning_item_id_policy="omit"`, which breaks this pairing. Error: "function_call was provided without its required reasoning item". Use `claude-sdk` with Claude models, or `gpt-4o` (non-reasoning) with `openai-agents` instead.
+- **GPT-5.5 reasoning models don't work with `openai-agents` harness.** GPT-5.x reasoning models require every `function_call` in conversation history to be paired with its `reasoning` item. The executor sets `reasoning_item_id_policy="omit"`, which breaks this pairing. Error: "function_call was provided without its required reasoning item". Use `claude-sdk` with Claude models, or `gpt-5.5` (non-reasoning) with `openai-agents` instead.

@@ -94,7 +94,7 @@ Read rate_limiter.py, refactor it to use async/await,
 then review the refactor for correctness.
 ```
 
-All generated code is written to `examples/cross_harness_coding/omnigent_code_generated/`.
+All generated code is written to `examples/cross_harness_coding/omnigent_generated_code/`.
 
 ---
 
