@@ -4,13 +4,13 @@ Detailed breakdown of every attribute in `config.yaml`, its role, scope, and nes
 
 ---
 
-## Top-level metadata (lines 1-6)
+## Top-level metadata (lines 1-7)
 
 | Attribute | Value | Role |
 |---|---|---|
 | `spec_version` | `1` | Schema version of the Omnigent agent YAML spec. Tells the framework which parser to use. |
 | `name` | `cross_harness_coding` | Unique identifier for this agent. Used in session logs, CLI output, and the `omnigent run` resolver. |
-| `description` | *(multiline string)* | Human-readable summary. Shown in `omnigent list` and the Web UI agent picker. The `>` folding style collapses newlines into spaces. |
+| `description` | *(multiline string)* | Human-readable summary shown in `omnigent list` and the Web UI. The `>` folding style collapses newlines into spaces. |
 
 ---
 
@@ -35,10 +35,14 @@ A `|` literal block (preserves newlines). This is the system message sent to the
 1. **Role** — "You are a coding supervisor"
 2. **Hard constraint** — "You MUST delegate all work — never write or review code yourself"
 3. **Agent roster** — Names and capabilities of `impl_worker` and `review_worker`
-4. **Workflow** — The sequential implement -> review -> revise loop
+4. **Workflow** — implement → verify tests → review → revise:
+   - `impl_worker` writes code and runs tests
+   - Supervisor checks the test report — if tests fail, sends failures back to `impl_worker` (skips review)
+   - Once tests pass, `review_worker` reviews the code
+   - If REVISE, feedback goes back to `impl_worker` for another cycle
 5. **Transparency rule** — "Always tell the user which agent is working"
 
-The supervisor's prompt is the only place the orchestration logic lives. There's no code — the LLM follows these instructions to decide when to call which sub-agent tool.
+The prompt is the only place the orchestration logic lives — no code. The LLM follows these instructions to decide when to call which tool.
 
 ---
 
@@ -48,86 +52,128 @@ Grants the supervisor access to the host operating system (shell, filesystem).
 
 | Attribute | Value | Role |
 |---|---|---|
-| `type` | `caller_process` | Inherit the environment of the process that launched `omnigent run`. The agent sees the same filesystem, env vars, and CWD as your terminal. |
+| `type` | `caller_process` | Inherit the shell environment of the process that launched `omnigent run` — same filesystem, env vars, and CWD. |
 | `cwd` | `.` | Working directory. `.` = wherever you ran `omnigent run` from (typically the repo root). |
-| `sandbox.type` | `none` | No sandboxing — the agent can read/write anywhere the calling process can. Other options include `docker` or `firecracker` for isolation. |
+| `sandbox.type` | `none` | No sandboxing — the agent can read/write anywhere the calling process can. |
 
-**Scope:** This `os_env` is the supervisor's own. Each sub-agent declares its own `os_env` independently (they happen to be identical here, so all three share the same filesystem view).
-
----
-
-## `tools:` — Sub-agent declarations
-
-The `tools:` block declares what tools the supervisor can call. In this config, there are no Python tools or builtins — only two **sub-agents**, each declared as a tool of `type: agent`.
-
-When the supervisor's LLM decides to call `impl_worker(...)` or `review_worker(...)`, the framework spawns a child agent session, passes the argument as the task, and returns the sub-agent's final response as the tool result.
+**Scope:** Each agent declares its own `os_env`. All three agents use `sandbox: none` and share the same `cwd: .` filesystem.
 
 ---
 
-### `tools.impl_worker:` — The implementation sub-agent
+## `tools:` — Sub-agent references
 
-| Attribute | Path | Role |
+The `tools:` block declares what the supervisor can call. It references two sub-agents by name — each lives in its own directory under `agents/`.
+
+```yaml
+tools:
+  agents:
+    - impl_worker
+    - review_worker
+```
+
+The framework discovers `agents/impl_worker/config.yaml` and `agents/review_worker/config.yaml`, registers them as callable tools, and spawns child sessions when the supervisor invokes them.
+
+---
+
+### `agents/impl_worker/config.yaml` — The implementation sub-agent
+
+| Attribute | Value | Role |
 |---|---|---|
-| `type` | `impl_worker.type` | `agent` — this tool is a sub-agent, not a Python function or builtin. |
-| `prompt` | `impl_worker.prompt` | System prompt for the implementation agent. Defines its role (coder), output directory (`omnigent_generated_code/`), and rules (write tests, run them, report results). |
-| `executor.type` | `impl_worker.executor.type` | `omnigent` — same executor type as the supervisor. |
-| `executor.model` | `impl_worker.executor.model` | `gpt-5.4` — this sub-agent runs on OpenAI, not Anthropic. This is the cross-harness part. |
-| `executor.config.harness` | `impl_worker.executor.config.harness` | `codex` — uses the Codex CLI harness (requires `codex` binary on PATH). |
-| `os_env` | `impl_worker.os_env` | Same as supervisor — `caller_process`, `cwd: .`, no sandbox. Shares the same filesystem so it can write files the reviewer can read. |
+| `name` | `impl_worker` | Must match the name in the parent's `tools.agents` list. |
+| `description` | *(multiline)* | Human-readable summary shown to the supervisor LLM as the tool description. |
+| `prompt` | *(literal block)* | System prompt for the implementation agent. Defines its role (coder), output directory (`omnigent_generated_code/`), and rules (write tests, run them, report results). |
+| `executor.type` | `omnigent` | Same executor type as the supervisor. |
+| `executor.model` | `gpt-5.5` | This sub-agent runs on OpenAI, not Anthropic. This is the cross-harness part. |
+| `executor.config.harness` | `codex` | Uses the Codex CLI harness (requires `codex` binary on PATH). |
+| `os_env` | `caller_process`, `cwd: .`, `sandbox: none` | Same filesystem access as the supervisor and reviewer. All agents share the same working directory. |
 
 **Key point:** The impl_worker's `executor` is completely independent from the supervisor's. Different model, different harness, different provider. The framework handles the protocol translation.
 
 ---
 
-### `tools.review_worker:` — The review sub-agent
+### `agents/review_worker/config.yaml` — The review sub-agent
 
-| Attribute | Path | Role |
+| Attribute | Value | Role |
 |---|---|---|
-| `type` | `review_worker.type` | `agent` — sub-agent tool. |
-| `prompt` | `review_worker.prompt` | System prompt for the reviewer. Reads from `omnigent_generated_code/`, evaluates on four dimensions (correctness, style, security, performance), returns a structured verdict (PASS/REVISE/REJECT). |
-| `executor.type` | `review_worker.executor.type` | `omnigent` |
-| `executor.model` | `review_worker.executor.model` | `claude-sonnet-4-6` — same model as the supervisor but running as a separate agent session. |
-| `executor.config.harness` | `review_worker.executor.config.harness` | `claude-sdk` — same harness as the supervisor. |
-| `os_env` | `review_worker.os_env` | Same filesystem access — reads the files that `impl_worker` wrote. |
+| `name` | `review_worker` | Must match the name in the parent's `tools.agents` list. |
+| `description` | *(multiline)* | Human-readable summary shown to the supervisor LLM as the tool description. |
+| `prompt` | *(literal block)* | System prompt for the reviewer. Reads from `omnigent_generated_code/`, evaluates on seven dimensions (correctness, style, security, performance, documentation, type hints, best practices), returns a structured verdict (PASS/REVISE/REJECT). |
+| `executor.type` | `omnigent` | Same executor type as the supervisor. |
+| `executor.model` | `claude-sonnet-4-6` | Same model as the supervisor but running as a separate agent session. |
+| `executor.config.harness` | `claude-sdk` | Same harness as the supervisor. |
+| `os_env` | `caller_process`, `cwd: .`, `sandbox: none` | Same filesystem access as the other agents. |
+
+---
+
+## `guardrails:` — Cost governance
+
+This config uses a single cost-guard policy — no labels, no taint, no deny policies:
+
+```yaml
+guardrails:
+  policies:
+    cost_guard:
+      type: function
+      function:
+        path: omnigent.policies.builtins.cost.cost_budget
+        arguments:
+          max_cost_usd: 3.0
+          ask_thresholds_usd: [0.50]
+```
+
+| Attribute | Role |
+|---|---|
+| `function.path` | `omnigent.policies.builtins.cost.cost_budget` — built-in cost tracker that evaluates on every turn. |
+| `max_cost_usd` | Hard cap — session terminates if cumulative cost exceeds $3.00. |
+| `ask_thresholds_usd` | `[0.50]` — pause and ask the user for approval when cost crosses $0.50. |
+
+**Why $3 and $0.50?** Three LLMs, two providers. One implement-test-review cycle can cost $0.50–1.00. The $3.00 cap allows 2–3 revision cycles; the $0.50 ASK fires after roughly one cycle.
+
+**Why no labels or taint policies?** All three agents need full read/write access to the same files — there are no natural information-flow boundaries. See [secure_code_assistant](../secure_code_assistant/) and [telco_customer_agent](../telco_customer_agent/) for taint/deny examples.
+
+**Scope:** The cost guard tracks spend across the entire session tree — supervisor, impl_worker, and review_worker all contribute to one cumulative budget across both providers.
 
 ---
 
 ## What's NOT in this config
 
-Compared to the telco and secure_code_assistant examples, this config has **no `guardrails:` block** — no labels, no policies. That's intentional: this example focuses purely on composition (cross-harness delegation), not governance. It also has no `tools.builtins:` (no web_search) and no `tools/python/` directory — both sub-agents use shell access only via `os_env`.
+Compared to the secure_code_assistant and telco examples, this config has:
+- **No labels** — no taint tracking (cost governance only)
+- **No taint/deny policies** — no information flow control
+- **No builtins** — no `web_search`
 
 ---
 
 ## Nesting summary
 
 ```
-config.yaml
-+-- spec_version          # schema version
-+-- name                  # agent identifier
-+-- description           # human-readable summary
-+-- executor              # SUPERVISOR's LLM config
-|   +-- type
-|   +-- model
-|   +-- config.harness
-+-- prompt                # SUPERVISOR's system prompt
-+-- os_env                # SUPERVISOR's filesystem access
-|   +-- type
-|   +-- cwd
-|   +-- sandbox.type
-+-- tools                 # SUPERVISOR's callable tools
-    +-- impl_worker       # sub-agent tool #1
-    |   +-- type: agent
-    |   +-- prompt        # IMPL's system prompt
-    |   +-- executor      # IMPL's LLM config (different harness!)
-    |   +-- os_env        # IMPL's filesystem access
-    +-- review_worker     # sub-agent tool #2
-        +-- type: agent
-        +-- prompt        # REVIEWER's system prompt
-        +-- executor      # REVIEWER's LLM config
-        +-- os_env        # REVIEWER's filesystem access
+cross_harness_coding/
++-- config.yaml               # SUPERVISOR config
+|   +-- spec_version          # schema version
+|   +-- name                  # agent identifier
+|   +-- description           # human-readable summary
+|   +-- executor              # SUPERVISOR's LLM config
+|   |   +-- type
+|   |   +-- model
+|   |   +-- config.harness
+|   +-- prompt                # SUPERVISOR's system prompt
+|   +-- os_env                # SUPERVISOR's filesystem access
+|   |   +-- type
+|   |   +-- cwd
+|   |   +-- sandbox.type
+|   +-- tools                 # SUPERVISOR's callable tools
+|   |   +-- agents: [impl_worker, review_worker]
+|   +-- guardrails            # session-scoped governance
+|       +-- policies
+|           +-- cost_guard    # budget cap: $2 max, $0.10 ASK threshold
++-- agents/
+|   +-- impl_worker/
+|   |   +-- config.yaml       # IMPL's config (harness: codex)
+|   +-- review_worker/
+|       +-- config.yaml       # REVIEWER's config (harness: claude-sdk)
 ```
 
-Each sub-agent is a fully self-contained agent definition nested inside the parent's `tools:` block. They get their own model, harness, prompt, and environment — the only thing they share with the supervisor is the session tree.
+Each sub-agent is a fully self-contained agent definition in its own directory under `agents/`. They get their own model, harness, prompt, and environment — the only thing they share with the supervisor is the session tree.
 
 ---
 
@@ -147,14 +193,14 @@ Session: cross_harness_coding (root)
 
 **Shared across the tree:**
 
-- **Session identity** — one persistent session ID for the whole conversation (used by `omnigent attach`, session logs, Web UI)
-- **Filesystem** — all agents see the same CWD, so impl_worker can write files and review_worker can read them
-- **Policy state** — if this config had guardrails, taint labels set by a sub-agent would propagate up to the session level (relevant for telco/secure_code examples, not this one)
-- **Conversation history** — the supervisor's transcript includes sub-agent tool calls and their results
+- **Session identity** — one session ID for the whole conversation (`omnigent attach`, logs, Web UI)
+- **Filesystem** — all agents see the same CWD, so impl_worker writes files and review_worker reads them
+- **Policy state** — `cost_guard` tracks cumulative cost across all sub-agent sessions
+- **Conversation history** — the supervisor's transcript includes sub-agent calls and results
 
 **Not shared:**
 
-- **Context window** — each sub-agent has its own context window with its own system prompt; the reviewer doesn't see the implementer's full conversation, only what the supervisor passes as the tool call argument
+- **Context window** — each sub-agent has its own context and system prompt; the reviewer only sees what the supervisor passes as the tool call argument
 - **Executor** — each agent talks to its own LLM provider independently
 
-The session tree is what makes cross-harness delegation feel like one conversation to the user, even though three different LLM sessions are involved under the hood.
+The session tree is what makes cross-harness delegation feel like one conversation, even though three different LLM sessions are involved.
