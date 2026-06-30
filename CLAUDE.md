@@ -71,7 +71,12 @@ os_env:
 ```
 examples/
 |-- cross_harness_coding/          # Cross-harness coding (Codex implements, Claude reviews)
-|   +-- config.yaml               #   Supervisor (claude-sdk) + impl_worker (codex) + review_worker (claude-sdk)
+|   |-- config.yaml               #   Supervisor (claude-sdk), references sub-agents by name
+|   +-- agents/
+|       |-- impl_worker/
+|       |   +-- config.yaml       #   Codex implementer (harness: codex)
+|       +-- review_worker/
+|           +-- config.yaml       #   Claude reviewer (harness: claude-sdk)
 |-- secure_code_assistant/         # Secure code assistant (information flow policies)
 |   |-- config.yaml               #   harness: claude-sdk, model: claude-sonnet-4-6
 |   +-- tools/python/
