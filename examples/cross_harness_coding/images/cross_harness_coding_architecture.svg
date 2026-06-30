@@ -105,11 +105,11 @@
   <!-- ============ impl_worker (Codex) ============ -->
   <rect x="80" y="315" width="350" height="130" rx="12" fill="url(#codexG)" filter="url(#shadow)"/>
   <text x="255" y="342" text-anchor="middle" fill="#fff" font-size="15" font-weight="700">impl_worker</text>
-  <text x="255" y="362" text-anchor="middle" fill="#ffecd2" font-size="10">Codex Harness  |  gpt-5.4</text>
+  <text x="255" y="362" text-anchor="middle" fill="#ffecd2" font-size="10">Codex Harness  |  gpt-5.5</text>
   <line x1="100" y1="372" x2="410" y2="372" stroke="#fff" stroke-width="0.5" opacity="0.2"/>
   <text x="255" y="392" text-anchor="middle" fill="#fff" font-size="10">Implementation Specialist (OpenAI)</text>
   <text x="255" y="410" text-anchor="middle" fill="#ffd5a0" font-size="9">Writes code, creates tests, runs verification</text>
-  <text x="255" y="428" text-anchor="middle" fill="#e8c07a" font-size="8" font-style="italic">&#x1F433; Docker-sandboxed — reads/writes project files in isolation</text>
+  <text x="255" y="428" text-anchor="middle" fill="#e8c07a" font-size="8" font-style="italic">Reads/writes project files in omnigent_generated_code/</text>
 
   <!-- ============ review_worker (Claude) ============ -->
   <rect x="470" y="315" width="350" height="130" rx="12" fill="url(#claudeG)" filter="url(#shadow)"/>
@@ -158,14 +158,14 @@
 
   <rect x="284" y="555" width="110" height="50" rx="8" fill="url(#codexG)" filter="url(#shadow)" opacity="0.8"/>
   <text x="339" y="577" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">impl_worker</text>
-  <text x="339" y="593" text-anchor="middle" fill="#ffecd2" font-size="7">&#x1F433; Codex writes code</text>
+  <text x="339" y="593" text-anchor="middle" fill="#ffecd2" font-size="7">Codex writes + tests</text>
 
   <line x1="394" y1="580" x2="409" y2="580" stroke="#fff" stroke-width="1.5" opacity="0.4"/>
   <polygon points="407,576 407,584 415,580" fill="#fff" opacity="0.4"/>
 
   <rect x="416" y="555" width="95" height="50" rx="8" fill="url(#cwdG)" filter="url(#shadow)" opacity="0.8"/>
-  <text x="463" y="577" text-anchor="middle" fill="#48c9b0" font-size="10" font-weight="600">run_tests</text>
-  <text x="463" y="593" text-anchor="middle" fill="#7ec8e3" font-size="7">pytest verifies</text>
+  <text x="463" y="577" text-anchor="middle" fill="#48c9b0" font-size="10" font-weight="600">Tests Pass</text>
+  <text x="463" y="593" text-anchor="middle" fill="#7ec8e3" font-size="7">impl_worker verifies</text>
 
   <line x1="511" y1="580" x2="526" y2="580" stroke="#fff" stroke-width="1.5" opacity="0.4"/>
   <polygon points="524,576 524,584 532,580" fill="#fff" opacity="0.4"/>
@@ -204,6 +204,6 @@
     <text x="625" y="12" text-anchor="middle" fill="#e74c3c" font-size="8" font-weight="600">Cost Guard</text>
 
     <rect x="695" y="0" width="110" height="16" rx="8" fill="#27ae60" opacity="0.25"/>
-    <text x="750" y="12" text-anchor="middle" fill="#27ae60" font-size="8" font-weight="600">Docker Sandbox</text>
+    <text x="750" y="12" text-anchor="middle" fill="#27ae60" font-size="8" font-weight="600">Portable Harness</text>
   </g>
 </svg>
