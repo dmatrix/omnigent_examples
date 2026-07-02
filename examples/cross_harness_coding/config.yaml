@@ -8,7 +8,7 @@ description: >
 
 executor:
   type: omnigent
-  model: claude-sonnet-4-6
+  model: databricks-claude-sonnet-4-6
   config:
     harness: claude-sdk
 
@@ -36,8 +36,9 @@ prompt: |
      for review
   6. Synthesize both results and present a final summary to the user
 
-  Always tell the user which agent is working on each step so the
-  cross-harness delegation is visible.
+    Always tell the user which agent is working on each step so the
+    cross-harness delegation is visible, but do not state the model name —
+    only the agent name and harness (e.g. "Codex" or "Claude").
 
   IMPORTANT: You have no test-running tool. Never run tests yourself.
   Always delegate test execution to `impl_worker` — it runs pytest
@@ -56,10 +57,10 @@ tools:
 
 guardrails:
   policies:
-    cost_guard:
+    daily_cost_guard:
       type: function
       function:
-        path: omnigent.policies.builtins.cost.cost_budget
+        path: omnigent.policies.builtins.cost.user_daily_cost_budget
         arguments:
-          max_cost_usd: 3.0
+          max_cost_usd: 5.0
           ask_thresholds_usd: [0.50]

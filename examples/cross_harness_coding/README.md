@@ -16,7 +16,7 @@ The cross-harness coding example demonstrates **composition** and **governance**
 
 The supervisor breaks down user requests, dispatches implementation to the Codex agent, which writes code and runs tests. If the impl_worker reports test failures, the supervisor sends failures back without bothering the reviewer. Once tests pass, the supervisor routes to Claude for review. If the review returns REVISE, the supervisor sends feedback back for another pass. All three agents share the same filesystem and session — no copy-paste, no context switching.
 
-A `cost_guard` policy caps total spend across all three agents and both providers, making this the first example to combine **composition** and **governance** in one config.
+A layered **cost guardrail** caps spend at two levels: a per-agent `cost_guard` ($1.00 per sub-agent invocation) and a `daily_cost_guard` ($5.00/day across all agents). This is the first example to combine **composition** and **governance** in one config.
 
 This is the pattern described in the Omnigent value proposition as **_composition_**: *"Start a coding task in Codex, then route a subtask to Claude Code while keeping one shared session."*
 
@@ -111,7 +111,7 @@ re-run the tests, then review the refactor for correctness.
 Now write a CLI wrapper in cli.py with argument parsing, help text,
 and integration tests. Then review it.
 ```
-> After one or two implement-test-review cycles, the `cost_guard` ASK threshold ($0.10) fires — the supervisor pauses and asks for approval to continue. This is the cost budget in action across both providers.
+> After one or two implement-test-review cycles, the per-agent `cost_guard` ASK threshold ($0.25) or the `daily_cost_guard` ASK threshold ($0.50) fires — the agent pauses and asks for approval to continue. This is layered cost governance in action across both providers.
 
 All generated code is written to `examples/cross_harness_coding/omnigent_generated_code/`.
 
@@ -127,7 +127,7 @@ Edit `agents/impl_worker/config.yaml` and change the executor:
 ```yaml
 executor:
   type: omnigent
-  model: gpt-5.4
+  model: databricks-gpt-5-4
   config:
     harness: openai-agents    # No CLI dependency, just OPENAI_API_KEY
 ```
@@ -138,7 +138,7 @@ Edit `agents/impl_worker/config.yaml`:
 ```yaml
 executor:
   type: omnigent
-  model: claude-sonnet-4-6
+  model: databricks-claude-sonnet-4-6
   config:
     harness: claude-sdk
 ```
@@ -149,7 +149,7 @@ Edit `agents/review_worker/config.yaml`:
 ```yaml
 executor:
   type: omnigent
-  model: gpt-5.4
+  model: databricks-gpt-5-4
   config:
     harness: openai-agents
 ```
@@ -201,11 +201,11 @@ Put it in rate_limiter.py with unit tests in test_rate_limiter.py.
 
 ---
 
-### Act 4: The Budget (1 min) — "One budget, two providers"
+### Act 4: The Budget (1 min) — "Layered budgets, two providers"
 
-**Show** the `guardrails:` block in `config.yaml`.
+**Show** the `guardrails:` blocks in all three `config.yaml` files.
 
-**Say:** "One policy — `cost_guard`. It tracks spend across all three agents and both providers. The ASK threshold fires at fifty cents, so the user stays informed. The hard cap is three dollars — enough for a couple revision cycles. This is governance plus composition — one budget, two providers, three agents."
+**Say:** "Two layers of cost governance. Each sub-agent has a `cost_guard` — a dollar cap per invocation so no single agent runs away. Then all three agents share a `daily_cost_guard` — five dollars per day across both providers. The ASK thresholds fire early so the user stays informed. This is governance plus composition — layered budgets, two providers, three agents."
 
 ---
 
@@ -216,7 +216,7 @@ Put it in rate_limiter.py with unit tests in test_rate_limiter.py.
 | 1. The YAML | 2 min | Three configs, two harnesses, one directory |
 | 2. The Pipeline | 4 min | Implement on Codex → test → review on Claude |
 | 3. The Swap | 2 min | Swap harnesses without changing tools/prompts |
-| 4. The Budget | 1 min | One cost budget across all providers |
+| 4. The Budget | 1 min | Layered cost budgets across all providers |
 | **Total** | **9 min** | |
 
 ---
@@ -225,9 +225,9 @@ Put it in rate_limiter.py with unit tests in test_rate_limiter.py.
 
 | Agent | Harness | Model | Role |
 |---|---|---|---|
-| **Supervisor** | `claude-sdk` | `claude-sonnet-4-6` | Coordinator — breaks down tasks, routes to sub-agents, synthesizes results |
-| **impl_worker** | `codex` | `gpt-5.5` | Implementation — writes code, creates tests, runs verification |
-| **review_worker** | `claude-sdk` | `claude-sonnet-4-6` | Review — correctness, security, style, performance analysis |
+| **Supervisor** | `claude-sdk` | `databricks-claude-sonnet-4-6` | Coordinator — breaks down tasks, routes to sub-agents, synthesizes results |
+| **impl_worker** | `codex` | `databricks-gpt-5-4` | Implementation — writes code, creates tests, runs verification |
+| **review_worker** | `claude-sdk` | `databricks-claude-sonnet-4-6` | Review — correctness, security, style, performance analysis |
 
 All three agents share the same `os_env` (filesystem and CWD). The supervisor dispatches sequentially: implement, test, then review. If the review returns REVISE, the cycle repeats.
 
@@ -250,11 +250,12 @@ All three agents operate on the same working directory.
 
 ## Guardrails
 
-| Policy | Action | Limit |
+| Policy | Scope | Limit |
 |---|---|---|
-| `cost_guard` | Budget | $3.00 max, $0.50 ASK threshold |
+| `cost_guard` | Per sub-agent invocation | $1.00 max, $0.25 ASK threshold |
+| `daily_cost_guard` | Daily across all agents | $5.00 max, $0.50 ASK threshold |
 
-The cost guard tracks cumulative LLM spend across all three agents (supervisor + impl_worker + review_worker) and both providers (Anthropic + OpenAI). When spend crosses $0.50, the user is asked to approve. At $3.00, the session is terminated.
+Cost governance is layered at two levels. Each sub-agent (`impl_worker`, `review_worker`) has its own `cost_guard` that caps a single invocation at $1.00 (ASK at $0.25). On top of that, all three agents (supervisor + impl_worker + review_worker) share a `daily_cost_guard` that tracks cumulative daily spend across both providers (Anthropic + OpenAI). When daily spend crosses $0.50, the user is asked to approve. At $5.00, the session is terminated.
 
 ---
 
@@ -263,7 +264,7 @@ The cost guard tracks cumulative LLM spend across all three agents (supervisor +
 - **Cross-harness delegation**: Sub-agents run on different LLM providers (Codex + Claude SDK) within one session
 - **Shared session**: All agents share the same session tree — context, files, and state persist across harness boundaries
 - **Sequential dispatch**: Supervisor enforces implement→test→review ordering to avoid file conflicts
-- **Cost-guarded composition**: A single budget policy caps spend across all three agents and both providers
+- **Cost-guarded composition**: Layered budget policies (per-agent + daily) cap spend across all three agents and both providers
 - **Harness portability**: Swap any agent's harness without changing tools or prompts
 
 ---
