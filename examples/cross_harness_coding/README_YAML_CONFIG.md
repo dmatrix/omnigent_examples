@@ -21,7 +21,7 @@ This block tells the framework which LLM provider and model to use for the **sup
 | Attribute | Value | Role |
 |---|---|---|
 | `type` | `omnigent` | The executor type. `omnigent` means the framework manages the agent loop (tool dispatch, session state, policy evaluation). |
-| `model` | `claude-sonnet-4-6` | Which model to call. Can be overridden at the CLI with `--model`. |
+| `model` | `databricks-claude-sonnet-4-6` | Which model to call. Routed through Databricks AI Gateway. Can be overridden at the CLI with `--model`. |
 | `config.harness` | `claude-sdk` | Which SDK/protocol adapter to use for API calls. `claude-sdk` = Anthropic's native API. Can be overridden with `--harness`. |
 
 **Scope:** This executor only governs the supervisor. Each sub-agent has its own `executor:` block.
@@ -83,11 +83,13 @@ The framework discovers `agents/impl_worker/config.yaml` and `agents/review_work
 | `description` | *(multiline)* | Human-readable summary shown to the supervisor LLM as the tool description. |
 | `prompt` | *(literal block)* | System prompt for the implementation agent. Defines its role (coder), output directory (`omnigent_generated_code/`), and rules (write tests, run them, report results). |
 | `executor.type` | `omnigent` | Same executor type as the supervisor. |
-| `executor.model` | `gpt-5.5` | This sub-agent runs on OpenAI, not Anthropic. This is the cross-harness part. |
+| `executor.model` | `databricks-gpt-5-4` | This sub-agent runs on OpenAI via Databricks AI Gateway, not Anthropic. This is the cross-harness part. |
 | `executor.config.harness` | `codex` | Uses the Codex CLI harness (requires `codex` binary on PATH). |
 | `os_env` | `caller_process`, `cwd: .`, `sandbox: none` | Same filesystem access as the supervisor and reviewer. All agents share the same working directory. |
+| `guardrails.policies.cost_guard` | `cost_budget`, $1.00 max, $0.25 ASK | Per-invocation cost cap — prevents a single impl_worker call from running away. |
+| `guardrails.policies.daily_cost_guard` | `user_daily_cost_budget`, $5.00 max, $0.50 ASK | Daily cost cap — shared across all agents in the session tree. |
 
-**Key point:** The impl_worker's `executor` is completely independent from the supervisor's. Different model, different harness, different provider. The framework handles the protocol translation.
+**Key point:** The impl_worker's `executor` is completely independent from the supervisor's. Different model, different harness, different provider. The framework handles the protocol translation. The impl_worker also has its own guardrails — a per-invocation `cost_guard` and a `daily_cost_guard` — so cost is controlled at both the agent and session level.
 
 ---
 
@@ -99,15 +101,41 @@ The framework discovers `agents/impl_worker/config.yaml` and `agents/review_work
 | `description` | *(multiline)* | Human-readable summary shown to the supervisor LLM as the tool description. |
 | `prompt` | *(literal block)* | System prompt for the reviewer. Reads from `omnigent_generated_code/`, evaluates on seven dimensions (correctness, style, security, performance, documentation, type hints, best practices), returns a structured verdict (PASS/REVISE/REJECT). |
 | `executor.type` | `omnigent` | Same executor type as the supervisor. |
-| `executor.model` | `claude-sonnet-4-6` | Same model as the supervisor but running as a separate agent session. |
+| `executor.model` | `databricks-claude-sonnet-4-6` | Same model as the supervisor but running as a separate agent session. |
 | `executor.config.harness` | `claude-sdk` | Same harness as the supervisor. |
 | `os_env` | `caller_process`, `cwd: .`, `sandbox: none` | Same filesystem access as the other agents. |
+| `guardrails.policies.cost_guard` | `cost_budget`, $1.00 max, $0.25 ASK | Per-invocation cost cap — prevents a single review_worker call from running away. |
+| `guardrails.policies.daily_cost_guard` | `user_daily_cost_budget`, $5.00 max, $0.50 ASK | Daily cost cap — shared across all agents in the session tree. |
 
 ---
 
 ## `guardrails:` — Cost governance
 
-This config uses a single cost-guard policy — no labels, no taint, no deny policies:
+This config uses **layered cost governance** — no labels, no taint, no deny policies. Cost is controlled at two levels:
+
+### Supervisor guardrails (session-wide daily budget)
+
+```yaml
+guardrails:
+  policies:
+    daily_cost_guard:
+      type: function
+      function:
+        path: omnigent.policies.builtins.cost.user_daily_cost_budget
+        arguments:
+          max_cost_usd: 5.0
+          ask_thresholds_usd: [0.50]
+```
+
+| Attribute | Role |
+|---|---|
+| `function.path` | `omnigent.policies.builtins.cost.user_daily_cost_budget` — built-in daily cost tracker that evaluates on every turn. Tracks cumulative spend per user per day. |
+| `max_cost_usd` | Hard cap — session terminates if daily cost exceeds $5.00. |
+| `ask_thresholds_usd` | `[0.50]` — pause and ask the user for approval when daily cost crosses $0.50. |
+
+### Sub-agent guardrails (per-invocation + daily budget)
+
+Each sub-agent (`impl_worker`, `review_worker`) has **two** policies:
 
 ```yaml
 guardrails:
@@ -117,21 +145,29 @@ guardrails:
       function:
         path: omnigent.policies.builtins.cost.cost_budget
         arguments:
-          max_cost_usd: 3.0
+          max_cost_usd: 1.0
+          ask_thresholds_usd: [0.25]
+    daily_cost_guard:
+      type: function
+      function:
+        path: omnigent.policies.builtins.cost.user_daily_cost_budget
+        arguments:
+          max_cost_usd: 5.0
           ask_thresholds_usd: [0.50]
 ```
 
-| Attribute | Role |
-|---|---|
-| `function.path` | `omnigent.policies.builtins.cost.cost_budget` — built-in cost tracker that evaluates on every turn. |
-| `max_cost_usd` | Hard cap — session terminates if cumulative cost exceeds $3.00. |
-| `ask_thresholds_usd` | `[0.50]` — pause and ask the user for approval when cost crosses $0.50. |
+| Policy | Function | Role |
+|---|---|---|
+| `cost_guard` | `cost_budget` | Per-invocation cap — a single sub-agent call terminates at $1.00, asks at $0.25. Prevents any one agent from running away on a single task. |
+| `daily_cost_guard` | `user_daily_cost_budget` | Daily cap — cumulative spend across all agents terminates at $5.00, asks at $0.50. Same policy as the supervisor, tracked at the user level. |
 
-**Why $3 and $0.50?** Three LLMs, two providers. One implement-test-review cycle can cost $0.50–1.00. The $3.00 cap allows 2–3 revision cycles; the $0.50 ASK fires after roughly one cycle.
+**Why two levels?** The per-invocation `cost_guard` ($1.00) catches runaway sub-agents early — if an implementation task loops on test failures, it stops before burning through the daily budget. The `daily_cost_guard` ($5.00) provides the session-wide ceiling across all agents and both providers.
+
+**Why $5.00 daily and $1.00 per-invocation?** Three LLMs, two providers. One implement-test-review cycle can cost $0.50–1.00. The $1.00 per-invocation cap allows one full cycle per sub-agent call. The $5.00 daily cap allows multiple revision cycles across a working session.
 
 **Why no labels or taint policies?** All three agents need full read/write access to the same files — there are no natural information-flow boundaries. See [secure_code_assistant](../secure_code_assistant/) and [telco_customer_agent](../telco_customer_agent/) for taint/deny examples.
 
-**Scope:** The cost guard tracks spend across the entire session tree — supervisor, impl_worker, and review_worker all contribute to one cumulative budget across both providers.
+**Scope:** The `daily_cost_guard` tracks spend across the entire session tree — supervisor, impl_worker, and review_worker all contribute to one cumulative daily budget across both providers. The `cost_guard` is scoped to each individual sub-agent invocation.
 
 ---
 
@@ -165,12 +201,18 @@ cross_harness_coding/
 |   |   +-- agents: [impl_worker, review_worker]
 |   +-- guardrails            # session-scoped governance
 |       +-- policies
-|           +-- cost_guard    # budget cap: $2 max, $0.10 ASK threshold
+|           +-- daily_cost_guard  # daily budget: $5.00 max, $0.50 ASK
 +-- agents/
 |   +-- impl_worker/
 |   |   +-- config.yaml       # IMPL's config (harness: codex)
+|   |       +-- guardrails
+|   |           +-- cost_guard        # per-invocation: $1.00 max, $0.25 ASK
+|   |           +-- daily_cost_guard  # daily budget: $5.00 max, $0.50 ASK
 |   +-- review_worker/
 |       +-- config.yaml       # REVIEWER's config (harness: claude-sdk)
+|           +-- guardrails
+|               +-- cost_guard        # per-invocation: $1.00 max, $0.25 ASK
+|               +-- daily_cost_guard  # daily budget: $5.00 max, $0.50 ASK
 ```
 
 Each sub-agent is a fully self-contained agent definition in its own directory under `agents/`. They get their own model, harness, prompt, and environment — the only thing they share with the supervisor is the session tree.
@@ -195,7 +237,7 @@ Session: cross_harness_coding (root)
 
 - **Session identity** — one session ID for the whole conversation (`omnigent attach`, logs, Web UI)
 - **Filesystem** — all agents see the same CWD, so impl_worker writes files and review_worker reads them
-- **Policy state** — `cost_guard` tracks cumulative cost across all sub-agent sessions
+- **Policy state** — `daily_cost_guard` tracks cumulative daily cost across all sub-agent sessions; per-invocation `cost_guard` is scoped to each sub-agent call
 - **Conversation history** — the supervisor's transcript includes sub-agent calls and results
 
 **Not shared:**
