@@ -6,7 +6,7 @@ description: >
 
 executor:
   type: omnigent
-  model: claude-sonnet-4-6
+  model: databricks-claude-sonnet-4-6
   config:
     harness: claude-sdk
 
@@ -35,3 +35,20 @@ os_env:
   cwd: .
   sandbox:
     type: none
+
+guardrails:
+  policies:
+    cost_guard:
+      type: function
+      function:
+        path: omnigent.policies.builtins.cost.cost_budget
+        arguments:
+          max_cost_usd: 1.0
+          ask_thresholds_usd: [0.25]
+    daily_cost_guard:
+      type: function
+      function:
+        path: omnigent.policies.builtins.cost.user_daily_cost_budget
+        arguments:
+          max_cost_usd: 5.0
+          ask_thresholds_usd: [0.50]
