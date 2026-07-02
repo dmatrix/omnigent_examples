@@ -257,6 +257,29 @@ All three agents operate on the same working directory.
 
 Cost governance is layered at two levels. Each sub-agent (`impl_worker`, `review_worker`) has its own `cost_guard` that caps a single invocation at $1.00 (ASK at $0.25). On top of that, all three agents (supervisor + impl_worker + review_worker) share a `daily_cost_guard` that tracks cumulative daily spend across both providers (Anthropic + OpenAI). When daily spend crosses $0.50, the user is asked to approve. At $5.00, the session is terminated.
 
+### Cost guard recovery
+
+When a hard limit fires, recovery depends on which policy was triggered:
+
+| Scenario | What happens | How to continue |
+|---|---|---|
+| **Per-invocation cap** (`cost_guard` hits $1.00) | The sub-agent invocation is terminated and an error is returned to the supervisor. The supervisor session stays alive. | Send a new message — the supervisor dispatches a fresh sub-agent call with a fresh $1.00 budget. |
+| **Daily cap** (`daily_cost_guard` hits $5.00) | The entire session is terminated. No more turns until the budget resets. | Wait for the next calendar day (daily budget resets automatically), or raise `max_cost_usd` in all three `config.yaml` files and re-run. |
+| **ASK threshold** (`$0.25` or `$0.50`) | The agent pauses and asks for approval. | Approve to continue, or deny to stop the current operation. |
+
+**Adjusting limits:**
+
+```bash
+# Start a fresh session (resets per-invocation budgets, but daily budget is per-user)
+omnigent run examples/cross_harness_coding/ --no-session
+```
+
+To permanently raise or lower limits, edit the `guardrails:` block in the relevant `config.yaml`:
+
+- **Fewer pauses** — raise `ask_thresholds_usd` (e.g., `[1.00]` instead of `[0.25]`)
+- **Higher per-invocation cap** — raise `max_cost_usd` in the sub-agent's `cost_guard`
+- **Higher daily cap** — raise `max_cost_usd` in `daily_cost_guard` across all three configs (supervisor + both sub-agents)
+
 ---
 
 ## Key Concepts
