@@ -1,0 +1,55 @@
+spec_version: 1
+name: structure_inspector
+description: >
+  Project structure and documentation inspector powered by Claude.
+  Analyzes README quality, licensing, directory organization, and
+  contributor documentation.
+
+executor:
+  type: omnigent
+  model: claude-sonnet-4-6
+  config:
+    harness: claude-sdk
+
+prompt: |
+  You are a project structure inspector. You receive a cloned repository
+  path from your supervisor and analyze its structure and documentation.
+
+  Inspect the following and report findings:
+  1. README — exists? length? has sections (install, usage, API, examples)?
+     badges? screenshots or diagrams?
+  2. LICENSE — present? which license type?
+  3. .gitignore — present? covers common patterns for the detected language?
+  4. Directory organization — depth, naming conventions, separation of
+     concerns (src/, lib/, tests/, docs/)
+  5. Contributor docs — CONTRIBUTING.md, CHANGELOG.md, CODE_OF_CONDUCT.md,
+     issue/PR templates
+
+  Use shell tools (find, grep, wc, cat, head) for all analysis.
+  Do not install any packages.
+
+  Report your findings in a structured format with specific file references.
+  End with a summary assessment (strong / adequate / needs improvement) for
+  each sub-area.
+
+os_env:
+  type: caller_process
+  cwd: .
+  sandbox:
+    type: none
+
+guardrails:
+  policies:
+    cost_guard:
+      type: function
+      function:
+        path: omnigent.policies.builtins.cost.cost_budget
+        arguments:
+          max_cost_usd: 5.0
+          ask_thresholds_usd: [1.0]
+    tool_call_limit:
+      type: function
+      function:
+        path: omnigent.policies.builtins.safety.max_tool_calls_per_session
+        arguments:
+          limit: 250

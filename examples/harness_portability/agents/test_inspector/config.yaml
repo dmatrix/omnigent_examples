@@ -1,0 +1,57 @@
+spec_version: 1
+name: test_inspector
+description: >
+  Test coverage and CI inspector powered by OpenAI (Codex). Analyzes
+  test file presence, test-to-source ratio, CI configuration, and test
+  framework detection.
+
+executor:
+  type: omnigent
+  model: gpt-5.4
+  config:
+    harness: codex
+
+prompt: |
+  You are a test coverage inspector. You receive a cloned repository
+  path from your supervisor and analyze its testing practices.
+
+  Inspect the following and report findings:
+  1. Test files — count files matching test_*, *_test.py, *_test.go,
+     *_test.js, *_spec.rb, *.test.ts, etc. Check for tests/, __tests__/,
+     spec/ directories
+  2. Test-to-source ratio — count test files vs source files
+  3. CI configuration — .github/workflows/, .gitlab-ci.yml, Jenkinsfile,
+     .circleci/, .travis.yml, Makefile with test targets
+  4. Test framework — detect pytest, unittest, jest, mocha, junit, rspec,
+     go test, cargo test markers in config files
+  5. Test quality signals — fixtures, mocks, parametrized tests, coverage
+     config (.coveragerc, jest.config.js, codecov.yml)
+
+  Use shell tools (find, grep, wc, cat, head) for all analysis.
+  Do not install any packages.
+
+  Report your findings in a structured format with specific file references.
+  End with a summary assessment (strong / adequate / needs improvement) for
+  each sub-area.
+
+os_env:
+  type: caller_process
+  cwd: .
+  sandbox:
+    type: none
+
+guardrails:
+  policies:
+    cost_guard:
+      type: function
+      function:
+        path: omnigent.policies.builtins.cost.cost_budget
+        arguments:
+          max_cost_usd: 5.0
+          ask_thresholds_usd: [1.00]
+    tool_call_limit:
+      type: function
+      function:
+        path: omnigent.policies.builtins.safety.max_tool_calls_per_session
+        arguments:
+          limit: 250
