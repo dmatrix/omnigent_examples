@@ -9,17 +9,22 @@ versions can run locally or with a Databricks hosted Omnigent Server.
 ![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
 ![Databricks](https://img.shields.io/badge/Databricks-FF3621?logo=databricks&logoColor=white)
 ![Claude](https://img.shields.io/badge/Claude-Anthropic-6B4FBB)
+![Codex](https://img.shields.io/badge/Codex-OpenAI-412991)
+![Pi](https://img.shields.io/badge/Pi-Earendil-2E7D32)
+![Hermes](https://img.shields.io/badge/Hermes-Nous_Research-B71C1C)
+![MLflow](https://img.shields.io/badge/MLflow-Tracing-0194E2?logo=mlflow&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)
 
 ---
 
 ## Overview
 
-This repository contains example agent configurations for the [Omnigent](https://github.com/omnigent) meta-harness. Each example defines an AI agent in YAML -- specifying the executor, system prompt, and tools. Three flagship examples demonstrate different patterns:
+This repository contains example agent configurations for the [Omnigent](https://github.com/omnigent) meta-harness. Each example defines an AI agent in YAML -- specifying the executor, system prompt, and tools. Four flagship examples demonstrate different patterns:
 
 1. **[Secure Code Assistant](examples/secure_code_assistant/)** -- information flow control blocks web search after private code read, blocks file writes after web content reads, and enforces ALLOW, DENY, ASK policy guardrails, and budget control costs at session level. 
-2. **[Telco Customer Agent](examples/telco_customer_agent/)** -- multi-tool customer data agent with PII/financial policy labels and control
-3. **[Cross-Harness Coding](examples/cross_harness_coding/)** -- multi-harness delegation (Codex implements, Claude reviews, one shared session)
+2. **[Cross-Harness Coding](examples/cross_harness_coding/)** -- multi-harness delegation (Codex implements, Claude reviews, one shared session)
+3. **[Harness Portability](examples/harness_portability/)** -- one supervisor, four inspectors, four harnesses: a Code Project Health Inspector with Claude SDK, Codex, Pi, and Hermes sub-agents
+4. **[Telco Customer Agent](examples/telco_customer_agent/)** -- multi-tool customer data agent with PII/financial policy labels and control
 ---
 
 ## Get Started
@@ -116,9 +121,14 @@ omnigent run examples/telco_customer_agent/ --no-session
 
 # Cross-Harness Coding -- Codex implements, Claude reviews
 omnigent run examples/cross_harness_coding/
+
+# Harness Portability -- Code Project Health Inspector (runs on any harness)
+omnigent run examples/harness_portability/
+omnigent run examples/harness_portability/ --model gpt-5.4 --harness codex
+omnigent run examples/harness_portability/ --harness pi
 ```
 
-Each example README has detailed local setup instructions -- see [Secure Code Assistant](examples/secure_code_assistant/), [Telco](examples/telco_customer_agent/), [Cross-Harness](examples/cross_harness_coding/).
+Each example README has detailed local setup instructions -- see [Secure Code Assistant](examples/secure_code_assistant/), [Telco](examples/telco_customer_agent/), [Cross-Harness](examples/cross_harness_coding/), [Harness Portability](examples/harness_portability/).
 
 ### Local Web UI
 
@@ -147,6 +157,7 @@ Each example README has a full list of queries:
 - [Secure Code Assistant queries](examples/secure_code_assistant/#example-queries)
 - [Telco Customer Agent queries](examples/telco_customer_agent/#example-queries)
 - [Cross-Harness Coding queries](examples/cross_harness_coding/#example-queries)
+- [Harness Portability queries](examples/harness_portability/#example-queries)
 
 ---
 
@@ -250,6 +261,7 @@ Each flagship agent has its own architecture diagram in its README:
 - [Secure Code Assistant](examples/secure_code_assistant/)
 - [Telco Customer Agent architecture](examples/telco_customer_agent/)
 - [Cross-Harness Coding architecture](examples/cross_harness_coding/)
+- [Harness Portability](examples/harness_portability/)
 Reference docs:
 
 - [Local vs Remote modes](docs/local_vs_remote.md) -- how all Omnigent components (server, runner, harness, Web UI, PolicyEngine) fit together in Databricks-hosted and fully-local deployments
@@ -305,6 +317,7 @@ Tools are auto-discovered from `tools/python/` in the agent's directory. Each `.
 | **Secure Code Assistant** | [`examples/secure_code_assistant/`](examples/secure_code_assistant/) | Information flow control — blocks web search after code read, blocks file writes after web search |
 | **Telco Customer** | [`examples/telco_customer_agent/`](examples/telco_customer_agent/) | Customer data agent with PII/financial policy labels (supports Databricks, OpenAI, Claude) |
 | **Cross-Harness Coding** | [`examples/cross_harness_coding/`](examples/cross_harness_coding/) | Multi-harness delegation — Codex implements, Claude reviews, one shared session |
+| **Harness Portability** | [`examples/harness_portability/`](examples/harness_portability/) | One supervisor, four inspectors — Code Project Health Inspector (Claude SDK, Codex, Pi, Hermes sub-agents) |
 
 ---
 
@@ -324,6 +337,15 @@ omnigent_examples/
 |   |   |-- README.md
 |   |   |-- config.yaml                      #   Supervisor + impl_worker (codex) + review_worker (claude-sdk)
 |   |   +-- images/                          #   Architecture diagram (SVG + PNG)
+|   |-- harness_portability/                  # Harness portability (supervisor + 4 inspector sub-agents)
+|   |   |-- README.md
+|   |   |-- README_YAML_CONFIG.md
+|   |   |-- config.yaml                      #   Supervisor (claude-sdk), dispatches to 4 sub-agents
+|   |   +-- agents/
+|   |       |-- structure_inspector/config.yaml   #   Structure & docs (claude-sdk)
+|   |       |-- test_inspector/config.yaml        #   Tests & CI (codex)
+|   |       |-- dependency_inspector/config.yaml  #   Dependencies (pi)
+|   |       +-- security_inspector/config.yaml    #   Security & quality (hermes)
 |   |-- secure_code_assistant/               # Secure code assistant (information flow policies)
 |   |   |-- README.md
 |   |   |-- config.yaml                      #   harness: claude-sdk, model: claude-sonnet-4-6

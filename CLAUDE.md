@@ -38,6 +38,12 @@ omnigent run examples/telco_customer_agent/ --no-session
 
 # Cross-harness coding (Codex + Claude)
 omnigent run examples/cross_harness_coding/
+
+# Harness portability (Code Project Health Inspector — runs on any harness)
+omnigent run examples/harness_portability/
+omnigent run examples/harness_portability/ --model gpt-5.4 --harness codex
+omnigent run examples/harness_portability/ --harness pi
+omnigent run examples/harness_portability/ --harness hermes
 ```
 
 ## Key Conventions
@@ -77,6 +83,17 @@ examples/
 |       |   +-- config.yaml       #   Codex implementer (harness: codex)
 |       +-- review_worker/
 |           +-- config.yaml       #   Claude reviewer (harness: claude-sdk)
+|-- harness_portability/           # Harness portability (supervisor + 4 inspector sub-agents)
+|   |-- config.yaml               #   Supervisor (claude-sdk), dispatches to 4 sub-agents
+|   +-- agents/
+|       |-- structure_inspector/
+|       |   +-- config.yaml       #   Structure & docs (claude-sdk)
+|       |-- test_inspector/
+|       |   +-- config.yaml       #   Tests & CI (codex)
+|       |-- dependency_inspector/
+|       |   +-- config.yaml       #   Dependencies (pi)
+|       +-- security_inspector/
+|           +-- config.yaml       #   Security & quality (hermes)
 |-- secure_code_assistant/         # Secure code assistant (information flow policies)
 |   |-- config.yaml               #   harness: claude-sdk, model: claude-sonnet-4-6
 |   +-- tools/python/

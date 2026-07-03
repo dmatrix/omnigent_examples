@@ -134,3 +134,4 @@ Source: [`omnigent/policies/builtins/`](https://github.com/dmatrix/omnigent/tree
 | [Secure Code Assistant](../examples/secure_code_assistant/) | `cost.cost_budget` + taint/deny (information flow) |
 | [Telco Customer Agent](../examples/telco_customer_agent/) | `cost.cost_budget` + PII/financial label policies |
 | [Cross-Harness Coding](../examples/cross_harness_coding/) | `cost.cost_budget` (per-invocation) + `cost.user_daily_cost_budget` (daily) |
+| [Harness Portability](../examples/harness_portability/) | `cost.cost_budget` (supervisor + per-sub-agent) + `safety.max_tool_calls_per_session` (supervisor) |

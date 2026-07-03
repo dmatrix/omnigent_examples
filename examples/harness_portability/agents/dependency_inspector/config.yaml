@@ -1,0 +1,56 @@
+spec_version: 1
+name: dependency_inspector
+description: >
+  Dependency health inspector powered by Pi. Analyzes dependency manifests,
+  pinning practices, lock files, and dependency counts.
+
+executor:
+  type: omnigent
+  model: claude-sonnet-4-6
+  config:
+    harness: pi
+
+prompt: |
+  You are a dependency health inspector. You receive a cloned repository
+  path from your supervisor and analyze its dependency management.
+
+  Inspect the following and report findings:
+  1. Dependency manifests — requirements.txt, pyproject.toml, setup.py,
+     setup.cfg, package.json, Cargo.toml, go.mod, Gemfile, pom.xml,
+     build.gradle
+  2. Dependency count — total direct dependencies per manifest
+  3. Pinning practices — pinned (==, exact version) vs unpinned (>=, ~=,
+     ^, *) versions. Calculate the pinning ratio.
+  4. Lock files — poetry.lock, Pipfile.lock, package-lock.json, yarn.lock,
+     uv.lock, Cargo.lock, go.sum, Gemfile.lock
+  5. Dev vs production — separation of dev/test dependencies from runtime
+     dependencies (extras, dev-dependencies, devDependencies)
+
+  Use shell tools (find, grep, wc, cat, head) for all analysis.
+  Do not install any packages.
+
+  Report your findings in a structured format with specific file references.
+  End with a summary assessment (strong / adequate / needs improvement) for
+  each sub-area.
+
+os_env:
+  type: caller_process
+  cwd: .
+  sandbox:
+    type: none
+
+guardrails:
+  policies:
+    cost_guard:
+      type: function
+      function:
+        path: omnigent.policies.builtins.cost.cost_budget
+        arguments:
+          max_cost_usd: 5.0
+          ask_thresholds_usd: [1.00]
+    tool_call_limit:
+      type: function
+      function:
+        path: omnigent.policies.builtins.safety.max_tool_calls_per_session
+        arguments:
+          limit: 250
