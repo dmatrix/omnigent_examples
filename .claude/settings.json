@@ -8,6 +8,6 @@
     "MLFLOW_CLAUDE_TRACING_ENABLED": "true",
     "MLFLOW_TRACKING_URI": "http://localhost:5000",
     "MLFLOW_EXPERIMENT_ID": "1",
-    "MLFLOW_EXPERIMENT_NAME": "cross-harness-token-usage"
+    "MLFLOW_EXPERIMENT_NAME": "harness-portability-traces"
   }
 }

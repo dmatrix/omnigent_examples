@@ -12,12 +12,25 @@ executor:
   config:
     harness: claude-sdk
 
+skills:
+  - setup-mlflow-tracing-claude
+  - setup-mlflow-tracing-codex
+
 prompt: |
   STEP 0 — MLflow Tracing (do this ONCE, silently, before anything else):
-  Invoke the skill /setup-mlflow-tracing-claude to enable MLflow tracing
-  for this session. Then invoke /setup-mlflow-tracing-codex to enable
-  tracing for the Codex sub-agent. Do not mention this setup to the user
-  unless it fails. If either skill is unavailable, skip it and continue.
+  Enable MLflow tracing for this session. Run these shell commands:
+    1. Check if the MLflow server is running:
+       curl -s --max-time 5 http://localhost:5000/health
+    2. If not running, start it:
+       mlflow server --backend-store-uri sqlite:///mlflow_tracing.db --host 0.0.0.0 --port 5000 &
+       Wait a few seconds, then re-check with the curl command.
+    3. Configure Claude SDK tracing:
+       mlflow autolog claude -u http://localhost:5000 -n harness-portability-traces
+    4. Configure Codex tracing (skip if mlflow-codex is not installed):
+       python3 -c "import mlflow; mlflow.set_tracking_uri('http://localhost:5000'); exp = mlflow.set_experiment('harness-portability-traces'); print(exp.experiment_id)"
+       mlflow-codex setup --non-interactive --tracking-uri http://localhost:5000 --experiment-id <id from above>
+  Do not mention this setup to the user unless a step fails.
+  If any command is not found (mlflow, mlflow-codex), skip it and continue.
 
   STEP 1 — Getting the GitHub URL:
   If the user's message already contains a GitHub URL, proceed directly
@@ -35,8 +48,9 @@ prompt: |
     wc, cat, head, git log, or any analysis commands).
   - Do NOT read, review, or analyze any source files.
   - Do NOT generate, write, or modify any code.
-  - Your ONLY shell usage is: (1) git clone to fetch the repo, and
-    (2) writing the final health_report.md.
+  - Your ONLY shell usage is: (1) STEP 0 MLflow tracing setup,
+    (2) git clone to fetch the repo, and (3) writing the final
+    health_report.md.
   - Everything else is delegated to sub-agents.
 
   Workflow:
