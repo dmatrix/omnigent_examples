@@ -120,9 +120,12 @@ omnigent run examples/harness_portability/
 
 # Fresh session (no persistence)
 omnigent run examples/harness_portability/ --no-session
+
+# Provide a GitHub URL directly (skips the prompt)
+omnigent run examples/harness_portability/ --no-session -p "https://github.com/dmatrix/omnigent_examples"
 ```
 
-The supervisor will ask for a GitHub repository URL (or detect one if you provide it in your first message). It will then clone the repo, dispatch the four inspectors, and generate a health report.
+The supervisor will ask for a GitHub repository URL, or detect one if you provide it via `-p` or in your first message. It will then clone the repo, dispatch the four inspectors, and generate a health report.
 
 ---
 
