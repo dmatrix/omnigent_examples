@@ -65,7 +65,16 @@ Connect to a Databricks-hosted Omnigent server. Override the model to route thro
 # Authenticate with the remote server
 omnigent login https://omnigent-<id>.aws.databricksapps.com
 
-# Telco customer agent
+# Secure Code Assistant
+omnigent run examples/secure_code_assistant/ --model databricks-claude-sonnet-4-6 --server https://omnigent-<id>.aws.databricksapps.com
+
+# Cross-Harness Coding
+omnigent run examples/cross_harness_coding/ --model databricks-claude-sonnet-4-6 --server https://omnigent-<id>.aws.databricksapps.com
+
+# Harness Portability -- Code Project Health Inspector
+omnigent run examples/harness_portability/ --server https://omnigent-<id>.aws.databricksapps.com -p "https://github.com/dmatrix/omnigent_examples"
+
+# Telco Customer Agent
 omnigent run examples/telco_customer_agent/ --model databricks-claude-sonnet-4-6 --server https://omnigent-<id>.aws.databricksapps.com
 ```
 
@@ -106,26 +115,18 @@ export $(grep ANTHROPIC_API_KEY .env | tr -d '"')
 ```bash
 # Secure Code Assistant -- information flow policies (Claude)
 omnigent run examples/secure_code_assistant/
-
-# Secure Code Assistant -- override model
 omnigent run examples/secure_code_assistant/ --model claude-sonnet-4-6 --harness claude-sdk
-
-# Telco -- uses credentials configured in setup
-omnigent run examples/telco_customer_agent/
-
-# Telco -- OpenAI
-omnigent run examples/telco_customer_agent/ --model gpt-5.5 --harness openai-agents
-
-# Fresh session (no persistence)
-omnigent run examples/telco_customer_agent/ --no-session
 
 # Cross-Harness Coding -- Codex implements, Claude reviews
 omnigent run examples/cross_harness_coding/
 
-# Harness Portability -- Code Project Health Inspector (runs on any harness)
+# Harness Portability -- Code Project Health Inspector (4 harnesses)
 omnigent run examples/harness_portability/
-omnigent run examples/harness_portability/ --model gpt-5.4 --harness codex
-omnigent run examples/harness_portability/ --harness pi
+omnigent run examples/harness_portability/ --no-session -p "https://github.com/dmatrix/omnigent_examples"
+
+# Telco Customer Agent -- PII/financial policy labels
+omnigent run examples/telco_customer_agent/
+omnigent run examples/telco_customer_agent/ --model gpt-5.5 --harness openai-agents
 ```
 
 Each example README has detailed local setup instructions -- see [Secure Code Assistant](examples/secure_code_assistant/), [Telco](examples/telco_customer_agent/), [Cross-Harness](examples/cross_harness_coding/), [Harness Portability](examples/harness_portability/).
@@ -155,9 +156,9 @@ omnigent server stop      # stop server and local host daemon
 
 Each example README has a full list of queries:
 - [Secure Code Assistant queries](examples/secure_code_assistant/#example-queries)
-- [Telco Customer Agent queries](examples/telco_customer_agent/#example-queries)
 - [Cross-Harness Coding queries](examples/cross_harness_coding/#example-queries)
 - [Harness Portability queries](examples/harness_portability/#example-queries)
+- [Telco Customer Agent queries](examples/telco_customer_agent/#example-queries)
 
 ---
 
