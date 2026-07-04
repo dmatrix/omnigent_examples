@@ -129,7 +129,7 @@ omnigent run examples/telco_customer_agent/
 omnigent run examples/telco_customer_agent/ --model gpt-5.5 --harness openai-agents
 ```
 
-Each example README has detailed local setup instructions -- see [Secure Code Assistant](examples/secure_code_assistant/), [Telco](examples/telco_customer_agent/), [Cross-Harness](examples/cross_harness_coding/), [Harness Portability](examples/harness_portability/).
+Each example README has detailed local setup instructions -- see [Secure Code Assistant](examples/secure_code_assistant/), [Cross-Harness](examples/cross_harness_coding/), [Harness Portability](examples/harness_portability/), [Telco](examples/telco_customer_agent/).
 
 ### Local Web UI
 
