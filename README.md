@@ -260,9 +260,9 @@ No Python tool code changes are needed -- the tools are provider-independent.
 Each flagship agent has its own architecture diagram in its README:
 
 - [Secure Code Assistant](examples/secure_code_assistant/)
-- [Telco Customer Agent architecture](examples/telco_customer_agent/)
 - [Cross-Harness Coding architecture](examples/cross_harness_coding/)
 - [Harness Portability](examples/harness_portability/)
+- [Telco Customer Agent architecture](examples/telco_customer_agent/)
 Reference docs:
 
 - [Local vs Remote modes](docs/local_vs_remote.md) -- how all Omnigent components (server, runner, harness, Web UI, PolicyEngine) fit together in Databricks-hosted and fully-local deployments
@@ -316,9 +316,9 @@ Tools are auto-discovered from `tools/python/` in the agent's directory. Each `.
 | Agent | Path | Description |
 |---|---|---|
 | **Secure Code Assistant** | [`examples/secure_code_assistant/`](examples/secure_code_assistant/) | Information flow control — blocks web search after code read, blocks file writes after web search |
-| **Telco Customer** | [`examples/telco_customer_agent/`](examples/telco_customer_agent/) | Customer data agent with PII/financial policy labels (supports Databricks, OpenAI, Claude) |
 | **Cross-Harness Coding** | [`examples/cross_harness_coding/`](examples/cross_harness_coding/) | Multi-harness delegation — Codex implements, Claude reviews, one shared session |
 | **Harness Portability** | [`examples/harness_portability/`](examples/harness_portability/) | One supervisor, four inspectors — Code Project Health Inspector (Claude SDK, Codex, Pi, Hermes sub-agents) |
+| **Telco Customer** | [`examples/telco_customer_agent/`](examples/telco_customer_agent/) | Customer data agent with PII/financial policy labels (supports Databricks, OpenAI, Claude) |
 
 ---
 
