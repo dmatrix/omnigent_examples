@@ -8,13 +8,27 @@
 
 ## Overview
 
-The telco agent demonstrates **governance** — Omnigent's ability to enforce data access boundaries that the LLM cannot override. Nine policies across five categories show the full range of what the PolicyEngine can do:
+The telco agent demonstrates **governance** — Omnigent's ability to enforce data access boundaries that the LLM cannot override. Nine [session-based contextual policies](https://www.databricks.com/blog/contextual-policies-omnigent-using-session-state-better-govern-ai-agents) across five categories show the full range of what the PolicyEngine can do:
 
-- **Taint labels + information flow** — when the agent reads customer PII or financial data, the session is tainted with monotonic labels and web search is blocked to prevent data leakage.
-- **Cost governance** — a session-level cost budget caps LLM spend and ASKs for approval at configurable thresholds.
-- **PII leak prevention** — outgoing LLM messages are scanned for SSN, email, and phone patterns before reaching the model.
-- **Stateful risk scoring** — each tool call accumulates risk points; when the score crosses a threshold, sensitive tools require human approval.
-- **Custom policy** — a bulk access guard (written in Python) tracks distinct customer records accessed and ASKs after the configured limit.
+**Taint Labels + Information Flow: Block data leakage after sensitive access**
+
+When the agent reads customer PII or billing data, the session is tainted with monotonic labels (`has_pii`, `has_financial`). Once set, the `block_web_after_pii` and `block_web_after_financial` policies DENY web search for the rest of the session — even if the search query itself is clean. Five policies: three label-setters and two deny rules.
+
+**Cost Budget: Keep session spending under control**
+
+The `cost_budget` policy tracks cumulative LLM spend. It ASKs for approval at $1.00 and DENYs further tool calls at the $5.00 hard limit.
+
+**PII Leak Prevention: Catch sensitive data before it leaves**
+
+The `deny_pii_in_llm_request` policy scans outgoing messages for SSN, email, and phone patterns before they reach the model. Fires as ASK so the user can review and approve or block.
+
+**Risk Score: Get more cautious as sensitive access accumulates**
+
+The `risk_score` policy keeps a running score for the session — each tool call adds points (billing: 5, customers: 3, plans: 1). When the score crosses the threshold, sensitive tools require human approval. No single query triggers it; the pattern does.
+
+**Bulk Access Guard: Flag when too many records are accessed**
+
+A custom policy (`policies/bulk_access_guard.py`) tracks distinct customer IDs (CUST-XXXX) across the session. ASKs for approval after 3 unique customers. Demonstrates the factory function + session state + POLICY_REGISTRY authoring pattern.
 
 Unlike prompt-based guardrails, all nine policies are enforced at the framework layer — the tool call is denied or paused before it reaches the model. The agent also demonstrates **portability** — the same policies fire identically on Claude, GPT, or any supported harness.
 
