@@ -136,10 +136,13 @@ Show me CUST-1003's billing history
 → ASK: "Risk score exceeded — multiple sensitive data accesses in this session."
 ```
 
-**Bulk access guard** (custom policy -- distinct customer count):
+**Bulk access guard** (custom policy -- distinct customer count, query one per turn):
 ```
-Look up CUST-1001, then CUST-1002, then CUST-1003, then CUST-1004
-→ ASK: "Bulk access guard: this session has accessed 4 distinct customer records (limit: 3). Continue?"
+Show me CUST-1001's account details
+Show me CUST-1002's account details
+Show me CUST-1003's account details
+Show me CUST-1004's account details
+→ ASK on the 4th: "Bulk access guard: this session has accessed 4 distinct customer records (limit: 3). Continue?"
 ```
 
 **Skill** (on-demand structured report):
