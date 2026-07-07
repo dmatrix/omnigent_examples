@@ -2,12 +2,12 @@
 
 ## Project Overview
 
-Example agent configurations for the Omnigent CLI. Flagship examples include a secure code assistant with information flow policies, a telco customer data agent demonstrating session-scoped PII/financial policy labels, and a cross-harness coding supervisor.
+Example agent configurations for the Omnigent CLI. Flagship examples include a secure code assistant with information flow policies, a telco customer data agent demonstrating session-scoped PII/financial policy labels, a cross-harness coding supervisor, and a harness portability inspector using four LLM providers simultaneously.
 
 ## Tech Stack
 
 - **Omnigent CLI** -- runs agents from YAML configs
-- **Claude SDK harness** (`harness: claude-sdk`) -- all agents use `databricks-claude-sonnet-4-6`
+- **Claude SDK harness** (`harness: claude-sdk`) -- most agents default to `claude-sonnet-4-6` (direct API); cross_harness_coding defaults to `databricks-claude-sonnet-4-6` (Databricks AI Gateway)
 - **Python tools** -- `@tool` decorator from `omnigent_client.tools`, auto-discovered from `tools/python/`
 - **SQLite** -- telco tools query `examples/tools/data/telco.db`
 
@@ -101,6 +101,8 @@ examples/
 |       +-- search_docs.py        #   Doc search stub (triggers has_external_content)
 |-- telco_customer_agent/         # Telco customer data agent (PII/financial policies)
 |   |-- config.yaml               #   harness: claude-sdk, model: claude-sonnet-4-6
+|   |-- policies/
+|   |   +-- bulk_access_guard.py  #   Custom policy: ASKs after 3+ distinct customers
 |   |-- tools/python/
 |   |   |-- query_plans.py        #   Public plan/pricing data (no labels)
 |   |   |-- query_customers.py    #   Customer PII + devices

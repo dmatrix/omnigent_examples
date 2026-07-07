@@ -20,7 +20,7 @@ This example shows three Omnigent capabilities working together:
 
 2. **Multi-agent composition** — A supervisor agent dispatches four specialist sub-agents, each running on a different LLM harness, within a single session tree. The agents share filesystem access and policy state. This is not four independent scripts — it is one coordinated workflow with a shared session, layered cost governance, and a unified output artifact.
 
-3. **Provider-agnostic governance** — Guardrails (cost checkpoints, tool call limits) are defined in YAML and enforced by the Omnigent PolicyEngine — not by the LLM provider. The cost guard never hard-terminates — it asks for approval at soft thresholds and prompts for a model downgrade at the budget limit. The user always decides whether to continue. These fire identically whether the agent behind them is Claude, GPT, Pi, or Hermes. You define governance once and it follows the workflow across providers.
+3. **Provider-agnostic governance** — Guardrails (cost checkpoints, tool call limits) are defined in YAML and enforced by the Omnigent PolicyEngine — not by the LLM provider. The cost guard ASKs for approval at soft thresholds and DENYs further tool calls at the budget limit. These fire identically whether the agent behind them is Claude, GPT, Pi, or Hermes. You define governance once and it follows the workflow across providers.
 
 4. **Cross-harness observability** — MLflow tracing captures every agent turn, tool call, and policy evaluation across the session tree. Load `/setup-mlflow-tracing-claude` and `/setup-mlflow-tracing-codex` to enable tracing for the supported harnesses. Traces are stored in a local `mlflow.db` and viewable in the MLflow UI — no per-harness instrumentation code needed.
 
@@ -314,19 +314,19 @@ One supervisor, four inspectors. Each inspector's harness is set in its own `con
 
 | Policy | Scope | Limit |
 |---|---|---|
-| `cost_guard` | Per session | ASK at $1.00, downgrade gate at $5.00 |
+| `cost_guard` | Per session | ASK at $1.00, DENY at $5.00 |
 
 ### Sub-agents (each)
 
 | Policy | Scope | Limit |
 |---|---|---|
-| `cost_guard` | Per invocation | ASK at $1.00, downgrade gate at $5.00 |
+| `cost_guard` | Per invocation | ASK at $1.00, DENY at $5.00 |
 | `tool_call_limit` | Per invocation | 250 tool calls max |
 
-The cost guard **never hard-terminates a session**. It works in two phases:
+The cost guard works in two phases:
 
 1. **ASK threshold** (`ask_thresholds_usd`) — the agent pauses and asks for approval when spend crosses the checkpoint. Approve to continue, deny to stop.
-2. **Downgrade gate** (`max_cost_usd`) — when spend reaches the limit, the policy asks the user to switch to a cheaper model (via `/model`). Once switched, the session continues. The budget resets its gate — it's a model-downgrade prompt, not a session kill.
+2. **Hard limit** (`max_cost_usd`) — when spend reaches the limit, further tool calls are denied. The session stays alive — switch to a cheaper model (via `/model`) or start a fresh session to continue.
 
 The tool call limit on each sub-agent prevents runaway inspection loops. The supervisor has no tool call limit — it only makes a handful of calls (clone + dispatch + write report). All policies are harness-agnostic: they evaluate in the Omnigent runner, not in the LLM harness.
 
@@ -335,10 +335,8 @@ The tool call limit on each sub-agent prevents runaway inspection loops. The sup
 | Scenario | What happens | How to continue |
 |---|---|---|
 | **ASK threshold** ($1.00) | The agent pauses and asks for approval. | Approve to continue, or deny to stop. |
-| **Downgrade gate** ($5.00) | The agent asks you to switch to a cheaper model. | Switch models with `/model`, then continue. |
+| **Hard limit** ($5.00) | Further tool calls are denied. | Switch models with `/model`, or start a fresh session. |
 | **Tool call limit** (sub-agent hits 250) | Further tool calls are denied for that sub-agent. The supervisor can still dispatch other sub-agents. | Start a fresh session, or raise `limit` in the sub-agent's `config.yaml`. |
-
-No session is ever hard-terminated by cost. The user always decides whether to continue.
 
 **Adjusting limits:**
 
@@ -351,7 +349,7 @@ To permanently change when the agent pauses, edit the `guardrails:` block in the
 
 - **Fewer pauses** — raise `ask_thresholds_usd` (e.g., `[2.00]` instead of `[1.00]`)
 - **More tool calls** — raise `limit` in sub-agent configs (e.g., `500` instead of `250`)
-- **Higher downgrade gate** — raise `max_cost_usd` (e.g., `10.0` instead of `5.0`)
+- **Higher hard limit** — raise `max_cost_usd` (e.g., `10.0` instead of `5.0`)
 
 ---
 

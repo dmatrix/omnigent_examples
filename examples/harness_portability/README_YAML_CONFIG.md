@@ -161,7 +161,7 @@ guardrails:
 
 | Policy | Function | Role |
 |---|---|---|
-| `cost_guard` | `cost_budget` | Session-wide cost governance — asks for approval at $1.00 (soft checkpoint), prompts for model downgrade at $5.00 (budget gate). Never hard-terminates; the user always decides whether to continue. Tracks cumulative LLM spend across the supervisor and all sub-agent calls. |
+| `cost_guard` | `cost_budget` | Session-wide cost governance — ASKs for approval at $1.00 (soft checkpoint), DENYs further tool calls at $5.00 (hard limit). The session stays alive — switch to a cheaper model or start a fresh session to continue. Tracks cumulative LLM spend across the supervisor and all sub-agent calls. |
 
 The supervisor has no tool call limit — it only makes a handful of calls (clone, dispatch four sub-agents, write report). Tool call limits live on the sub-agents where the heavy shell work happens.
 
@@ -189,10 +189,10 @@ guardrails:
 
 | Policy | Function | Role |
 |---|---|---|
-| `cost_guard` | `cost_budget` | Per-invocation cost governance — asks for approval at $1.00, prompts for model downgrade at $5.00. Never hard-terminates; prevents any one inspection from running away. |
+| `cost_guard` | `cost_budget` | Per-invocation cost governance — ASKs for approval at $1.00, DENYs further tool calls at $5.00. Prevents any one inspection from running away. |
 | `tool_call_limit` | `max_tool_calls_per_session` | Per-invocation rate limit — denies tool calls once the sub-agent exceeds 250 calls. Prevents runaway shell loops during inspection. |
 
-**Why two levels?** The per-invocation `cost_guard` ($5.00 gate) on each sub-agent catches runaway inspections early. The session-wide `cost_guard` ($5.00 gate) on the supervisor provides the overall ceiling. Neither hard-terminates — both ask the user before continuing. The `tool_call_limit` (250) on each sub-agent adds a hard cap on shell activity — the supervisor doesn't need one because it only makes a handful of calls. This is the same layered pattern used in [cross_harness_coding](../cross_harness_coding/).
+**Why two levels?** The per-invocation `cost_guard` ($5.00) on each sub-agent catches runaway inspections early. The session-wide `cost_guard` ($5.00) on the supervisor provides the overall ceiling. Both DENY further tool calls at the hard limit — the session stays alive but you need to switch models or start fresh to continue. The `tool_call_limit` (250) on each sub-agent adds a hard cap on shell activity — the supervisor doesn't need one because it only makes a handful of calls. This is the same layered pattern used in [cross_harness_coding](../cross_harness_coding/).
 
 ---
 
