@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 780" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 920" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#1a1a2e"/>
@@ -46,7 +46,7 @@
   </defs>
 
   <!-- Background -->
-  <rect width="900" height="780" fill="url(#bg)"/>
+  <rect width="900" height="920" fill="url(#bg)"/>
 
   <!-- Subtle grid -->
   <g opacity="0.03" stroke="#fff" stroke-width="0.5">
@@ -65,8 +65,8 @@
   <circle cx="750" cy="100" r="35" fill="#48c9b0" opacity="0.04"/>
 
   <!-- Title -->
-  <text x="450" y="38" text-anchor="middle" fill="#fff" font-size="18" font-weight="700" letter-spacing="1">Telco Customer Agent — Omnigent with Policy Labels</text>
-  <text x="450" y="58" text-anchor="middle" fill="#8899aa" font-size="11">Session-Scoped Information Flow Control  |  PII + Financial Guardrails</text>
+  <text x="450" y="38" text-anchor="middle" fill="#fff" font-size="18" font-weight="700" letter-spacing="1">Telco Customer Agent — 9 Policies, 5 Categories</text>
+  <text x="450" y="58" text-anchor="middle" fill="#8899aa" font-size="11">Taint Labels  |  Cost Budget  |  PII Scan  |  Risk Score  |  Custom Bulk Guard</text>
 
   <!-- ============ User Query ============ -->
   <rect x="330" y="75" width="240" height="44" rx="22" fill="url(#userG)" filter="url(#shadow)"/>
@@ -80,7 +80,7 @@
   <!-- ============ Agent ============ -->
   <rect x="200" y="156" width="500" height="65" rx="12" fill="url(#agentG)" filter="url(#shadow)"/>
   <text x="450" y="183" text-anchor="middle" fill="#fff" font-size="16" font-weight="700">telco_customer_agent</text>
-  <text x="450" y="200" text-anchor="middle" fill="#a8d8ea" font-size="10">Prompt-Driven Routing  |  openai-agents  |  databricks-gpt-5-5</text>
+  <text x="450" y="200" text-anchor="middle" fill="#a8d8ea" font-size="10">Prompt-Driven Routing  |  claude-sdk  |  claude-sonnet-4-6</text>
   <text x="450" y="213" text-anchor="middle" fill="#7ec8e3" font-size="8" font-style="italic">Tools: query_customers, query_billing, query_plans, web_search (builtin)</text>
 
   <!-- ============ Policy Engine (crimson band) ============ -->
@@ -93,10 +93,9 @@
   <text x="790" y="332" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">Session Labels</text>
   <text x="790" y="350" text-anchor="middle" fill="#ffd5dd" font-size="9">conversation_labels SQL</text>
   <line x1="725" y1="358" x2="855" y2="358" stroke="#fff" stroke-width="0.5" opacity="0.3"/>
-  <text x="730" y="375" fill="#ffecd2" font-size="10" font-family="monospace">has_pii:       false</text>
-  <text x="730" y="393" fill="#ffecd2" font-size="10" font-family="monospace">has_financial:  false</text>
-  <text x="730" y="411" fill="#ffecd2" font-size="10" font-family="monospace">has_credit:    false</text>
-  <text x="730" y="429" fill="#ffecd2" font-size="10" font-family="monospace">used_web:      false</text>
+  <text x="730" y="378" fill="#ffecd2" font-size="10" font-family="monospace">has_pii:       false</text>
+  <text x="730" y="400" fill="#ffecd2" font-size="10" font-family="monospace">has_financial:  false</text>
+  <text x="730" y="422" fill="#ffecd2" font-size="10" font-family="monospace">used_web:      false</text>
 
   <!-- Arrow: PolicyEngine -> Labels -->
   <path d="M710,270 L790,310" fill="none" stroke="#e94560" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.6"/>
@@ -108,7 +107,7 @@
   <text x="107" y="340" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">query_customers</text>
   <text x="107" y="355" text-anchor="middle" fill="#ffecd2" font-size="8">@tool  |  Auto-discovered</text>
   <text x="107" y="370" text-anchor="middle" fill="#ffd5a0" font-size="7">Names, emails, phones, SSN</text>
-  <text x="107" y="382" text-anchor="middle" fill="#e8c07a" font-size="7" font-style="italic">Sets: has_pii, has_credit</text>
+  <text x="107" y="382" text-anchor="middle" fill="#e8c07a" font-size="7" font-style="italic">Sets: has_pii  |  Risk: +3</text>
 
   <!-- query_billing -->
   <rect x="200" y="315" width="155" height="75" rx="8" fill="url(#toolBillG)" filter="url(#shadow)"/>
@@ -154,56 +153,83 @@
   <text x="450" y="505" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">Policy Enforcement Scenarios</text>
 
   <!-- Scenario 1: ALLOW -->
-  <rect x="40" y="520" width="250" height="70" rx="8" fill="#0d3b1f" opacity="0.5" stroke="#2ecc71" stroke-width="1"/>
-  <text x="165" y="542" text-anchor="middle" fill="#2ecc71" font-size="11" font-weight="700">ALLOW</text>
-  <text x="165" y="558" text-anchor="middle" fill="#a8e6cf" font-size="8">query_plans("Show all tiers")</text>
-  <text x="165" y="572" text-anchor="middle" fill="#7dcea0" font-size="7">No sensitive data — no labels triggered</text>
-  <text x="165" y="584" text-anchor="middle" fill="#52be80" font-size="7">web_search still available</text>
+  <rect x="40" y="520" width="155" height="70" rx="8" fill="#0d3b1f" opacity="0.5" stroke="#2ecc71" stroke-width="1"/>
+  <text x="117" y="542" text-anchor="middle" fill="#2ecc71" font-size="11" font-weight="700">ALLOW</text>
+  <text x="117" y="558" text-anchor="middle" fill="#a8e6cf" font-size="8">query_plans</text>
+  <text x="117" y="572" text-anchor="middle" fill="#7dcea0" font-size="7">No labels triggered</text>
+  <text x="117" y="584" text-anchor="middle" fill="#52be80" font-size="7">Risk score +1</text>
 
   <!-- Scenario 2: DENY -->
-  <rect x="320" y="520" width="250" height="70" rx="8" fill="#3b0d0d" opacity="0.5" stroke="#e74c3c" stroke-width="1"/>
-  <text x="445" y="542" text-anchor="middle" fill="#e74c3c" font-size="11" font-weight="700">DENY</text>
-  <text x="445" y="558" text-anchor="middle" fill="#f5b7b1" font-size="8">web_search after query_customers</text>
-  <text x="445" y="572" text-anchor="middle" fill="#e6a09e" font-size="7">has_pii=true blocks web_search</text>
-  <text x="445" y="584" text-anchor="middle" fill="#d98880" font-size="7">PII could leak in search queries</text>
+  <rect x="210" y="520" width="155" height="70" rx="8" fill="#3b0d0d" opacity="0.5" stroke="#e74c3c" stroke-width="1"/>
+  <text x="287" y="542" text-anchor="middle" fill="#e74c3c" font-size="11" font-weight="700">DENY</text>
+  <text x="287" y="558" text-anchor="middle" fill="#f5b7b1" font-size="8">web_search after PII</text>
+  <text x="287" y="572" text-anchor="middle" fill="#e6a09e" font-size="7">has_pii blocks web_search</text>
+  <text x="287" y="584" text-anchor="middle" fill="#d98880" font-size="7">Taint label enforcement</text>
 
-  <!-- Scenario 3: ASK -->
-  <rect x="600" y="520" width="250" height="70" rx="8" fill="#3b2d0d" opacity="0.5" stroke="#f5a623" stroke-width="1"/>
-  <text x="725" y="542" text-anchor="middle" fill="#f5a623" font-size="11" font-weight="700">ASK</text>
-  <text x="725" y="558" text-anchor="middle" fill="#fdebd0" font-size="8">Output with PII + financial data</text>
-  <text x="725" y="572" text-anchor="middle" fill="#f5cba7" font-size="7">has_pii + has_financial = human review</text>
-  <text x="725" y="584" text-anchor="middle" fill="#e8b88a" font-size="7">Execution pauses for approval</text>
+  <!-- Scenario 3: ASK — Cost -->
+  <rect x="380" y="520" width="155" height="70" rx="8" fill="#3b2d0d" opacity="0.5" stroke="#f5a623" stroke-width="1"/>
+  <text x="457" y="542" text-anchor="middle" fill="#f5a623" font-size="11" font-weight="700">ASK — Cost</text>
+  <text x="457" y="558" text-anchor="middle" fill="#fdebd0" font-size="8">Spend exceeds $1.00</text>
+  <text x="457" y="572" text-anchor="middle" fill="#f5cba7" font-size="7">cost_budget threshold</text>
+  <text x="457" y="584" text-anchor="middle" fill="#e8b88a" font-size="7">Pauses for approval</text>
+
+  <!-- Scenario 4: ASK — Risk Score -->
+  <rect x="550" y="520" width="155" height="70" rx="8" fill="#1a0d3b" opacity="0.5" stroke="#bb86fc" stroke-width="1"/>
+  <text x="627" y="542" text-anchor="middle" fill="#bb86fc" font-size="11" font-weight="700">ASK — Risk</text>
+  <text x="627" y="558" text-anchor="middle" fill="#d7bde2" font-size="8">Score crosses 10</text>
+  <text x="627" y="572" text-anchor="middle" fill="#c39bd3" font-size="7">Billing=5, Customer=3</text>
+  <text x="627" y="584" text-anchor="middle" fill="#af7ac5" font-size="7">Stateful accumulation</text>
+
+  <!-- Scenario 5: ASK — Bulk Access -->
+  <rect x="720" y="520" width="155" height="70" rx="8" fill="#0d2a3b" opacity="0.5" stroke="#4fc3f7" stroke-width="1"/>
+  <text x="797" y="542" text-anchor="middle" fill="#4fc3f7" font-size="11" font-weight="700">ASK — Bulk</text>
+  <text x="797" y="558" text-anchor="middle" fill="#85c1e9" font-size="8">4+ distinct customers</text>
+  <text x="797" y="572" text-anchor="middle" fill="#7ec8e3" font-size="7">Custom Python policy</text>
+  <text x="797" y="584" text-anchor="middle" fill="#5dade2" font-size="7">bulk_access_guard.py</text>
+
+  <!-- ============ PII Leak Prevention ============ -->
+  <rect x="200" y="610" width="500" height="35" rx="8" fill="#3b1a0d" opacity="0.5" stroke="#e97c00" stroke-width="1"/>
+  <text x="450" y="630" text-anchor="middle" fill="#f5a623" font-size="11" font-weight="700">PII Leak Prevention — deny_pii_in_llm_request</text>
+  <text x="450" y="641" text-anchor="middle" fill="#fdebd0" font-size="8">Scans outgoing LLM messages for SSN, email, phone patterns  |  ASK on match</text>
 
   <!-- ============ Skill ============ -->
-  <rect x="300" y="610" width="300" height="45" rx="8" fill="#1b4f72" filter="url(#shadow)" opacity="0.8"/>
-  <text x="450" y="632" text-anchor="middle" fill="#4fc3f7" font-size="11" font-weight="700">Skill: customer-report</text>
-  <text x="450" y="647" text-anchor="middle" fill="#85c1e9" font-size="8">On-demand via load_skill  |  Redaction rules  |  Churn risk template</text>
+  <rect x="300" y="665" width="300" height="45" rx="8" fill="#1b4f72" filter="url(#shadow)" opacity="0.8"/>
+  <text x="450" y="687" text-anchor="middle" fill="#4fc3f7" font-size="11" font-weight="700">Skill: customer-report</text>
+  <text x="450" y="702" text-anchor="middle" fill="#85c1e9" font-size="8">On-demand via load_skill  |  Redaction rules  |  Churn risk template</text>
 
   <!-- ============ Output ============ -->
-  <line x1="450" y1="655" x2="450" y2="680" stroke="#48c9b0" stroke-width="2" opacity="0.6"/>
-  <polygon points="445,678 455,678 450,688" fill="#48c9b0" opacity="0.6"/>
+  <line x1="450" y1="710" x2="450" y2="735" stroke="#48c9b0" stroke-width="2" opacity="0.6"/>
+  <polygon points="445,733 455,733 450,743" fill="#48c9b0" opacity="0.6"/>
 
-  <rect x="330" y="688" width="240" height="38" rx="19" fill="url(#userG)" filter="url(#shadow)" opacity="0.85"/>
-  <text x="450" y="712" text-anchor="middle" fill="#fff" font-size="13" font-weight="600">Policy-Gated Response</text>
+  <rect x="330" y="743" width="240" height="38" rx="19" fill="url(#userG)" filter="url(#shadow)" opacity="0.85"/>
+  <text x="450" y="767" text-anchor="middle" fill="#fff" font-size="13" font-weight="600">Policy-Gated Response</text>
+
+  <!-- ============ Policy summary bar ============ -->
+  <rect x="100" y="800" width="700" height="40" rx="8" fill="#0f1a2e" stroke="#2980b9" stroke-width="0.5" opacity="0.7"/>
+  <text x="450" y="818" text-anchor="middle" fill="#8899aa" font-size="10" font-weight="600">9 Policies: 3 taint labels + 2 deny + cost_budget + deny_pii + risk_score + bulk_access_guard</text>
+  <text x="450" y="832" text-anchor="middle" fill="#667788" font-size="8">5 builtin  |  1 custom Python  |  3 taint  |  Session-scoped  |  Framework-enforced</text>
 
   <!-- ============ Footer Badges ============ -->
-  <g transform="translate(0, 742)">
-    <rect x="70" y="0" width="120" height="20" rx="10" fill="#2980b9" opacity="0.25"/>
-    <text x="130" y="14" text-anchor="middle" fill="#2980b9" font-size="9" font-weight="600">Omnigent CLI</text>
+  <g transform="translate(0, 860)">
+    <rect x="45" y="0" width="120" height="20" rx="10" fill="#2980b9" opacity="0.25"/>
+    <text x="105" y="14" text-anchor="middle" fill="#2980b9" font-size="9" font-weight="600">Omnigent CLI</text>
 
-    <rect x="205" y="0" width="110" height="20" rx="10" fill="#e94560" opacity="0.25"/>
-    <text x="260" y="14" text-anchor="middle" fill="#e94560" font-size="9" font-weight="600">PolicyEngine</text>
+    <rect x="175" y="0" width="110" height="20" rx="10" fill="#e94560" opacity="0.25"/>
+    <text x="230" y="14" text-anchor="middle" fill="#e94560" font-size="9" font-weight="600">PolicyEngine</text>
 
-    <rect x="330" y="0" width="100" height="20" rx="10" fill="#f5a623" opacity="0.25"/>
-    <text x="380" y="14" text-anchor="middle" fill="#f5a623" font-size="9" font-weight="600">Labels</text>
+    <rect x="295" y="0" width="90" height="20" rx="10" fill="#f5a623" opacity="0.25"/>
+    <text x="340" y="14" text-anchor="middle" fill="#f5a623" font-size="9" font-weight="600">Labels</text>
 
-    <rect x="445" y="0" width="130" height="20" rx="10" fill="#bb86fc" opacity="0.25"/>
-    <text x="510" y="14" text-anchor="middle" fill="#bb86fc" font-size="9" font-weight="600">PII + Financial</text>
+    <rect x="395" y="0" width="100" height="20" rx="10" fill="#bb86fc" opacity="0.25"/>
+    <text x="445" y="14" text-anchor="middle" fill="#bb86fc" font-size="9" font-weight="600">Risk Score</text>
 
-    <rect x="590" y="0" width="100" height="20" rx="10" fill="#2ecc71" opacity="0.25"/>
-    <text x="640" y="14" text-anchor="middle" fill="#2ecc71" font-size="9" font-weight="600">ASK Flow</text>
+    <rect x="505" y="0" width="110" height="20" rx="10" fill="#e97c00" opacity="0.25"/>
+    <text x="560" y="14" text-anchor="middle" fill="#e97c00" font-size="9" font-weight="600">PII Scanner</text>
 
-    <rect x="705" y="0" width="110" height="20" rx="10" fill="#4fc3f7" opacity="0.25"/>
-    <text x="760" y="14" text-anchor="middle" fill="#4fc3f7" font-size="9" font-weight="600">Telco Data</text>
+    <rect x="625" y="0" width="110" height="20" rx="10" fill="#2ecc71" opacity="0.25"/>
+    <text x="680" y="14" text-anchor="middle" fill="#2ecc71" font-size="9" font-weight="600">Cost Budget</text>
+
+    <rect x="745" y="0" width="110" height="20" rx="10" fill="#4fc3f7" opacity="0.25"/>
+    <text x="800" y="14" text-anchor="middle" fill="#4fc3f7" font-size="9" font-weight="600">Bulk Guard</text>
   </g>
 </svg>

@@ -2,8 +2,8 @@
 
 **YAML-defined AI agents for the Omnigent Meta Harness -- from single-tool assistants to multi-tool customer support, secure code assistants, and cross-harness orchestration.**
 
-These examples help you get started and learn the nuances of what omnigent offers. Both
-versions can run locally or with a Databricks hosted Omnigent Server. 
+These examples help you get started and learn the nuances of what omnigent offers. All
+examples can run locally or with a Databricks hosted Omnigent Server.
 
 [![omnigent.ai](https://img.shields.io/badge/omnigent.ai-Visit-00C853)](https://omnigent.ai)
 ![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
@@ -23,8 +23,8 @@ This repository contains example agent configurations for the [Omnigent](https:/
 
 1. **[Secure Code Assistant](examples/secure_code_assistant/)** -- information flow control blocks web search after private code read, blocks file writes after web content reads, and enforces ALLOW, DENY, ASK policy guardrails, and budget control costs at session level. 
 2. **[Cross-Harness Coding](examples/cross_harness_coding/)** -- multi-harness delegation (Codex implements, Claude reviews, one shared session)
-3. **[Harness Portability](examples/harness_portability/)** -- one supervisor, four inspectors, four harnesses: a Code Project Health Inspector with Claude SDK, Codex, Pi, and Hermes sub-agents
-4. **[Telco Customer Agent](examples/telco_customer_agent/)** -- multi-tool customer data agent with PII/financial policy labels and control
+3. **[Harness Portability](examples/harness_portability/)** -- one supervisor, four inspectors, four harnesses: a Code Project Health Inspector with Claude SDK, Codex, Pi, and Hermes sub-agents, including MLflow tracing of Claude and Codex.
+4. **[Telco Customer Agent](examples/telco_customer_agent/)** -- multi-tool customer data agent with 9 policies: PII/financial taint labels, cost budget, PII leak prevention, stateful risk scoring, and a custom bulk access guard
 ---
 
 ## Get Started
@@ -183,7 +183,7 @@ executor:
 ```yaml
 executor:
   type: omnigent
-  model: gpt-5
+  model: gpt-5.4
   config:
     harness: openai-agents
 ```
@@ -192,7 +192,7 @@ executor:
 ```yaml
 executor:
   type: omnigent
-  model: ollama/llama-3
+  model: llama3.3
   config:
     harness: openai-agents
     connection:
@@ -212,7 +212,7 @@ executor:
 ```yaml
 executor:
   type: omnigent
-  model: databricks-claude-sonnet-4-6
+  model: claude-sonnet-4-6
   config:
     harness: pi
 ```
@@ -220,36 +220,58 @@ executor:
 Or override at the command line without editing the YAML:
 ```bash
 omnigent run examples/secure_code_assistant/ --model claude-sonnet-4-6 --harness claude-sdk
-omnigent run examples/telco_customer_agent/ --model gpt-5 --harness openai-agents
+omnigent run examples/telco_customer_agent/ --model gpt-5.4 --harness openai-agents
 omnigent run examples/cross_harness_coding/ --model gpt-5.5 --harness codex
 omnigent run examples/telco_customer_agent/ --harness pi
 ```
+
+### Supported harnesses
+
+Omnigent supports 13 harnesses in direct mode (Omnigent drives the model and tools) and additional native-TUI wrappers. Each harness is a one-line config value — swap providers without changing prompts, tools, or policies.
+
+| Harness | Alias | Model family | Auth | CLI tool required |
+|---|---|---|---|---|
+| `claude-sdk` | `claude` | Claude only | `ANTHROPIC_API_KEY` in `.env`, or Claude subscription (`claude auth login`), or Databricks | -- |
+| `openai-agents` | `openai-agents-sdk` | Any | `OPENAI_API_KEY` in `.env`, or ChatGPT subscription (`codex login`), or Databricks | -- |
+| `codex` | -- | GPT only | `OPENAI_API_KEY` in `.env`, or ChatGPT subscription | Codex CLI (`npm i -g @openai/codex`) |
+| `open-responses` | -- | Any (default: `gpt-5.3-codex`) | `OPENAI_API_KEY` in `.env` | -- |
+| `pi` | -- | Any | Omnigent credential config | Pi CLI (`npm i -g @earendil-works/pi-coding-agent`) |
+| `hermes` | -- | Any | Own auth (`hermes setup`) | Hermes CLI |
+| `goose` | -- | Any | Own auth (`goose configure`) | Goose CLI |
+| `cursor` | -- | Any | Own auth (Cursor login) | Cursor |
+| `antigravity` | -- | Gemini only | Gemini API key or Vertex AI | -- |
+| `copilot` | -- | Any | GitHub Copilot subscription | -- |
+| `kimi` | `kimi-code` | Any | Session-scoped config | Kimi CLI |
+| `qwen` | `qwen-code` | Any | Own auth | Qwen CLI |
+
+Native-TUI harnesses (`claude-native`, `codex-native`, `hermes-native`, `pi-native`, etc.) boot the vendor's own terminal UI. They are launched via `omnigent <name>`, not used in `config.yaml` agent definitions.
 
 ### Supported models
 
 | Provider | Model | Harness | Additional Auth |
 |---|---|---|---|
+| **Anthropic (direct)** | `claude-sonnet-5` | `claude-sdk` | `ANTHROPIC_API_KEY` in `.env` |
+| | `claude-opus-4-8` | `claude-sdk` | `ANTHROPIC_API_KEY` in `.env` |
+| | `claude-opus-4-7` | `claude-sdk` | `ANTHROPIC_API_KEY` in `.env` |
+| | `claude-sonnet-4-6` | `claude-sdk` | `ANTHROPIC_API_KEY` in `.env` |
+| | `claude-haiku-4-5` | `claude-sdk` | `ANTHROPIC_API_KEY` in `.env` |
+| | `claude-fable-5` | `claude-sdk` | `ANTHROPIC_API_KEY` in `.env` |
+| **OpenAI (direct)** | `gpt-5.5` | `openai-agents` or `codex` | `OPENAI_API_KEY` in `.env` |
+| | `gpt-5.4` | `openai-agents` or `codex` | `OPENAI_API_KEY` in `.env` |
+| | `gpt-5.4-mini` | `openai-agents` or `codex` | `OPENAI_API_KEY` in `.env` |
+| | `gpt-5.3-codex` | `openai-agents` or `codex` | `OPENAI_API_KEY` in `.env` |
 | **Databricks AI Gateway** | `databricks-claude-sonnet-4-6` | `claude-sdk` | -- (Databricks auth only) |
-| | `databricks-claude-opus-4-7` | `claude-sdk` | -- |
 | | `databricks-claude-opus-4-8` | `claude-sdk` | -- |
 | | `databricks-gpt-5-5` | `openai-agents` or `codex` | -- |
 | | `databricks-gpt-5-4` | `openai-agents` or `codex` | -- |
-| | `databricks-gpt-5-4-mini` | `openai-agents` or `codex` | -- |
 | | `databricks-kimi-k2-6` | `openai-agents` | -- |
 | | `databricks-meta-llama-3.3-70b-instruct` | `openai-agents` | -- |
-| | `databricks-claude-sonnet-4-6` | `pi` | -- |
-| **Anthropic (direct)** | `claude-sonnet-4-6` | `claude-sdk` | `ANTHROPIC_API_KEY` in `.env` |
-| | `claude-opus-4-7` | `claude-sdk` | `ANTHROPIC_API_KEY` in `.env` |
-| | `claude-haiku-4-5` | `claude-sdk` | `ANTHROPIC_API_KEY` in `.env` |
-| **OpenAI (direct)** | `gpt-5.5` | `openai-agents` or `codex` | `OPENAI_API_KEY` in `.env` |
-| | `gpt-5.3-codex` | `openai-agents` or `codex` | `OPENAI_API_KEY` in `.env` |
-| | `gpt-5.4` | `openai-agents` or `codex` | `OPENAI_API_KEY` in `.env` |
-| | `gpt-5.4-mini` | `openai-agents` or `codex` | `OPENAI_API_KEY` in `.env` |
-| **Gateway** | Any model via OpenRouter, LiteLLM, vLLM, Azure | `openai-agents`, `claude-sdk`, `codex`, or `pi` | Gateway `base_url` + key |
-| **Pi** | Claude or OpenAI models via Pi agent | `pi` | Pi CLI (`@earendil-works/pi-coding-agent`) |
-| **Ollama (local)** | `ollama/llama-3` | `openai-agents` | None |
+| **Gateway** | Any model via OpenRouter, LiteLLM, vLLM, Azure | Any harness | Gateway `base_url` + key |
+| **Ollama (local)** | Any Ollama model tag (e.g. `llama3.3`) | `openai-agents` | None (`base_url: http://localhost:11434/v1`) |
 
-Databricks AI Gateway models require `databricks auth login` and `--server`. Non-Databricks models (Anthropic, OpenAI, Ollama) run fully locally -- see [Run Locally](#run-locally).
+> **Databricks models are dynamic.** The `databricks-` prefix maps to serving endpoints in your workspace (e.g., `databricks-claude-sonnet-4-6` → `claude-sonnet-4-6`). The models above are common examples — your workspace may serve different endpoints. Use `omnigent models list --server <url>` to see available models.
+
+> **Model family rules.** `claude-sdk` only accepts Claude models. `codex` only accepts GPT models. `antigravity` only accepts Gemini models. All other harnesses (`openai-agents`, `pi`, `hermes`, `goose`, `cursor`, `kimi`, `qwen`, `copilot`) accept any model.
 
 No Python tool code changes are needed -- the tools are provider-independent.
 
@@ -318,7 +340,7 @@ Tools are auto-discovered from `tools/python/` in the agent's directory. Each `.
 | **Secure Code Assistant** | [`examples/secure_code_assistant/`](examples/secure_code_assistant/) | Information flow control — blocks web search after code read, blocks file writes after web search |
 | **Cross-Harness Coding** | [`examples/cross_harness_coding/`](examples/cross_harness_coding/) | Multi-harness delegation — Codex implements, Claude reviews, one shared session |
 | **Harness Portability** | [`examples/harness_portability/`](examples/harness_portability/) | One supervisor, four inspectors — Code Project Health Inspector (Claude SDK, Codex, Pi, Hermes sub-agents) |
-| **Telco Customer** | [`examples/telco_customer_agent/`](examples/telco_customer_agent/) | Customer data agent with PII/financial policy labels (supports Databricks, OpenAI, Claude) |
+| **Telco Customer** | [`examples/telco_customer_agent/`](examples/telco_customer_agent/) | Customer data agent with 9 policies: PII/financial taint labels, cost budget, PII leak prevention, risk scoring, and custom bulk access guard |
 
 ---
 
@@ -359,6 +381,8 @@ omnigent_examples/
 |   |   |-- config.yaml
 |   |   |-- design.md                        #   Policy rationale + staged implementation plan
 |   |   |-- images/                          #   Architecture diagram (SVG + PNG)
+|   |   |-- policies/
+|   |   |   +-- bulk_access_guard.py         #   Custom policy: ASKs after 3+ distinct customers
 |   |   |-- tools/python/
 |   |   |   |-- query_plans.py               #   Public plan/pricing data (no labels)
 |   |   |   |-- query_customers.py           #   Customer PII + devices (triggers has_pii)

@@ -102,6 +102,51 @@ guardrails:
           on_phases: [tool_call]
           on_tools: [web_search]
 
+    # --- Cost governance ---
+
+    cost_budget:
+      type: function
+      function:
+        path: omnigent.policies.builtins.cost.cost_budget
+        arguments:
+          max_cost_usd: 5.0
+          ask_thresholds_usd: [1.00]
+
+    # --- PII leak prevention ---
+
+    deny_pii_in_llm_request:
+      type: function
+      function:
+        path: omnigent.policies.builtins.safety.deny_pii_in_llm_request
+        arguments:
+          pii_types: [ssn, email, phone]
+          action: ASK
+
+    # --- Stateful risk scoring ---
+
+    risk_score:
+      type: function
+      function:
+        path: omnigent.policies.builtins.risk_score.risk_score_policy
+        arguments:
+          threshold: 10
+          tool_points:
+            query_customers: 3
+            query_billing: 5
+            query_plans: 1
+          guarded_tools: [query_customers, query_billing]
+          escalate_action: ASK
+          reason: "Risk score exceeded — multiple sensitive data accesses in this session."
+
+    # --- Custom: bulk access guard ---
+
+    bulk_access_guard:
+      type: function
+      function:
+        path: examples.telco_customer_agent.policies.bulk_access_guard.bulk_access_guard
+        arguments:
+          max_customers: 3
+
 prompt: |
   You are a telco customer data agent. You MUST use your tools to answer
   every question. You are FORBIDDEN from answering from your training data

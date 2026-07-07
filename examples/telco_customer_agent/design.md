@@ -1,6 +1,8 @@
-# Telco Customer Data Agent with PII/Financial Policy Labels
+# Telco Customer Data Agent — Design Doc
 
-Implemented  here: https://github.com/dmatrix/omnigent_examples (A private repo)
+> **Status: Implementation complete.** All 9 stages shipped. The agent now has 9 policies across five categories (taint/deny, cost, PII leak prevention, risk scoring, custom bulk access guard). See the [README](README.md) and [config.yaml](config.yaml) for the current state. This document preserves the original design rationale and staged implementation plan for reference. Note: the YAML snippets below use a simplified notation from the planning phase — the implemented config uses `type: function` with `function.path` syntax.
+
+Implemented here: https://github.com/dmatrix/omnigent_examples (A private repo)
 
 ## Why Omnigent Is the Right Framework for This
 
@@ -143,7 +145,9 @@ Neither alone is sufficient. AI Gateway can't enforce session-scoped information
 
 ```
 examples/telco_customer_agent/
-├── config.yaml                      # Agent + labels + policies
+├── config.yaml                      # Agent + labels + 9 policies
+├── policies/
+│   └── bulk_access_guard.py         # Custom policy: ASKs after 3+ distinct customers
 ├── tools/python/
 │   ├── query_customers.py           # @tool: query customers + devices
 │   ├── query_billing.py             # @tool: query billing + subscriptions
@@ -282,7 +286,7 @@ label_schema:
     monotonic: max
 ```
 
-## Policies (5 total)
+## Policies (original 5 — see config.yaml for the full 9-policy implementation)
 
 ```yaml
 policies:

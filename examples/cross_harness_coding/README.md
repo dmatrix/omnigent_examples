@@ -56,13 +56,20 @@ export $(grep OPENAI_API_KEY .env | tr -d '"')
 
 ### 3. Run the agent
 
+The default config uses `databricks-*` models, which require Databricks auth (`omnigent login`). To run locally with direct API keys instead, override the models:
+
 ```bash
-# Default: Codex implements, Claude reviews
+# With Databricks auth configured (default config)
 omnigent run examples/cross_harness_coding/
+
+# With direct API keys (no Databricks dependency)
+omnigent run examples/cross_harness_coding/ --model claude-sonnet-4-6
 
 # Fresh session (no persistence)
 omnigent run examples/cross_harness_coding/ --no-session
 ```
+
+> **Note:** The `--model` flag overrides the supervisor only. The `impl_worker` sub-agent defaults to `databricks-gpt-5-4` on Codex — to use direct API, edit `agents/impl_worker/config.yaml` and change the model to `gpt-5.4` (see [Harness Swapping](#harness-swapping)).
 
 ---
 

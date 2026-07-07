@@ -64,7 +64,7 @@ The agent has three additional Python tools that don't appear in the YAML. These
 
 | File | Tool function | Why it matters |
 |---|---|---|
-| `tools/python/query_plans.py` | `query_plans` | Not referenced by any policy — public data, no taint |
+| `tools/python/query_plans.py` | `query_plans` | Referenced by `risk_score` (1 point per call) — public data, no taint labels |
 | `tools/python/query_customers.py` | `query_customers` | Referenced by the `taint_pii` policy (`on_tools: [query_customers]`) |
 | `tools/python/query_billing.py` | `query_billing` | Referenced by the `taint_financial` policy (`on_tools: [query_billing]`) |
 
@@ -74,7 +74,7 @@ The agent has three additional Python tools that don't appear in the YAML. These
 
 ## `guardrails:` — Session-scoped governance
 
-This is the section that distinguishes this example from a bare LLM agent. The guardrails block defines **labels** (session state) and **policies** (rules that evaluate on every tool call).
+This is the section that distinguishes this example from a bare LLM agent. The guardrails block defines **labels** (session state) and **9 policies** across five categories: taint/deny (information flow), cost governance, PII leak prevention, stateful risk scoring, and a custom bulk access guard.
 
 ### `guardrails.labels:` — Session state tracking
 
@@ -117,7 +117,7 @@ Labels are **session-scoped variables** that track what the agent has seen or do
 
 Policies are evaluated by the PolicyEngine on every tool call. They run **before** the tool executes — the LLM never gets a vote.
 
-There are two types in this config: **taint policies** (set labels) and **deny policies** (block tool calls).
+In the YAML, the nine policies are organized into four groups by implementation pattern: **taint policies** (set labels), **deny policies** (block tool calls), **builtin policies** (cost, PII, risk), and a **custom policy** (bulk access guard).
 
 #### Taint policies — Tag session state on tool access
 
@@ -188,6 +188,100 @@ The two deny policies:
 
 **How policies compose:** Both deny policies target `web_search`. If either `has_pii` or `has_financial` is true, web search is blocked. The taint policies fire first (they ALLOW with side-effects), then the deny policies evaluate against the updated labels. This means calling `query_customers` and `web_search` in the same turn will still block — the taint fires before the deny evaluates.
 
+#### Cost governance — Session-level budget
+
+```yaml
+cost_budget:
+  type: function
+  function:
+    path: omnigent.policies.builtins.cost.cost_budget
+    arguments:
+      max_cost_usd: 5.0
+      ask_thresholds_usd: [1.00]
+```
+
+| Attribute | Role |
+|---|---|
+| `function.path` | Built-in cost tracking policy. Accumulates LLM spend (USD) across the session. |
+| `max_cost_usd` | Hard limit — DENYs further tool calls at $5.00. The session stays alive; switch models or start fresh to continue. |
+| `ask_thresholds_usd` | `[1.00]` — pause and ask the user for approval when spend crosses $1.00. |
+
+**Why:** The telco agent makes multiple tool calls per question (query + follow-up). Without a cost cap, a long conversation could run away. The ASK threshold fires early to keep the user informed.
+
+#### PII leak prevention — Outgoing message scanning
+
+```yaml
+deny_pii_in_llm_request:
+  type: function
+  function:
+    path: omnigent.policies.builtins.safety.deny_pii_in_llm_request
+    arguments:
+      pii_types: [ssn, email, phone]
+      action: ASK
+```
+
+| Attribute | Role |
+|---|---|
+| `function.path` | Built-in PII scanner. Evaluates on `llm_request` phase — before the message is sent to the model. |
+| `pii_types` | Pattern categories to scan for: SSN patterns, email addresses, phone numbers. |
+| `action` | `ASK` — pause for user approval instead of hard-blocking. The user can approve if the PII exposure is intentional. |
+
+**Why:** The taint labels prevent PII from leaking *out* via web search, but they don't prevent PII from being sent *to* the LLM in user messages or system prompts. This policy adds the complementary guard — scanning outgoing messages for PII patterns before they reach the model. Together, taint labels and PII scanning cover both directions of the data flow.
+
+#### Stateful risk scoring — Accumulative session risk
+
+```yaml
+risk_score:
+  type: function
+  function:
+    path: omnigent.policies.builtins.risk_score.risk_score_policy
+    arguments:
+      threshold: 10
+      tool_points:
+        query_customers: 3
+        query_billing: 5
+        query_plans: 1
+      guarded_tools: [query_customers, query_billing]
+      escalate_action: ASK
+      reason: "Risk score exceeded — multiple sensitive data accesses in this session."
+```
+
+| Attribute | Role |
+|---|---|
+| `function.path` | Built-in risk score accumulator. Uses `session_state` to persist the score across turns. |
+| `threshold` | Score at which `guarded_tools` escalate. `10` = roughly 2 billing queries or 3 customer queries. |
+| `tool_points` | Points added per tool call. `query_billing` (5) is weighted higher than `query_customers` (3) because financial data is more sensitive. `query_plans` (1) adds minimal risk. |
+| `guarded_tools` | Tools that require approval once the threshold is crossed. Only `query_customers` and `query_billing` are gated — `query_plans` remains unrestricted. |
+| `escalate_action` | `ASK` — pause for human approval, not hard deny. |
+| `reason` | Message shown to the user when the threshold fires. |
+
+**Why:** The taint labels are binary (on/off) — they can't express *how much* sensitive data the agent has touched. The risk score adds a quantitative dimension: one billing query is fine, but querying 3 customers' billing in a row is a pattern worth flagging. This is the first *stateful* policy in the example — it accumulates across turns and can't be expressed as a static rule.
+
+#### Custom policy — Bulk access guard
+
+```yaml
+bulk_access_guard:
+  type: function
+  function:
+    path: examples.telco_customer_agent.policies.bulk_access_guard.bulk_access_guard
+    arguments:
+      max_customers: 3
+```
+
+| Attribute | Role |
+|---|---|
+| `function.path` | Dotted path to a custom Python module in `policies/bulk_access_guard.py`. The framework imports it at load time. |
+| `max_customers` | Configurable limit — ASK after this many distinct customers are accessed. |
+
+**Why:** This is the "write your own policy" example. It demonstrates four things a developer needs to know:
+
+1. **Factory pattern** — the function takes arguments and returns a policy callable
+2. **Session state** — the callable reads/writes `session_state` to track customer IDs across turns
+3. **Pattern extraction** — it uses regex to find `CUST-XXXX` patterns in tool call arguments
+4. **POLICY_REGISTRY** — the module exports a registry list so the framework can discover and validate the policy
+
+The use case is real: preventing bulk data exfiltration by flagging when an agent accesses too many distinct customer records. The implementation is ~30 lines.
+
 ---
 
 ## `prompt:` — The agent's system prompt
@@ -208,7 +302,6 @@ The prompt is long (~100 lines) because it includes the database schema. This gi
 
 - **No sub-agents** — unlike cross_harness_coding, this is a single-agent config. All tools are Python functions or builtins, not `type: agent` declarations.
 - **No `os_env` write access needed** — the agent reads from SQLite and the web, but doesn't write files. The `os_env` is declared for shell access (grep, find, etc.) but the agent's prompt doesn't instruct it to use the filesystem.
-- **No ASK policies** — earlier versions had `response`-phase ASK policies that paused for human approval, but these don't work reliably with the `claude-sdk` harness and were removed.
 
 ---
 
@@ -236,11 +329,15 @@ config.yaml
 |   |   +-- has_financial     # financial taint (monotonic)
 |   |   +-- used_web          # web search taint (monotonic)
 |   +-- policies              # rules evaluated on every tool call
-|       +-- taint_pii         # ALLOW query_customers, set has_pii
-|       +-- taint_financial   # ALLOW query_billing, set has_financial
-|       +-- taint_web         # ALLOW web_search, set used_web
-|       +-- block_web_after_pii       # DENY web_search if has_pii
-|       +-- block_web_after_financial  # DENY web_search if has_financial
+|       +-- taint_pii                  # ALLOW query_customers, set has_pii
+|       +-- taint_financial            # ALLOW query_billing, set has_financial
+|       +-- taint_web                  # ALLOW web_search, set used_web
+|       +-- block_web_after_pii        # DENY web_search if has_pii
+|       +-- block_web_after_financial   # DENY web_search if has_financial
+|       +-- cost_budget                # ASK at $1.00, DENY at $5.00
+|       +-- deny_pii_in_llm_request    # ASK on SSN/email/phone in outgoing messages
+|       +-- risk_score                 # ASK when cumulative risk score exceeds 10
+|       +-- bulk_access_guard          # ASK after 3+ distinct customer records
 +-- prompt                    # system prompt (strict tool usage + schema)
 ```
 
@@ -248,7 +345,9 @@ config.yaml
 
 ## Policy evaluation flow
 
-When the agent calls a tool, the PolicyEngine evaluates in this order:
+When the agent calls a tool, the PolicyEngine evaluates policies in order. Here are two representative flows:
+
+### Flow 1: `web_search` after PII access
 
 ```
 Agent calls web_search
@@ -257,16 +356,41 @@ Agent calls web_search
 Phase: tool_call
         |
         v
-1. taint_web fires         --> ALLOW, set used_web = True
-2. block_web_after_pii?    --> check has_pii label
+1. taint_web fires              --> ALLOW, set used_web = True
+2. block_web_after_pii?         --> check has_pii label
    - if True  --> DENY (return reason to model, tool never executes)
    - if False --> skip
-3. block_web_after_financial? --> check has_financial label
+3. block_web_after_financial?   --> check has_financial label
    - if True  --> DENY
    - if False --> skip
+4. cost_budget                  --> check cumulative spend
+   - if over $1.00 --> ASK
+   - if over $5.00 --> DENY
+5. risk_score                   --> add 0 points (web_search has no tool_points)
         |
         v
 All policies passed? --> tool executes
 ```
 
-Taint policies always fire (no condition). Deny policies only activate when their condition label is `"True"`. The deny decision is final — the model receives the reason string and must respond without the tool result.
+### Flow 2: `query_billing` with accumulated risk
+
+```
+Agent calls query_billing(CUST-1003)
+        |
+        v
+Phase: tool_call
+        |
+        v
+1. taint_financial fires        --> ALLOW, set has_financial = True
+2. cost_budget                  --> check cumulative spend
+3. deny_pii_in_llm_request      --> scan args for PII patterns (SSN/email/phone)
+4. risk_score                   --> add 5 points, check threshold
+   - if score >= 10 --> ASK ("Risk score exceeded")
+5. bulk_access_guard            --> extract CUST-1003, add to seen set
+   - if distinct count > 3 --> ASK ("Bulk access guard")
+        |
+        v
+All policies passed? --> tool executes
+```
+
+Taint policies always fire (no condition). Deny policies only activate when their condition label is `"True"`. Stateful policies (risk_score, bulk_access_guard) accumulate state and may escalate on any call. The first DENY or unresolved ASK is final — the model receives the reason string and must respond without the tool result.

@@ -2,7 +2,7 @@ spec_version: 1
 name: cross_harness_coding
 description: >
   Cross-harness coding supervisor — dispatches implementation to a
-  Docker-sandboxed Codex sub-agent, let's the sub agent verify with pytest, and routes
+  Codex sub-agent, lets the sub-agent verify with pytest, and routes
   code review to a Claude sub-agent. Demonstrates composition, governance
   (cost budget across providers), and code safety within a single shared session.
 
