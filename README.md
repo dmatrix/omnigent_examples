@@ -19,7 +19,7 @@ examples can run locally or with a Databricks hosted Omnigent Server.
 
 ## Overview
 
-This repository contains example agent configurations for the [Omnigent](https://github.com/omnigent) meta-harness. Each example defines an AI agent in YAML -- specifying the executor, system prompt, contexual and custom policies, skills, and tools. Four flagship examples demonstrate different patterns, all examplying [session-based contextual polices](https://www.databricks.com/blog/contextual-policies-omnigent-using-session-state-better-govern-ai-agents) and use of meta-harness for orchestrating agents and secured execution:
+This repository contains example agent configurations for the [Omnigent](https://github.com/omnigent) meta-harness. Each example defines an [Custom Omnigent AI agent](https://omnigent.ai/docs/use/custom-agents) in YAML -- specifying the executor, system prompt, contexual and custom policies, skills, and tools. Four flagship examples demonstrate different patterns, all examplying [session-based contextual polices](https://www.databricks.com/blog/contextual-policies-omnigent-using-session-state-better-govern-ai-agents) and use of meta-harness for orchestrating agents and secured execution:
 
 1. **[Secure Code Assistant](examples/secure_code_assistant/)** -- session-based information flow control blocks web search after private code read, blocks file writes after web content reads, and enforces ALLOW, DENY, ASK policy guardrails, and budget control costs at session level. 
 2. **[Cross-Harness Coding](examples/cross_harness_coding/)** -- multi-harness delegation (Codex implements, Claude reviews, one shared session)
