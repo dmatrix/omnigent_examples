@@ -49,12 +49,6 @@ omnigent setup
 
 This walks you through choosing providers for each harness (Claude, OpenAI, Ollama, etc.) and stores configurations in `~/.omnigent/config.yaml`. View your configuration at any time with `omnigent config list`.
 
-### Set up databases
-
-```bash
-python examples/tools/create_telco_db.py   # Telco agent (5 tables, 125 records)
-```
-
 ---
 
 ## Run on Databricks
