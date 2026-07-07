@@ -19,12 +19,12 @@ examples can run locally or with a Databricks hosted Omnigent Server.
 
 ## Overview
 
-This repository contains example agent configurations for the [Omnigent](https://github.com/omnigent) meta-harness. Each example defines an AI agent in YAML -- specifying the executor, system prompt, and tools. Four flagship examples demonstrate different patterns:
+This repository contains example agent configurations for the [Omnigent](https://github.com/omnigent) meta-harness. Each example defines an AI agent in YAML -- specifying the executor, system prompt, contexual and custom policies, skills, and tools. Four flagship examples demonstrate different patterns, all examplying session-based contextual polices and use of meta-harness for orchestrating agents and secured execution:
 
-1. **[Secure Code Assistant](examples/secure_code_assistant/)** -- information flow control blocks web search after private code read, blocks file writes after web content reads, and enforces ALLOW, DENY, ASK policy guardrails, and budget control costs at session level. 
+1. **[Secure Code Assistant](examples/secure_code_assistant/)** -- session-based information flow control blocks web search after private code read, blocks file writes after web content reads, and enforces ALLOW, DENY, ASK policy guardrails, and budget control costs at session level. 
 2. **[Cross-Harness Coding](examples/cross_harness_coding/)** -- multi-harness delegation (Codex implements, Claude reviews, one shared session)
 3. **[Harness Portability](examples/harness_portability/)** -- one supervisor, four inspectors, four harnesses: a Code Project Health Inspector with Claude SDK, Codex, Pi, and Hermes sub-agents, including MLflow tracing of Claude and Codex.
-4. **[Telco Customer Agent](examples/telco_customer_agent/)** -- multi-tool customer data agent with 9 policies: PII/financial taint labels, cost budget, PII leak prevention, stateful risk scoring, and a custom bulk access guard
+4. **[Telco Customer Agent](examples/telco_customer_agent/)** -- multi-tool customer data agent with 9 contextual and session-based policies: PII/financial taint labels, cost budget, PII leak prevention, stateful risk scoring, and a custom bulk access guard
 ---
 
 ## Get Started
