@@ -133,21 +133,19 @@ Each example README has detailed local setup instructions -- see [Secure Code As
 
 ### Local Web UI
 
-The Web UI is built into the server. Start the server and register your machine as a host:
+The Web UI is built into the server. When you run an agent, the CLI auto-spawns a local server on a free port and prints the URL:
 
-```bash
-# Start the server in the background (serves Web UI at http://localhost:8000)
-omnigent server start
-
-# Register this machine as a host (separate terminal)
-omnigent host
-
-# Open http://localhost:8000/
+```
+  Web UI: http://127.0.0.1:6767
+  Open in your browser for a visual interface
 ```
 
-### Manage the background server
+The port is dynamically assigned — use the URL printed in your terminal.
+
+You can also manage the background server directly:
 
 ```bash
+omnigent server start     # ensure background server is running
 omnigent server status    # is the background server running?
 omnigent server stop      # stop server and local host daemon
 ```
