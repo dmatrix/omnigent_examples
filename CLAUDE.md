@@ -109,6 +109,20 @@ examples/
 |   |   +-- query_billing.py      #   Billing + subscriptions (financial data)
 |   +-- skills/customer-report/
 |       +-- SKILL.md              #   On-demand report template with PII redaction
+|-- agent_evaluator/              # Agent evaluator (MLflow + spawn)
+|   |-- config.yaml               #   claude-opus-4-8, spawn: true, cost_budget
+|   |-- agents/
+|   |   +-- sample_target/        #   Built-in PoC target (FAQ agent)
+|   |       |-- config.yaml       #     claude-sonnet-4-6, cost_budget
+|   |       +-- tools/python/
+|   |           +-- knowledge_base.py  #  In-memory FAQ lookup (no deps)
+|   |-- tools/python/
+|   |   |-- run_agent.py          #   Instructions for sys_session_create dispatch
+|   |   |-- collect_traces.py     #   Retrieves MLflow traces
+|   |   |-- evaluate_traces.py    #   Runs mlflow.genai.evaluate() with scorers
+|   |   +-- check_policies.py     #   Inspects trace spans for policy events
+|   +-- skills/eval-report/
+|       +-- SKILL.md              #   Graded evaluation report template
 |-- tools/
 |   |-- create_telco_db.py        # Telco database setup script
 |   |-- data/telco.db             # Pre-built telco database (5 tables, 125 records) 
