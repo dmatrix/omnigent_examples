@@ -178,6 +178,12 @@ This exercises all five MLflow scorers without requiring any external setup. The
 
 ---
 
+## How to Demo
+
+See [demo.md](demo.md) for a timed walkthrough (10-12 min).
+
+---
+
 ## Why This Is Interesting
 
 - **No eval dataset** — scorers work from traces, not ground truth
