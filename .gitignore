@@ -222,6 +222,7 @@ DEVELOPER_EXPERIENCE.md
 
 # Omnigent generated code output
 omnigent_generated_code/
+health_report.md
 
 # OmniAgents runtime files
 omniagents.db

@@ -16,9 +16,7 @@ The cross-harness coding example demonstrates **composition** and **governance**
 
 The supervisor breaks down user requests, dispatches implementation to the Codex agent, which writes code and runs tests. If the impl_worker reports test failures, the supervisor sends failures back without bothering the reviewer. Once tests pass, the supervisor routes to Claude for review. If the review returns REVISE, the supervisor sends feedback back for another pass. All three agents share the same filesystem and session — no copy-paste, no context switching.
 
-A layered **cost guardrail** caps spend at two levels: a per-agent `cost_guard` ($1.00 per sub-agent invocation) and a `daily_cost_guard` ($5.00/day across all agents). This is the first example to combine **composition** and **governance** in one config.
-
-This is the pattern described in the Omnigent value proposition as **_composition_**: *"Start a coding task in Codex, then route a subtask to Claude Code while keeping one shared session."*
+A layered **cost guardrail** caps spend at two levels: a per-agent `cost_guard` ($1.00 per sub-agent invocation) and a `daily_cost_guard` ($5.00/day across all agents).
 
 ---
 
@@ -163,68 +161,9 @@ executor:
 
 ---
 
-## How to Demo (8-10 min)
+## How to Demo
 
-### Act 1: The YAML (2 min) — "Three agents, two harnesses, one directory"
-
-**Show** `config.yaml` — the supervisor references its sub-agents by name:
-
-**Say:** "The supervisor runs on Claude and references two sub-agents: `impl_worker` and `review_worker`. Each lives in its own directory under `agents/` with its own `config.yaml`."
-
-**Open** `agents/impl_worker/config.yaml` and `agents/review_worker/config.yaml`:
-> "The implementer runs on Codex — OpenAI's coding agent. The reviewer runs on Claude. Two different LLM providers, each with their own executor config. The framework handles the routing — you don't write any glue code."
-
----
-
-### Act 2: The Pipeline (4 min) — "Implement, test, and review"
-
-**Run:** `omnigent run examples/cross_harness_coding/ --no-session`
-
-**Prompt:**
-```
-Write a Python rate limiter class using the token bucket algorithm.
-Put it in rate_limiter.py with unit tests in test_rate_limiter.py.
-```
-
-**Watch:** The supervisor dispatches to `impl_worker` (OpenAI writes the code and runs tests), then dispatches to `review_worker` (Claude reviews it).
-
-**Say:** "Two different models, two different providers, talking through one session. The implementer wrote the code and ran tests. Then Claude reviewed it. The supervisor coordinates but never touches the code."
-
-**If tests fail:**
-> "Tests failed. Watch — the supervisor sends the failures back to the Codex implementer. It doesn't bother the reviewer until tests pass."
-
-**If review returns REVISE:**
-> "The reviewer found an issue. Watch — the supervisor sends the feedback back to the Codex implementer for revision. Same session, same files, different harnesses."
-
----
-
-### Act 3: The Swap (2 min) — "Same config, different brains"
-
-**Say:** "Your team wants both agents on Claude? One YAML change."
-
-**Show** the harness swapping section — point out that changing `harness: codex` to `harness: claude-sdk` is the only edit.
-
-**Say:** "The tools, the prompts, the delegation logic — nothing changes. Only the executor block. This is what harness portability means. Your workflow survives model migrations."
-
----
-
-### Act 4: The Budget (1 min) — "Layered budgets, two providers"
-
-**Show** the `guardrails:` blocks in all three `config.yaml` files.
-
-**Say:** "Two layers of cost governance. Each sub-agent has a `cost_guard` — a dollar cap per invocation so no single agent runs away. Then all three agents share a `daily_cost_guard` — five dollars per day across both providers. The ASK thresholds fire early so the user stays informed. This is governance plus composition — layered budgets, two providers, three agents."
-
----
-
-### Timing Summary
-
-| Act | Duration | Focus |
-|-----|----------|-------|
-| 1. The YAML | 2 min | Three configs, two harnesses, one directory |
-| 2. The Pipeline | 4 min | Implement on Codex → test → review on Claude |
-| 3. The Swap | 2 min | Swap harnesses without changing tools/prompts |
-| 4. The Budget | 1 min | Layered cost budgets across all providers |
-| **Total** | **9 min** | |
+See [demo.md](demo.md) for a timed walkthrough (8-10 min).
 
 ---
 
@@ -287,27 +226,3 @@ To permanently raise or lower limits, edit the `guardrails:` block in the releva
 - **Higher per-invocation cap** — raise `max_cost_usd` in the sub-agent's `cost_guard`
 - **Higher daily cap** — raise `max_cost_usd` in `daily_cost_guard` across all three configs (supervisor + both sub-agents)
 
----
-
-## Key Concepts
-
-- **Cross-harness delegation**: Sub-agents run on different LLM providers (Codex + Claude SDK) within one session
-- **Shared session**: All agents share the same session tree — context, files, and state persist across harness boundaries
-- **Sequential dispatch**: Supervisor enforces implement→test→review ordering to avoid file conflicts
-- **Cost-guarded composition**: Layered budget policies (per-agent + daily) cap spend across all three agents and both providers
-- **Harness portability**: Swap any agent's harness without changing tools or prompts
-
----
-
-## See Also: Polly
-
-For a production-grade orchestrator, see [**Polly**](https://github.com/omnigent-ai/omnigent/tree/main/examples/polly/) in the Omnigent framework. Polly is a built-in multi-agent supervisor that extends this pattern with:
-
-- **Three sub-agents** — Claude Code, Codex, and Pi, each in isolated git worktrees
-- **Parallel fanout** — independent tasks run concurrently with automatic worktree isolation
-- **Cross-vendor review** — every PR is reviewed by a different LLM provider than the one that wrote it
-- **Investigation skills** — read-only exploration and debugging delegated to sub-agents
-
-```bash
-omnigent run examples/polly/
-```

@@ -8,27 +8,11 @@
 
 ## Overview
 
-### Why this example matters
+A **Code Project Health Inspector** that clones a GitHub repo and dispatches four specialist sub-agents — each on a different harness (Claude SDK, Codex, Pi, Hermes) — to analyze structure, tests, dependencies, and security. Produces a graded `health_report.md`. Five YAML files, zero Python.
 
-Most AI agent frameworks lock you into a single LLM provider. Your prompts, tools, and governance are written against one SDK — and when you need to swap models (a better model launches, pricing changes, a provider has an outage, or compliance requires a specific vendor), you rewrite everything. Omnigent eliminates that lock-in. This example proves it with a real application: a **Code Project Health Inspector** that clones a GitHub repository, analyzes it across four dimensions, and produces a graded health report — using four different LLM providers simultaneously, orchestrated from pure YAML.
+Shows: harness portability (swap any sub-agent's harness with a one-line edit), multi-agent composition (one supervisor, four inspectors, one session tree), provider-agnostic governance (same cost guards fire on all four harnesses), and cross-harness MLflow tracing.
 
-### What this demonstrates
-
-This example shows three Omnigent capabilities working together:
-
-1. **Harness portability** — The same agent definition (prompt, tools, guardrails) runs unchanged on Claude SDK, Codex, Pi, and Hermes. The harness is a one-line config value, not an architectural commitment. Swapping a sub-agent from Codex to Claude takes one line edit — zero prompt changes, zero tool rewrites, zero policy adjustments.
-
-2. **Multi-agent composition** — A supervisor agent dispatches four specialist sub-agents, each running on a different LLM harness, within a single session tree. The agents share filesystem access and policy state. This is not four independent scripts — it is one coordinated workflow with a shared session, layered cost governance, and a unified output artifact.
-
-3. **Provider-agnostic governance** — Guardrails (cost checkpoints, tool call limits) are defined in YAML and enforced by the Omnigent PolicyEngine — not by the LLM provider. The cost guard ASKs for approval at soft thresholds and DENYs further tool calls at the budget limit. These fire identically whether the agent behind them is Claude, GPT, Pi, or Hermes. You define governance once and it follows the workflow across providers.
-
-4. **Cross-harness observability** — MLflow tracing captures every agent turn, tool call, and policy evaluation across the session tree. Load `/setup-mlflow-tracing-claude` and `/setup-mlflow-tracing-codex` to enable tracing for the supported harnesses. Traces are stored in a local `mlflow.db` and viewable in the MLflow UI — no per-harness instrumentation code needed.
-
-### Why Omnigent
-
-Without Omnigent, building this would require writing four separate integrations (Anthropic SDK, OpenAI SDK, Pi client, Hermes client), four different tool registration mechanisms, four separate cost-tracking implementations, custom orchestration code to tie them together, and per-provider tracing instrumentation. With Omnigent, it is five YAML files and zero lines of Python. The framework handles harness translation, tool registration, session management, policy enforcement, and MLflow tracing — so you focus on what the agent does, not how it talks to each provider.
-
-### The architecture at a glance
+### Architecture
 
 - **Supervisor** (`claude-sdk`) — asks for a GitHub repo URL (or accepts one inline), clones the repo, dispatches four inspectors, assembles the final report
 - **`structure_inspector`** (`claude-sdk`) — Project Structure & Documentation
@@ -36,9 +20,7 @@ Without Omnigent, building this would require writing four separate integrations
 - **`dependency_inspector`** (`pi`) — Dependency Health
 - **`security_inspector`** (`hermes`) — Code Quality & Security
 
-No `tools/python/` directory. No custom Python functions. All capabilities come from `os_env` (shell access). The only `tools:` block is the supervisor's four agent references. The supervisor assembles a `health_report.md` with letter grades, findings, and actionable recommendations from all four inspectors.
-
-Start with [cross-harness coding](../cross_harness_coding/) to learn the delegation pattern (Codex implements, Claude reviews), then come here to see four harnesses collaborating in one session. From here, explore [governance](../secure_code_assistant/) (information flow control) and [data taint](../telco_customer_agent/) (PII/financial labels).
+No `tools/python/` directory — all capabilities come from `os_env` (shell access). The supervisor assembles a `health_report.md` with letter grades and findings from all four inspectors.
 
 ---
 
@@ -209,73 +191,9 @@ The prompt, `os_env`, and guardrails stay identical — only the `executor:` blo
 
 ---
 
-## How to Demo (8-9 min)
+## How to Demo
 
-### Act 1: The YAML (1.5 min) — "One supervisor, four inspectors, four harnesses"
-
-**Show** `config.yaml`. Point out:
-
-**Say:** "This is the supervisor — Claude SDK. It references four sub-agents in its `tools:` block. It doesn't inspect anything itself — it clones the repo, dispatches to four inspectors, and assembles the report."
-
-**Show** `agents/test_inspector/config.yaml`.
-
-**Say:** "Each inspector is its own config. This one runs on Codex. The structure inspector runs on Claude, the dependency inspector on Pi, the security inspector on Hermes. Four harnesses, one session tree. To swap any inspector's harness, change one line."
-
----
-
-### Act 2: Run It (3 min) — "Inspect a real repo"
-
-**Run:** `omnigent run examples/harness_portability/ --no-session`
-
-**Prompt:**
-```
-Inspect https://github.com/pallets/flask
-```
-
-**Watch:** The supervisor clones Flask, then dispatches four inspectors. You'll see each inspector working on its category — structure, tests, dependencies, security — each on a different harness.
-
-**Say:** "The supervisor cloned the repo and dispatched four inspectors. Each one runs on a different LLM — Claude analyzes structure, GPT analyzes tests, Pi checks dependencies, Hermes scans for security issues. Same prompt pattern, same tools, different brains."
-
----
-
-### Act 3: The Report (1 min) — "Four inspectors, one report"
-
-**Show** `health_report.md`.
-
-**Say:** "The supervisor collected findings from all four inspectors and assembled them into one report with letter grades per category and an overall score. The inspectors ran on four different harnesses, but the output is a single coherent artifact."
-
----
-
-### Act 4: The Swap (2 min) — "Change one line, different brain"
-
-**Edit** `agents/test_inspector/config.yaml` — change `harness: codex` to `harness: claude-sdk` and `model: gpt-5.4` to `model: claude-sonnet-4-6`.
-
-**Re-run:** `omnigent run examples/harness_portability/ --no-session`
-
-**Same prompt:** `Inspect https://github.com/pallets/flask`
-
-**Say:** "Same supervisor. Same prompt. Same guardrails. I swapped the test inspector from Codex to Claude — one line. The report covers the same four categories with the same structure. The workflow is defined in the config, not in the harness."
-
----
-
-### Act 5: The Guardrails (1.5 min) — "Layered governance across harnesses"
-
-**Show** the `guardrails:` blocks in both `config.yaml` and one sub-agent config.
-
-**Say:** "Two layers of governance. The supervisor has a $5 session-wide cost cap. Each sub-agent has its own $5 cost cap and a 250 tool-call limit — so no single inspector can run away. The PolicyEngine runs in the Omnigent runner, not in the harness. These policies fire identically on Claude, GPT, Pi, and Hermes."
-
----
-
-### Timing Summary
-
-| Act | Duration | Focus |
-|-----|----------|-------|
-| 1. The YAML | 1.5 min | Supervisor + sub-agent configs, four harness assignments |
-| 2. Run It | 3 min | Inspect a real repo, watch cross-harness delegation |
-| 3. The Report | 1 min | Assembled health report with grades from all inspectors |
-| 4. The Swap | 2 min | Change one sub-agent's harness, same result |
-| 5. Guardrails | 1.5 min | Layered cost governance across harnesses |
-| **Total** | **9 min** | |
+See [demo.md](demo.md) for a timed walkthrough (8-9 min).
 
 ---
 
@@ -414,15 +332,3 @@ You can also configure tracing via `.claude/settings.json` instead of using the 
 | `pi` | Not yet supported | — |
 | `hermes` | Not yet supported | — |
 
----
-
-## Key Concepts
-
-- **Composition**: A supervisor dispatches four specialist sub-agents, each focused on one inspection category. The supervisor clones the repo, delegates, and assembles — it never inspects code itself.
-- **Harness portability**: Four different harnesses (Claude SDK, Codex, Pi, Hermes) collaborate in a single session tree. Each sub-agent's harness is set in its own `config.yaml` and can be swapped independently with a one-line edit.
-- **Session tree**: The supervisor and all sub-agents share one session — filesystem, policy state, and conversation history flow through the tree. Each sub-agent's cost counter is scoped to its own invocation, while the supervisor's counter spans the full session.
-- **Zero tool code**: No `tools/python/` directory. All capabilities come from `os_env` (filesystem and shell access). The agent uses standard CLI tools (find, grep, wc, git) for analysis.
-- **Layered governance**: Two tiers of cost control — the supervisor caps the full session, each sub-agent caps its own invocation. The `tool_call_limit` policy on each sub-agent prevents runaway inspection loops. All policies fire identically across harnesses.
-- **Tangible output**: The supervisor produces a structured `health_report.md` — not just conversation, but a reusable artifact assembled from four independent inspections.
-- **Cross-harness observability**: MLflow tracing captures every call across the session tree — agent turns, tool calls, policy verdicts — stored in a local `mlflow.db` and viewable in the MLflow UI. Enable with `/setup-mlflow-tracing-claude` and `/setup-mlflow-tracing-codex`.
-- **Builds on cross-harness coding**: Start with [cross-harness coding](../cross_harness_coding/) to learn two-harness delegation (Codex implements, Claude reviews), then come here to see four harnesses collaborating with layered governance and MLflow tracing.

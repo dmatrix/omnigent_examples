@@ -3,8 +3,7 @@ name: harness_portability
 description: >
   Code Project Health Inspector — clones a GitHub repo and dispatches four
   specialist sub-agents (each on a different harness) to analyze structure,
-  tests, dependencies, and security. Demonstrates composition and harness
-  portability in a single session tree.
+  tests, dependencies, and security.
 
 executor:
   type: omnigent
