@@ -229,4 +229,8 @@ omniagents.db
 omniagents.db-shm
 omniagents.db-wal
 mlflow.db
+mlflow_omnigent_tracing.db
 artifacts/
+
+# Claude Code local settings
+.claude/settings.json

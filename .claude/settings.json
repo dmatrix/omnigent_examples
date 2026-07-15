@@ -5,9 +5,11 @@
     ]
   },
   "env": {
-    "MLFLOW_CLAUDE_TRACING_ENABLED": "true",
-    "MLFLOW_TRACKING_URI": "http://localhost:5000",
-    "MLFLOW_EXPERIMENT_ID": "1",
-    "MLFLOW_EXPERIMENT_NAME": "harness-portability-traces"
+    "OMNIGENT_TELEMETRY_ENABLED": "true",
+    "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:5000",
+    "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
+    "OMNIGENT_OTEL_CAPTURE_CONTENT": "true",
+    "OTEL_EXPORTER_OTLP_HEADERS": "x-mlflow-experiment-id=0",
+    "MLFLOW_TRACKING_URI": "http://localhost:5000"
   }
 }

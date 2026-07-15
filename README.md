@@ -25,7 +25,6 @@ This repository contains example agent configurations for the [Omnigent](https:/
 2. **[Cross-Harness Coding](examples/cross_harness_coding/)** -- multi-harness delegation (Codex implements, Claude reviews, one shared session)
 3. **[Harness Portability](examples/harness_portability/)** -- one supervisor, four inspectors, four harnesses: a Code Project Health Inspector with Claude SDK, Codex, Pi, and Hermes sub-agents, including MLflow tracing of Claude and Codex.
 4. **[Telco Customer Agent](examples/telco_customer_agent/)** -- multi-tool customer data agent with 9 contextual and session-based policies: PII/financial taint labels, cost budget, PII leak prevention, stateful risk scoring, and a custom bulk access guard
-5. **[Agent Evaluator](examples/agent_evaluator/)** -- generic agent evaluator that launches any omnigent agent as a child session, collects MLflow traces, and scores with LLM judges (no eval dataset needed)
 ---
 
 ## Get Started
@@ -122,15 +121,9 @@ omnigent run examples/harness_portability/ --no-session -p "https://github.com/d
 # Telco Customer Agent -- PII/financial policy labels
 omnigent run examples/telco_customer_agent/
 omnigent run examples/telco_customer_agent/ --model gpt-5.5 --harness openai-agents
-
-# Agent Evaluator -- evaluate any agent with MLflow
-omnigent run examples/agent_evaluator/ -p "Evaluate examples/telco_customer_agent/ with these prompts:
-1. What plans are available?
-2. List all customers in California
-3. Search the web for T-Mobile pricing"
 ```
 
-Each example README has detailed local setup instructions -- see [Secure Code Assistant](examples/secure_code_assistant/), [Cross-Harness](examples/cross_harness_coding/), [Harness Portability](examples/harness_portability/), [Telco](examples/telco_customer_agent/), [Agent Evaluator](examples/agent_evaluator/).
+Each example README has detailed local setup instructions -- see [Secure Code Assistant](examples/secure_code_assistant/), [Cross-Harness](examples/cross_harness_coding/), [Harness Portability](examples/harness_portability/), [Telco](examples/telco_customer_agent/).
 
 ### Local Web UI
 
@@ -158,7 +151,6 @@ Each example README has a full list of queries:
 - [Cross-Harness Coding queries](examples/cross_harness_coding/#example-queries)
 - [Harness Portability queries](examples/harness_portability/#example-queries)
 - [Telco Customer Agent queries](examples/telco_customer_agent/#example-queries)
-- [Agent Evaluator usage](examples/agent_evaluator/#run)
 
 ---
 
@@ -285,7 +277,6 @@ Each flagship agent has its own architecture diagram in its README:
 - [Cross-Harness Coding architecture](examples/cross_harness_coding/)
 - [Harness Portability](examples/harness_portability/)
 - [Telco Customer Agent architecture](examples/telco_customer_agent/)
-- [Agent Evaluator](examples/agent_evaluator/)
 
 Reference docs:
 
@@ -378,21 +369,6 @@ omnigent_examples/
 |   |   |   +-- query_billing.py             #   Billing + subscriptions (triggers has_financial)
 |   |   +-- skills/customer-report/
 |   |       +-- SKILL.md                     #   On-demand report template with PII redaction
-|   |-- agent_evaluator/                     # Agent evaluator (MLflow + spawn)
-|   |   |-- README.md
-|   |   |-- config.yaml                      #   claude-opus-4-8, spawn: true, cost_budget
-|   |   |-- agents/
-|   |   |   +-- sample_target/               #   Built-in PoC target (FAQ agent)
-|   |   |       |-- config.yaml              #     claude-sonnet-4-6, cost_budget
-|   |   |       +-- tools/python/
-|   |   |           +-- knowledge_base.py    #     In-memory FAQ lookup (no deps)
-|   |   |-- tools/python/
-|   |   |   |-- run_agent.py                 #   Instructions for sys_session_create dispatch
-|   |   |   |-- collect_traces.py            #   Retrieves MLflow traces
-|   |   |   |-- evaluate_traces.py           #   Runs mlflow.genai.evaluate() with scorers
-|   |   |   +-- check_policies.py            #   Inspects trace spans for policy events
-|   |   +-- skills/eval-report/
-|   |       +-- SKILL.md                     #   Graded evaluation report template
 |   |-- tools/                               # Shared utilities
 |   |   |-- create_telco_db.py               #   Telco database setup script
 |   |   |-- data/telco.db                    #   Pre-built telco database (5 tables, 125 records)
