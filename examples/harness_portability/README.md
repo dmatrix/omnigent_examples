@@ -55,45 +55,23 @@ No database setup needed. No custom tool code. Just YAML.
 omnigent setup
 ```
 
-### 2. Export your API keys
+### 2. Export keys and env vars
 
 ```bash
-# For Claude SDK (supervisor + structure_inspector)
-export $(grep ANTHROPIC_API_KEY .env | tr -d '"')
-
-# For Codex (test_inspector)
-export $(grep OPENAI_API_KEY .env | tr -d '"')
+set -a; source .env; set +a
 ```
 
-### 3. Enable MLflow tracing
+### 3. Enable MLflow tracing (optional)
 
-MLflow tracing captures every agent turn, tool call, and policy evaluation across all harnesses. Enable it before running the agent:
+MLflow tracing captures every agent turn, tool call, and policy evaluation across all harnesses. The `.env` file (exported in step 2) includes `OMNIGENT_TELEMETRY_ENABLED=true` and `OTEL_EXPORTER_OTLP_ENDPOINT` — Omnigent's `telemetry.init()` picks these up at server startup automatically.
 
-**For Claude SDK** (supervisor, structure_inspector):
-```
-/setup-mlflow-tracing-claude
-```
+Start the MLflow server before running:
 
-**For Codex** (test_inspector):
-```
-/setup-mlflow-tracing-codex
+```bash
+mlflow server --backend-store-uri sqlite:///mlflow_omnigent_tracing.db --host 0.0.0.0 --port 5000 &
 ```
 
-Each skill is idempotent — safe to run multiple times. It checks/starts the local MLflow tracking server, runs `mlflow autolog` for the harness, configures the environment, and confirms tracing is active. Traces are stored in a local `mlflow.db` SQLite file and viewable at `http://localhost:5000`.
-
-You can also configure tracing manually in `.claude/settings.json`:
-
-```json
-{
-  "env": {
-    "MLFLOW_CLAUDE_TRACING_ENABLED": "true",
-    "MLFLOW_TRACKING_URI": "http://localhost:5000",
-    "MLFLOW_EXPERIMENT_NAME": "harness-portability-traces"
-  }
-}
-```
-
-With tracing enabled, every run produces a trace tree showing the supervisor dispatching to four sub-agents across four harnesses — with timing, cost, and token usage per span.
+Traces are stored in `mlflow_omnigent_tracing.db` and viewable at `http://localhost:5000`. Every run produces a trace tree showing the supervisor dispatching to four sub-agents across four harnesses — with timing, cost, and token usage per span.
 
 ### 4. Run the agent
 
@@ -273,18 +251,7 @@ To permanently change when the agent pauses, edit the `guardrails:` block in the
 
 ## Observability (MLflow Tracing)
 
-MLflow tracing captures every agent turn, tool call, and guardrail policy evaluation — stored in a local `mlflow.db` SQLite file and viewable in the MLflow UI at `http://localhost:5000`. Tracing is supported for the **claude-sdk** and **codex** harnesses.
-
-### Enable tracing with skills
-
-Load the setup skills for each supported harness. Each skill is idempotent — safe to run multiple times:
-
-```
-/setup-mlflow-tracing-claude     # For claude-sdk harness (supervisor, structure_inspector)
-/setup-mlflow-tracing-codex      # For codex harness (test_inspector)
-```
-
-Each skill checks/starts the local MLflow tracking server, runs `mlflow autolog` for the harness, configures environment variables, and confirms tracing is active.
+MLflow tracing captures every agent turn, tool call, and guardrail policy evaluation — stored in a local `mlflow_omnigent_tracing.db` SQLite file and viewable in the MLflow UI at `http://localhost:5000`. Tracing is supported for the **claude-sdk** and **codex** harnesses.
 
 ### What you see in traces
 
@@ -309,26 +276,12 @@ harness_portability  (AGENT, claude-sdk)
 
 Each span records the agent name, harness, model, duration, token usage, and policy verdict. The MLflow UI lets you compare runs across different inspections — see which sub-agent used the most tokens, which harness was fastest, and where policy verdicts fired.
 
-### Manual configuration
-
-You can also configure tracing via `.claude/settings.json` instead of using the setup skills:
-
-```json
-{
-  "env": {
-    "MLFLOW_CLAUDE_TRACING_ENABLED": "true",
-    "MLFLOW_TRACKING_URI": "http://localhost:5000",
-    "MLFLOW_EXPERIMENT_NAME": "harness-portability-traces"
-  }
-}
-```
-
 ### Supported harnesses
 
-| Harness | Tracing Support | Setup Skill |
-|---|---|---|
-| `claude-sdk` | Fully traced | `/setup-mlflow-tracing-claude` |
-| `codex` | Fully traced | `/setup-mlflow-tracing-codex` |
-| `pi` | Not yet supported | — |
-| `hermes` | Not yet supported | — |
+| Harness | Tracing Support |
+|---|---|
+| `claude-sdk` | Fully traced |
+| `codex` | Fully traced |
+| `pi` | Not yet supported |
+| `hermes` | Not yet supported |
 

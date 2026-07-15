@@ -19,7 +19,7 @@ A `|` literal block defining:
 
 1. **Role** — "You are a Code Project Health Inspector supervisor"
 2. **Interaction** — accepts a GitHub URL inline or asks for one
-3. **MLflow tracing** — invokes `/setup-mlflow-tracing-claude` and `/setup-mlflow-tracing-codex` on session start
+3. **MLflow tracing** — automatic via `OMNIGENT_TELEMETRY_ENABLED` + `OTEL_EXPORTER_OTLP_ENDPOINT` env vars
 4. **Delegation** — MUST delegate all inspection to four sub-agents; never inspects code itself
 5. **Agent roster** — `structure_inspector` (Claude SDK), `test_inspector` (Codex), `dependency_inspector` (Pi), `security_inspector` (Hermes)
 6. **Report** — collects findings, assigns letter grades (A–F), writes `health_report.md`

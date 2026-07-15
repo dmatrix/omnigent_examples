@@ -60,6 +60,16 @@ Tool subprocesses do not inherit shell env vars, so API keys must be in a `.env`
 
 The telco tools (`query_plans`, `query_customers`, `query_billing`) read from `examples/tools/data/telco.db`. Rebuild with `python examples/tools/create_telco_db.py`. All tools find the database relative to CWD (with `__file__` as fallback).
 
+### MLflow Tracing
+
+Omnigent has native OTEL tracing gated by `OMNIGENT_TELEMETRY_ENABLED=true`. When enabled, `telemetry.init()` fires at server startup and exports spans via OTLP. All required env vars are in the repo-root `.env` file:
+
+```bash
+set -a; source .env; set +a
+```
+
+Key env vars: `OMNIGENT_TELEMETRY_ENABLED`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL`, `OMNIGENT_OTEL_CAPTURE_CONTENT`. The evaluation tools also need `MLFLOW_TRACKING_URI` for `mlflow.search_traces()`.
+
 ### os_env
 
 Agents that need filesystem access declare:
@@ -109,20 +119,6 @@ examples/
 |   |   +-- query_billing.py      #   Billing + subscriptions (financial data)
 |   +-- skills/customer-report/
 |       +-- SKILL.md              #   On-demand report template with PII redaction
-|-- agent_evaluator/              # Agent evaluator (MLflow + spawn)
-|   |-- config.yaml               #   claude-opus-4-8, spawn: true, cost_budget
-|   |-- agents/
-|   |   +-- sample_target/        #   Built-in PoC target (FAQ agent)
-|   |       |-- config.yaml       #     claude-sonnet-4-6, cost_budget
-|   |       +-- tools/python/
-|   |           +-- knowledge_base.py  #  In-memory FAQ lookup (no deps)
-|   |-- tools/python/
-|   |   |-- run_agent.py          #   Instructions for sys_session_create dispatch
-|   |   |-- collect_traces.py     #   Retrieves MLflow traces
-|   |   |-- evaluate_traces.py    #   Runs mlflow.genai.evaluate() with scorers
-|   |   +-- check_policies.py     #   Inspects trace spans for policy events
-|   +-- skills/eval-report/
-|       +-- SKILL.md              #   Graded evaluation report template
 |-- tools/
 |   |-- create_telco_db.py        # Telco database setup script
 |   |-- data/telco.db             # Pre-built telco database (5 tables, 125 records) 
