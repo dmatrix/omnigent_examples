@@ -19,12 +19,13 @@ examples can run locally or with a Databricks hosted Omnigent Server.
 
 ## Overview
 
-This repository contains example agent configurations for the [Omnigent](https://github.com/omnigent) meta-harness. Each example defines an [Custom Omnigent AI agent](https://omnigent.ai/docs/use/custom-agents) in YAML -- specifying the executor, system prompt, contexual and custom policies, skills, and tools. Four flagship examples demonstrate different patterns, all exemplifying [session-based contextual policies](https://www.databricks.com/blog/contextual-policies-omnigent-using-session-state-better-govern-ai-agents) and use of meta-harness for orchestrating agents and secured execution:
+This repository contains example agent configurations for the [Omnigent](https://github.com/omnigent) meta-harness. Each example defines an [Custom Omnigent AI agent](https://omnigent.ai/docs/use/custom-agents) in YAML -- specifying the executor, system prompt, contexual and custom policies, skills, and tools. Five flagship examples demonstrate different patterns, all exemplifying [session-based contextual policies](https://www.databricks.com/blog/contextual-policies-omnigent-using-session-state-better-govern-ai-agents) and use of meta-harness for orchestrating agents and secured execution:
 
 1. **[Secure Code Assistant](examples/secure_code_assistant/)** -- session-based information flow control blocks web search after private code read, blocks file writes after web content reads, and enforces ALLOW, DENY, ASK policy guardrails, and budget control costs at session level. 
 2. **[Cross-Harness Coding](examples/cross_harness_coding/)** -- multi-harness delegation (Codex implements, Claude reviews, one shared session)
 3. **[Harness Portability](examples/harness_portability/)** -- one supervisor, four inspectors, four harnesses: a Code Project Health Inspector with Claude SDK, Codex, Pi, and Hermes sub-agents, including MLflow tracing of Claude and Codex.
-4. **[Telco Customer Agent](examples/telco_customer_agent/)** -- multi-tool customer data agent with 9 contextual and session-based policies: PII/financial taint labels, cost budget, PII leak prevention, stateful risk scoring, and a custom bulk access guard
+4. **[Slow-Burn Guard](examples/slow_burn_guard/)** -- a compromised runbook fragments a data-exfiltration goal into individually-benign steps; a single stateful risk-score policy sees the whole session and DENIES the outbound send. Blog companion example.
+5. **[Telco Customer Agent](examples/telco_customer_agent/)** -- multi-tool customer data agent with 9 contextual and session-based policies: PII/financial taint labels, cost budget, PII leak prevention, stateful risk scoring, and a custom bulk access guard
 ---
 
 ## Get Started
@@ -67,6 +68,9 @@ omnigent run examples/cross_harness_coding/ --model databricks-claude-sonnet-4-6
 
 # Harness Portability -- Code Project Health Inspector
 omnigent run examples/harness_portability/ --server https://omnigent-<id>.aws.databricksapps.com -p "https://github.com/dmatrix/omnigent_examples"
+
+# Slow-Burn Guard
+omnigent run examples/slow_burn_guard/ --model databricks-gpt-5-4 --server https://omnigent-<id>.aws.databricksapps.com
 
 # Telco Customer Agent
 omnigent run examples/telco_customer_agent/ --model databricks-claude-sonnet-4-6 --server https://omnigent-<id>.aws.databricksapps.com
@@ -118,12 +122,16 @@ omnigent run examples/cross_harness_coding/
 omnigent run examples/harness_portability/
 omnigent run examples/harness_portability/ --no-session -p "https://github.com/dmatrix/omnigent_examples"
 
+# Slow-Burn Guard -- stateful risk score blocks the exfil send (codex harness)
+export $(grep OPENAI_API_KEY .env | tr -d '"')
+omnigent run examples/slow_burn_guard/
+
 # Telco Customer Agent -- PII/financial policy labels
 omnigent run examples/telco_customer_agent/
 omnigent run examples/telco_customer_agent/ --model gpt-5.5 --harness openai-agents
 ```
 
-Each example README has detailed local setup instructions -- see [Secure Code Assistant](examples/secure_code_assistant/), [Cross-Harness](examples/cross_harness_coding/), [Harness Portability](examples/harness_portability/), [Telco](examples/telco_customer_agent/).
+Each example README has detailed local setup instructions -- see [Secure Code Assistant](examples/secure_code_assistant/), [Cross-Harness](examples/cross_harness_coding/), [Harness Portability](examples/harness_portability/), [Slow-Burn Guard](examples/slow_burn_guard/), [Telco](examples/telco_customer_agent/).
 
 ### Local Web UI
 
@@ -150,6 +158,7 @@ Each example README has a full list of queries:
 - [Secure Code Assistant queries](examples/secure_code_assistant/#example-queries)
 - [Cross-Harness Coding queries](examples/cross_harness_coding/#example-queries)
 - [Harness Portability queries](examples/harness_portability/#example-queries)
+- [Slow-Burn Guard walkthrough](examples/slow_burn_guard/#the-attack-step-by-step)
 - [Telco Customer Agent queries](examples/telco_customer_agent/#example-queries)
 
 ---
@@ -276,6 +285,7 @@ Each flagship agent has its own architecture diagram in its README:
 - [Secure Code Assistant](examples/secure_code_assistant/)
 - [Cross-Harness Coding architecture](examples/cross_harness_coding/)
 - [Harness Portability](examples/harness_portability/)
+- [Slow-Burn Guard](examples/slow_burn_guard/)
 - [Telco Customer Agent architecture](examples/telco_customer_agent/)
 
 Reference docs:
@@ -357,6 +367,15 @@ omnigent_examples/
 |   |   +-- tools/python/
 |   |       |-- read_source.py               #   File reader (triggers has_proprietary_code)
 |   |       +-- search_docs.py               #   Doc search stub (triggers has_external_content)
+|   |-- slow_burn_guard/                     # Slow-burn attack demo (single risk-score policy)
+|   |   |-- README.md
+|   |   |-- demo.md
+|   |   |-- config.yaml                      #   harness: codex, model: gpt-5.4-mini
+|   |   +-- tools/python/
+|   |       |-- read_runbook.py             #   Compromised runbook (prompt-injection vector)
+|   |       |-- query_customers.py           #   Customer PII read (+30 risk)
+|   |       |-- query_billing.py             #   Billing read (+30 risk)
+|   |       +-- send_report.py               #   Outbound egress action (guarded, DENIED)
 |   |-- telco_customer_agent/                # Telco customer data agent (PII/financial policies)
 |   |   |-- README.md
 |   |   |-- config.yaml

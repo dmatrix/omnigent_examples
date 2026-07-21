@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Example agent configurations for the Omnigent CLI. Flagship examples include a secure code assistant with information flow policies, a telco customer data agent demonstrating session-scoped PII/financial policy labels, a cross-harness coding supervisor, and a harness portability inspector using four LLM providers simultaneously.
+Example agent configurations for the Omnigent CLI. Flagship examples include a secure code assistant with information flow policies, a telco customer data agent demonstrating session-scoped PII/financial policy labels, a slow-burn guard that blocks a fragmented data-exfiltration attack with a single stateful risk-score policy, a cross-harness coding supervisor, and a harness portability inspector using four LLM providers simultaneously.
 
 ## Tech Stack
 
@@ -44,6 +44,10 @@ omnigent run examples/harness_portability/
 omnigent run examples/harness_portability/ --model gpt-5.4 --harness codex
 omnigent run examples/harness_portability/ --harness pi
 omnigent run examples/harness_portability/ --harness hermes
+
+# Slow-burn guard (codex harness + gpt-5.4-mini; needs OPENAI_API_KEY)
+omnigent run examples/slow_burn_guard/
+omnigent run examples/slow_burn_guard/ --model claude-sonnet-4-6 --harness claude-sdk
 ```
 
 ## Key Conventions
@@ -109,6 +113,15 @@ examples/
 |   +-- tools/python/
 |       |-- read_source.py        #   File reader (triggers has_proprietary_code)
 |       +-- search_docs.py        #   Doc search stub (triggers has_external_content)
+|-- slow_burn_guard/              # Slow-burn attack demo (single risk-score policy)
+|   |-- config.yaml               #   harness: codex, model: gpt-5.4-mini
+|   |-- README.md
+|   |-- demo.md
+|   +-- tools/python/
+|       |-- read_runbook.py       #   Compromised runbook (prompt-injection vector, 0 risk)
+|       |-- query_customers.py    #   Customer PII read (+30 risk)
+|       |-- query_billing.py      #   Billing read (+30 risk)
+|       +-- send_report.py        #   Outbound egress action (guarded_tools, DENIED)
 |-- telco_customer_agent/         # Telco customer data agent (PII/financial policies)
 |   |-- config.yaml               #   harness: claude-sdk, model: claude-sonnet-4-6
 |   |-- policies/
