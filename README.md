@@ -228,49 +228,13 @@ omnigent run examples/telco_customer_agent/ --harness pi
 
 ### Supported harnesses
 
-Omnigent supports 13 harnesses in direct mode (Omnigent drives the model and tools) and additional native-TUI wrappers. Each harness is a one-line config value — swap providers without changing prompts, tools, or policies.
-
-| Harness | Alias | Model family | Auth | CLI tool required |
-|---|---|---|---|---|
-| `claude-sdk` | `claude` | Claude only | `ANTHROPIC_API_KEY` in `.env`, or Claude subscription (`claude auth login`), or Databricks | -- |
-| `openai-agents` | `openai-agents-sdk` | Any | `OPENAI_API_KEY` in `.env`, or ChatGPT subscription (`codex login`), or Databricks | -- |
-| `codex` | -- | GPT only | `OPENAI_API_KEY` in `.env`, or ChatGPT subscription | Codex CLI (`npm i -g @openai/codex`) |
-| `open-responses` | -- | Any (default: `gpt-5.3-codex`) | `OPENAI_API_KEY` in `.env` | -- |
-| `pi` | -- | Any | Omnigent credential config | Pi CLI (`npm i -g @earendil-works/pi-coding-agent`) |
-| `hermes` | -- | Any | Own auth (`hermes setup`) | Hermes CLI |
-| `goose` | -- | Any | Own auth (`goose configure`) | Goose CLI |
-| `cursor` | -- | Any | Own auth (Cursor login) | Cursor |
-| `antigravity` | -- | Gemini only | Gemini API key or Vertex AI | -- |
-| `copilot` | -- | Any | GitHub Copilot subscription | -- |
-| `kimi` | `kimi-code` | Any | Session-scoped config | Kimi CLI |
-| `qwen` | `qwen-code` | Any | Own auth | Qwen CLI |
-
-Native-TUI harnesses (`claude-native`, `codex-native`, `hermes-native`, `pi-native`, etc.) boot the vendor's own terminal UI. They are launched via `omnigent <name>`, not used in `config.yaml` agent definitions.
+Omnigent supports 13 harnesses in direct mode (Omnigent drives the model and tools) plus native-TUI wrappers, and each harness is a one-line config value — swap providers without changing prompts, tools, or policies. See the [Harnesses reference](https://omnigent.ai/docs/build/harnesses) for the full list of harness ids, aliases, and auth requirements.
 
 ### Supported models
 
-| Provider | Model | Harness | Additional Auth |
-|---|---|---|---|
-| **Anthropic (direct)** | `claude-sonnet-5` | `claude-sdk` | `ANTHROPIC_API_KEY` in `.env` |
-| | `claude-opus-4-8` | `claude-sdk` | `ANTHROPIC_API_KEY` in `.env` |
-| | `claude-opus-4-7` | `claude-sdk` | `ANTHROPIC_API_KEY` in `.env` |
-| | `claude-sonnet-4-6` | `claude-sdk` | `ANTHROPIC_API_KEY` in `.env` |
-| | `claude-haiku-4-5` | `claude-sdk` | `ANTHROPIC_API_KEY` in `.env` |
-| | `claude-fable-5` | `claude-sdk` | `ANTHROPIC_API_KEY` in `.env` |
-| **OpenAI (direct)** | `gpt-5.5` | `openai-agents` or `codex` | `OPENAI_API_KEY` in `.env` |
-| | `gpt-5.4` | `openai-agents` or `codex` | `OPENAI_API_KEY` in `.env` |
-| | `gpt-5.4-mini` | `openai-agents` or `codex` | `OPENAI_API_KEY` in `.env` |
-| | `gpt-5.3-codex` | `openai-agents` or `codex` | `OPENAI_API_KEY` in `.env` |
-| **Databricks AI Gateway** | `databricks-claude-sonnet-4-6` | `claude-sdk` | -- (Databricks auth only) |
-| | `databricks-claude-opus-4-8` | `claude-sdk` | -- |
-| | `databricks-gpt-5-5` | `openai-agents` or `codex` | -- |
-| | `databricks-gpt-5-4` | `openai-agents` or `codex` | -- |
-| | `databricks-kimi-k2-6` | `openai-agents` | -- |
-| | `databricks-meta-llama-3.3-70b-instruct` | `openai-agents` | -- |
-| **Gateway** | Any model via OpenRouter, LiteLLM, vLLM, Azure | Any harness | Gateway `base_url` + key |
-| **Ollama (local)** | Any Ollama model tag (e.g. `llama3.3`) | `openai-agents` | None (`base_url: http://localhost:11434/v1`) |
+Omnigent runs models from Anthropic and OpenAI (direct API), Databricks AI Gateway, any OpenAI- or Anthropic-compatible gateway (OpenRouter, LiteLLM, vLLM, Azure), and local Ollama. See the [Models & Credentials reference](https://omnigent.ai/docs/build/models) for the full provider and model list.
 
-> **Databricks models are dynamic.** The `databricks-` prefix maps to serving endpoints in your workspace (e.g., `databricks-claude-sonnet-4-6` → `claude-sonnet-4-6`). The models above are common examples — your workspace may serve different endpoints. Use `omnigent models list --server <url>` to see available models.
+> **Databricks models are dynamic.** The `databricks-` prefix maps to serving endpoints in your workspace (e.g., `databricks-claude-sonnet-4-6` → `claude-sonnet-4-6`). Your workspace may serve different endpoints. Use `omnigent models list --server <url>` to see available models.
 
 > **Model family rules.** `claude-sdk` only accepts Claude models. `codex` only accepts GPT models. `antigravity` only accepts Gemini models. All other harnesses (`openai-agents`, `pi`, `hermes`, `goose`, `cursor`, `kimi`, `qwen`, `copilot`) accept any model.
 
