@@ -24,7 +24,7 @@ This repository contains example agent configurations for the [Omnigent](https:/
 1. **[Secure Code Assistant](examples/secure_code_assistant/)** -- session-based information flow control blocks web search after private code read, blocks file writes after web content reads, and enforces ALLOW, DENY, ASK policy guardrails, and budget control costs at session level. 
 2. **[Cross-Harness Coding](examples/cross_harness_coding/)** -- multi-harness delegation (Codex implements, Claude reviews, one shared session)
 3. **[Harness Portability](examples/harness_portability/)** -- one supervisor, four inspectors, four harnesses: a Code Project Health Inspector with Claude SDK, Codex, Pi, and Hermes sub-agents, including MLflow tracing of Claude and Codex.
-4. **[Slow-Burn Guard](examples/slow_burn_guard/)** -- a compromised runbook fragments a data-exfiltration goal into individually-benign steps; a single stateful risk-score policy sees the whole session and DENIES the outbound send. Blog companion example.
+4. **[Slow-Burn Guard](examples/slow_burn_guard/)** -- a compromised runbook fragments a data-exfiltration goal into individually-benign steps; a single stateful risk-score policy sees the whole session and DENIES the outbound send. Databricks [Omnigent blog](https://www.databricks.com/blog/blocking-slow-burn-attacks-contextual-policies-omnigent) companion example.
 5. **[Telco Customer Agent](examples/telco_customer_agent/)** -- multi-tool customer data agent with 9 contextual and session-based policies: PII/financial taint labels, cost budget, PII leak prevention, stateful risk scoring, and a custom bulk access guard
 ---
 
