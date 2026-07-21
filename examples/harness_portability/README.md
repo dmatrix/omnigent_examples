@@ -8,7 +8,7 @@
 
 ## Overview
 
-A **Code Project Health Inspector** that clones a GitHub repo and dispatches four specialist sub-agents — each on a different harness (Claude SDK, Codex, Pi, Hermes) — to analyze structure, tests, dependencies, and security. Produces a graded `health_report.md`. Five YAML files, zero Python.
+A **Code Project Health Inspector** that clones a GitHub repo and dispatches four specialist sub-agents — each on a different harness (Claude SDK, Codex, Pi, Hermes) — to analyze structure, tests, dependencies, and security. Produces a graded `health_report.md`, defined entirely in YAML with no custom tool code.
 
 Shows: harness portability (swap any sub-agent's harness with a one-line edit), multi-agent composition (one supervisor, four inspectors, one session tree), provider-agnostic governance (same cost guards fire on all four harnesses), and cross-harness MLflow tracing.
 
@@ -26,7 +26,7 @@ No `tools/python/` directory — all capabilities come from `os_env` (shell acce
 
 ## Get Started
 
-No database setup needed. No custom tool code. Just YAML.
+No database setup needed, and no custom tool code — the agents use shell access only.
 
 ### Prerequisites
 
@@ -43,7 +43,7 @@ No database setup needed. No custom tool code. Just YAML.
 | `dependency_inspector` | `pi` | Pi CLI (`npm i -g @earendil-works/pi-coding-agent`) | Uses configured provider |
 | `security_inspector` | `hermes` | Hermes CLI | Uses configured provider |
 
-> To run the full example out of the box, you need credentials for all four harnesses. To get started quickly, swap the sub-agents you don't have credentials for to `claude-sdk` (one-line edit per sub-agent).
+> To run the full example as configured, you need credentials for all four harnesses. To get started quickly, swap the sub-agents you don't have credentials for to `claude-sdk` (one-line edit per sub-agent).
 
 ---
 

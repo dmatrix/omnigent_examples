@@ -83,7 +83,7 @@ The system prompt instructs the agent to act as an account-review assistant that
 
 ## Not in this config
 
-No labels, no taint/deny rules, no cost budget, no custom Python policy, no sub-agents. All intentionally omitted to keep the example laser-focused on the single slow-burn mechanism. The comprehensive [telco_customer_agent](../telco_customer_agent/) example layers those on.
+No labels, no taint/deny rules, no cost budget, no custom Python policy, no sub-agents. All intentionally omitted to keep the example focused on the single slow-burn mechanism. The larger [telco_customer_agent](../telco_customer_agent/) example layers those on.
 
 ---
 

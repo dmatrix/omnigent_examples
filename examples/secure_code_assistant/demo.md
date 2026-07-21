@@ -33,14 +33,14 @@ Omnigent does all three. And the whole agent is a YAML file."
 - `tools:` — "Python functions auto-discovered from `tools/python/`. Web search as a builtin."
 - `guardrails:` — "This is the new thing. Two taint labels, two deny policies, a cost budget. 
 
-All declarative. The model never gets a vote."
+All declarative, and the model can't override it."
 
 **Pause on `block_search_after_code`:**
 > "If the session has seen proprietary source code, web search is denied. Not 'please don't search' — DENIED. The framework intercepts the call before it reaches the model's tools."
 
 ---
 
-### Act 2: Policies — Information Flow (4 min) — THE WOW MOMENT
+### Act 2: Policies — Information Flow (4 min)
 
 **Do:** `omnigent run examples/secure_code_assistant/`
 
@@ -64,7 +64,7 @@ Agent calls `read_source`, returns contents. Framework silently sets `has_propri
 
 **Say:** "I just read proprietary source code. Behind the scenes, the PolicyEngine set `has_proprietary_code` to True. That label is **monotonic** — once set, it can never be unset for this session."
 
-**Turn 3 — THE WOW MOMENT — web search denied:**
+**Turn 3 — web search denied:**
 
 ```
 Use web_search to find how other projects implement tool decorators

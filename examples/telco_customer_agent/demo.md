@@ -9,7 +9,7 @@
 **Say:** "This agent has three tools that query a telco database — plans, customers, and billing. The YAML defines nine policies across five categories: taint labels that track what data the agent has seen, DENY policies that block web search after sensitive data access, a cost budget, a PII leak scanner, a stateful risk score, and a custom bulk access guard. All declarative, all enforced at the framework layer."
 
 **Pause on the `block_web_after_pii` policy:**
-> "This is one YAML block. It says: if `has_pii` is true, deny `web_search`. The LLM never gets a vote."
+> "This is one YAML block. It says: if `has_pii` is true, deny `web_search`. The model can't override it."
 
 **Pause on the `risk_score` policy:**
 > "This one accumulates points — 5 for billing, 3 for customer data, 1 for plans. Once the score hits 10, the agent has to ask for permission. It's stateful — no single query triggers it, but a pattern of sensitive access does."
@@ -49,7 +49,7 @@ Use web_search to find T-Mobile's current pricing
 
 **Watch:** The agent attempts `web_search` → DENIED.
 
-**Say:** "The search query 'T-Mobile pricing' is completely clean — no PII in it. But Omnigent knows this session has seen customer data. The framework blocks the call before it reaches the LLM. This is what session-scoped governance means — AI Gateway can't do this because it's stateless per-request."
+**Say:** "The search query 'T-Mobile pricing' is completely clean — no PII in it. But Omnigent knows this session has seen customer data. The framework blocks the call before it reaches the LLM. This is what session-scoped governance means: the decision depends on session state, not just the current request."
 
 ---
 
