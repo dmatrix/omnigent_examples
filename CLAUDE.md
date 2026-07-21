@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Example agent configurations for the Omnigent CLI. Flagship examples include a secure code assistant with information flow policies, a telco customer data agent demonstrating session-scoped PII/financial policy labels, a slow-burn guard that blocks a fragmented data-exfiltration attack with a single stateful risk-score policy, a cross-harness coding supervisor, and a harness portability inspector using four LLM providers simultaneously.
+Example agent configurations for the Omnigent CLI. The examples include a secure code assistant with information flow policies, a telco customer data agent demonstrating session-scoped PII/financial policy labels, a slow-burn guard that blocks a fragmented data-exfiltration attack with a single stateful risk-score policy, a cross-harness coding supervisor, and a harness portability inspector using four LLM providers.
 
 ## Tech Stack
 

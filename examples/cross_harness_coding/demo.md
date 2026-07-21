@@ -49,7 +49,7 @@ Put it in rate_limiter.py with unit tests in test_rate_limiter.py.
 
 **Show** the `guardrails:` blocks in all three `config.yaml` files.
 
-**Say:** "Two layers of cost governance. Each sub-agent has a `cost_guard` — a dollar cap per invocation so no single agent runs away. Then all three agents share a `daily_cost_guard` — five dollars per day across both providers. The ASK thresholds fire early so the user stays informed. This is governance plus composition — layered budgets, two providers, three agents."
+**Say:** "Two layers of cost governance. Each sub-agent has a `cost_guard` — a dollar cap per invocation so no single agent runs away. Then all three agents share a `daily_cost_guard` — five dollars per day across both providers. The ASK thresholds fire early so the user stays informed. Layered budgets across two providers and three agents."
 
 ---
 

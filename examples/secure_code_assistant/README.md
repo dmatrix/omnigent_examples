@@ -8,7 +8,7 @@
 
 ## Overview
 
-Coding assistant with session-scoped information flow control. The PolicyEngine enforces DENY decisions at the framework layer — the LLM never sees the denied tool call. Same policies fire on Claude or GPT because enforcement lives in the runner, not the harness.
+Coding assistant with session-scoped information flow control. The PolicyEngine enforces DENY decisions in the Omnigent runner, so the same policies apply whether the agent runs on Claude or GPT.
 
 The agent has two custom tools and one builtin:
 

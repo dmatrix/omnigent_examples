@@ -8,7 +8,7 @@
 
 ## Overview
 
-Multi-tool customer data agent with nine [session-based contextual policies](https://www.databricks.com/blog/contextual-policies-omnigent-using-session-state-better-govern-ai-agents) enforced at the framework layer — the LLM never gets a vote. Policies span five categories:
+Multi-tool customer data agent with nine [session-based contextual policies](https://www.databricks.com/blog/contextual-policies-omnigent-using-session-state-better-govern-ai-agents) enforced in the Omnigent runner. Policies span five categories:
 
 - **Taint labels + information flow** — Monotonic labels (`has_pii`, `has_financial`) DENY web search after sensitive data access. Three label-setters, two deny rules.
 - **Cost budget** — ASKs at $1.00, DENYs at $5.00. Session-scoped, not per-request.

@@ -2,8 +2,8 @@
 
 **YAML-defined AI agents for the Omnigent Meta Harness -- from single-tool assistants to multi-tool customer support, secure code assistants, and cross-harness orchestration.**
 
-These examples help you get started and learn the nuances of what omnigent offers. All
-examples can run locally or with a Databricks hosted Omnigent Server.
+These examples help you get started with Omnigent. All examples can run locally or with a
+Databricks-hosted Omnigent Server.
 
 [![omnigent.ai](https://img.shields.io/badge/omnigent.ai-Visit-00C853)](https://omnigent.ai)
 ![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
@@ -19,7 +19,7 @@ examples can run locally or with a Databricks hosted Omnigent Server.
 
 ## Overview
 
-This repository contains example agent configurations for the [Omnigent](https://github.com/omnigent) meta-harness. Each example defines an [Custom Omnigent AI agent](https://omnigent.ai/docs/use/custom-agents) in YAML -- specifying the executor, system prompt, contexual and custom policies, skills, and tools. Five flagship examples demonstrate different patterns, all exemplifying [session-based contextual policies](https://www.databricks.com/blog/contextual-policies-omnigent-using-session-state-better-govern-ai-agents) and use of meta-harness for orchestrating agents and secured execution:
+This repository contains example agent configurations for the [Omnigent](https://github.com/omnigent) meta-harness. Each example defines a [Custom Omnigent AI agent](https://omnigent.ai/docs/use/custom-agents) in YAML -- specifying the executor, system prompt, contextual and custom policies, skills, and tools. Five examples demonstrate different patterns, each using [session-based contextual policies](https://www.databricks.com/blog/contextual-policies-omnigent-using-session-state-better-govern-ai-agents) and the meta-harness for orchestrating agents and secured execution:
 
 1. **[Secure Code Assistant](examples/secure_code_assistant/)** -- session-based information flow control blocks web search after private code read, blocks file writes after web content reads, and enforces ALLOW, DENY, ASK policy guardrails, and budget control costs at session level. 
 2. **[Cross-Harness Coding](examples/cross_harness_coding/)** -- multi-harness delegation (Codex implements, Claude reviews, one shared session)
@@ -280,7 +280,7 @@ No Python tool code changes are needed -- the tools are provider-independent.
 
 ## Architecture
 
-Each flagship agent has its own architecture diagram in its README:
+Each agent has its own architecture diagram in its README:
 
 - [Secure Code Assistant](examples/secure_code_assistant/)
 - [Cross-Harness Coding architecture](examples/cross_harness_coding/)

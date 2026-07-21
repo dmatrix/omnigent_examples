@@ -8,13 +8,13 @@
 
 ## Overview
 
-The cross-harness coding example demonstrates **composition** and **governance** — Omnigent's ability to orchestrate multiple LLM providers within a single agent session while enforcing budget controls. Three different agents, from different providers, collaborate across two harnesses:
+The cross-harness coding example orchestrates multiple LLM providers within a single agent session while enforcing budget controls. Three agents, from different providers, collaborate across two harnesses:
 
 - **`Supervisor`** — Lightweight coordinator on the **Claude SDK** harness (Anthropic). Decomposes tasks, dispatches to sub-agents, checks test results, and synthesizes results. Never writes code itself.
 - **`impl_worker`** — Implementation specialist on the **Codex** harness (OpenAI). Writes code, creates tests, and runs verification.
 - **`review_worker`** — Code reviewer on the **Claude SDK** harness (Anthropic). Reviews for correctness, security, style, and performance.
 
-The supervisor breaks down user requests, dispatches implementation to the Codex agent, which writes code and runs tests. If the impl_worker reports test failures, the supervisor sends failures back without bothering the reviewer. Once tests pass, the supervisor routes to Claude for review. If the review returns REVISE, the supervisor sends feedback back for another pass. All three agents share the same filesystem and session — no copy-paste, no context switching.
+The supervisor breaks down user requests, dispatches implementation to the Codex agent, which writes code and runs tests. If the impl_worker reports test failures, the supervisor sends failures back without bothering the reviewer. Once tests pass, the supervisor routes to Claude for review. If the review returns REVISE, the supervisor sends feedback back for another pass. All three agents share the same filesystem and session.
 
 A layered **cost guardrail** caps spend at two levels: a per-agent `cost_guard` ($1.00 per sub-agent invocation) and a `daily_cost_guard` ($5.00/day across all agents).
 
@@ -116,7 +116,7 @@ re-run the tests, then review the refactor for correctness.
 Now write a CLI wrapper in cli.py with argument parsing, help text,
 and integration tests. Then review it.
 ```
-> After one or two implement-test-review cycles, the per-agent `cost_guard` ASK threshold ($0.25) or the `daily_cost_guard` ASK threshold ($0.50) fires — the agent pauses and asks for approval to continue. This is layered cost governance in action across both providers.
+> After one or two implement-test-review cycles, the per-agent `cost_guard` ASK threshold ($0.25) or the `daily_cost_guard` ASK threshold ($0.50) fires — the agent pauses and asks for approval to continue. Both cost budgets apply across the two providers.
 
 All generated code is written to `examples/cross_harness_coding/omnigent_generated_code/`.
 
