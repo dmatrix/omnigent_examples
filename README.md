@@ -1,6 +1,6 @@
 # Omnigent Examples
 
-**YAML-defined AI agents for the Omnigent Meta Harness -- from single-tool assistants to multi-tool customer support, secure code assistants, and cross-harness orchestration.**
+**YAML-defined custom AI agents for the Omnigent Meta Harness -- from single-tool assistants to multi-tool customer support, secure code assistants, and cross-harness orchestration.**
 
 These examples help you get started with Omnigent. All examples can run locally or with a
 Databricks-hosted Omnigent Server.
