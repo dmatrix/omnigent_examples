@@ -42,13 +42,44 @@
     <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M 0 1 L 10 5 L 0 9 z" fill="#7ec8e3"/>
     </marker>
+    <marker id="arrAmber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#f5a623"/>
+    </marker>
     <marker id="arrRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M 0 1 L 10 5 L 0 9 z" fill="#e94560"/>
     </marker>
     <marker id="arrGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M 0 1 L 10 5 L 0 9 z" fill="#2ecc71"/>
     </marker>
+    <marker id="arrTeal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#1abc9c"/>
+    </marker>
+    <marker id="arrWhite" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#fff"/>
+    </marker>
   </defs>
+
+  <style>
+    /* Dash pattern stays a presentation attribute so static renderers (and the
+       exported PNG) show clean dashed connectors; only the offset animates. */
+    .flow      { animation: march 0.9s linear infinite; }
+    .flow-rev  { animation: marchRev 1.1s linear infinite; }
+    /* Gated hops march slowly — the animation itself says "this waits". */
+    .flow-slow { animation: march 2.6s linear infinite; }
+
+    /* Phase offsets make the pipeline read as one sequential flow. */
+    .s1 { animation-delay: 0s;    }
+    .s2 { animation-delay: -0.2s; }
+    .s3 { animation-delay: -0.4s; }
+    .s4 { animation-delay: -0.6s; }
+
+    @keyframes march    { to { stroke-dashoffset: -12; } }
+    @keyframes marchRev { to { stroke-dashoffset:  12; } }
+
+    @media (prefers-reduced-motion: reduce) {
+      .flow, .flow-rev, .flow-slow { animation: none; }
+    }
+  </style>
 
   <rect width="900" height="880" fill="url(#bg)"/>
 
@@ -88,8 +119,10 @@
   <text x="450" y="241" text-anchor="middle" font-size="11" fill="#a8e6cf">supervisor · claude-sdk</text>
   <text x="450" y="259" text-anchor="middle" font-size="11" fill="#ffd5dd">writes nothing — delegates every word</text>
 
-  <path d="M 172 161 L 172 178 L 360 178 L 360 195" stroke="#7ec8e3" stroke-width="2" fill="none" marker-end="url(#arr)"/>
-  <path d="M 727 161 L 727 178 L 540 178 L 540 195" stroke="#7ec8e3" stroke-width="2" fill="none" marker-end="url(#arr)"/>
+  <g stroke="#7ec8e3" stroke-width="2" fill="none" stroke-dasharray="7 5" marker-end="url(#arr)">
+    <path class="flow s1" d="M 172 161 L 172 178 L 360 178 L 360 195"/>
+    <path class="flow s1" d="M 727 161 L 727 178 L 540 178 L 540 195"/>
+  </g>
 
   <!-- Row C: three sub-agents -->
   <g filter="url(#shadow)">
@@ -112,12 +145,16 @@
   <text x="734" y="379" text-anchor="middle" font-size="11" fill="#fff">X thread + LinkedIn</text>
   <text x="734" y="394" text-anchor="middle" font-size="10" fill="#d7bde2">only from a PASSed draft</text>
 
-  <path d="M 380 271 L 380 295 L 166 295 L 166 315" stroke="#7ec8e3" stroke-width="2" fill="none" marker-end="url(#arr)"/>
-  <path d="M 450 271 L 450 315" stroke="#7ec8e3" stroke-width="2" fill="none" marker-end="url(#arr)"/>
-  <path d="M 520 271 L 520 295 L 734 295 L 734 315" stroke="#7ec8e3" stroke-width="2" fill="none" marker-end="url(#arr)"/>
+  <g stroke="#7ec8e3" stroke-width="2" fill="none" stroke-dasharray="7 5" marker-end="url(#arr)">
+    <path class="flow s2" d="M 380 271 L 380 295 L 166 295 L 166 315"/>
+    <path class="flow s2" d="M 450 271 L 450 315"/>
+    <path class="flow s2" d="M 520 271 L 520 295 L 734 295 L 734 315"/>
+  </g>
 
-  <!-- REVISE loop -->
-  <path d="M 319 358 L 297 358" stroke="#f5a623" stroke-width="2" fill="none" stroke-dasharray="5,4" marker-end="url(#arr)"/>
+  <!-- REVISE loop: marches backwards, editor -> blog_writer -->
+  <path class="flow-rev" d="M 319 358 L 297 358" stroke="#f5a623" stroke-width="2" fill="none"
+        stroke-dasharray="7 5" marker-end="url(#arrAmber)"/>
+  <text x="308" y="347" text-anchor="middle" font-size="9" fill="#f5a623">REVISE</text>
 
   <!-- Row D: ungated tier -->
   <g filter="url(#shadow)">
@@ -134,8 +171,10 @@
   </g>
   <text x="58" y="512" font-size="11" fill="#a8e6cf">artifacts/outlines/ · artifacts/drafts/ · artifacts/social/ · artifacts/cycles/ — staged freely, cheap to throw away</text>
 
-  <path d="M 166 401 L 166 415 L 450 415 L 450 430" stroke="#2ecc71" stroke-width="2" fill="none" marker-end="url(#arrGreen)"/>
-  <path d="M 734 401 L 734 415 L 470 415 L 470 430" stroke="#2ecc71" stroke-width="2" fill="none" marker-end="url(#arrGreen)"/>
+  <g stroke="#2ecc71" stroke-width="2" fill="none" stroke-dasharray="7 5" marker-end="url(#arrGreen)">
+    <path class="flow s3" d="M 166 401 L 166 415 L 450 415 L 450 430"/>
+    <path class="flow s3" d="M 734 401 L 734 415 L 470 415 L 470 430"/>
+  </g>
 
   <!-- Row E: THE GATE -->
   <g filter="url(#shadow)">
@@ -157,8 +196,10 @@
   <text x="770" y="640" text-anchor="middle" font-size="11" fill="#0b3b30">carrying both reasons</text>
   <text x="770" y="662" text-anchor="middle" font-size="11" font-weight="600" fill="#7b241c">approve · deny</text>
 
-  <path d="M 450 522 L 450 562" stroke="#e94560" stroke-width="2.5" fill="none" marker-end="url(#arrRed)"/>
-  <path d="M 655 618 L 675 618" stroke="#fff" stroke-width="2" fill="none" marker-end="url(#arr)"/>
+  <path class="flow s4" d="M 450 522 L 450 562" stroke="#e94560" stroke-width="2.5" fill="none"
+        stroke-dasharray="7 5" marker-end="url(#arrRed)"/>
+  <path class="flow-slow" d="M 655 618 L 675 618" stroke="#fff" stroke-width="2" fill="none"
+        stroke-dasharray="7 5" marker-end="url(#arrWhite)"/>
 
   <!-- Row F: guarded tools -->
   <g filter="url(#shadow)">
@@ -170,8 +211,10 @@
   <text x="640" y="740" text-anchor="middle" font-size="13" font-weight="600" font-family="monospace" fill="#fff">post_social</text>
   <text x="640" y="762" text-anchor="middle" font-size="10.5" fill="#f5b7b1">outbound to X / LinkedIn (stub)</text>
 
-  <path d="M 770 674 L 770 696 L 640 696 L 640 716" stroke="#1abc9c" stroke-width="2" fill="none" marker-end="url(#arrGreen)"/>
-  <path d="M 770 674 L 770 696 L 260 696 L 260 716" stroke="#1abc9c" stroke-width="2" fill="none" marker-end="url(#arrGreen)"/>
+  <g stroke="#1abc9c" stroke-width="2" fill="none" stroke-dasharray="7 5" marker-end="url(#arrTeal)">
+    <path class="flow-slow" d="M 770 674 L 770 696 L 640 696 L 640 716"/>
+    <path class="flow-slow" d="M 770 674 L 770 696 L 260 696 L 260 716"/>
+  </g>
   <text x="450" y="692" text-anchor="middle" font-size="10" fill="#a8e6cf">only after approval</text>
 
   <!-- Footer note -->
