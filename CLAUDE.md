@@ -132,11 +132,13 @@ examples/
 |   |   +-- query_billing.py      #   Billing + subscriptions (financial data)
 |   +-- skills/customer-report/
 |       +-- SKILL.md              #   On-demand report template with PII redaction
-|-- tools/
-|   |-- create_telco_db.py        # Telco database setup script
-|   |-- data/telco.db             # Pre-built telco database (5 tables, 125 records) 
-|   +-- python/                   # Shared tool library
++-- tools/
+    |-- create_telco_db.py        # Telco database setup script
+    +-- data/telco.db             # Pre-built telco database (5 tables, 125 records)
 ```
+
+There is no shared tool library. Every tool lives in the `tools/python/` directory
+of the example that uses it, and is auto-discovered from there.
 
 ## Known Issues
 
