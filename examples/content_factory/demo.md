@@ -84,12 +84,14 @@ Run cycles until the thin entry comes up — it is seeded `READY`, so a normal
 cycle will select it. To go straight there, set the other `READY` entries to
 `DRAFTED` first, or just ask the factory to run the next cycle repeatedly.
 
-The editor returns `REVISE`, and the supervisor is forbidden by its prompt from
-proceeding — it routes the feedback back to `blog_writer` rather than shrugging
-and publishing.
+The entry is designed to elicit a `REVISE` (a `REJECT` is also a valid outcome
+for a draft this thin). Either way the supervisor is forbidden by its prompt
+from proceeding — it routes the feedback back to `blog_writer` rather than
+shrugging and publishing.
 
-> The supervisor cannot overrule the editor, and cannot substitute its own
-> opinion of the draft. The verdict is the verdict.
+> The supervisor is forbidden by its prompt from overruling the editor or
+> substituting its own opinion of the draft. The verdict is the verdict. Note
+> this one is prompt-enforced, not policy-enforced — unlike the gate in Act 6.
 
 ---
 
@@ -116,9 +118,12 @@ Post the LinkedIn copy for <a slug that has not passed the editor>.
 
 **DENIED**, before any approval prompt appears — R1 short-circuits the engine.
 
-> Short-form content cannot precede the long-form it cites. That isn't a prompt
-> instruction the model might forget under pressure. It's a policy, outside the
-> model, that the agent cannot talk its way past.
+> No social post for a slug this session never recorded as `APPROVED`. That
+> isn't a prompt instruction the model might forget under pressure — it's a
+> policy, outside the model, that the agent cannot talk its way past. Be precise
+> about what it checks: the recorded state transition, not the existence of a
+> blog. The supervisor only records `APPROVED` after a `PASS`, and that is what
+> connects the policy to the editorial rule.
 
 ---
 

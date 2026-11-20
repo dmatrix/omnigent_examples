@@ -59,7 +59,7 @@ Nothing to build. The backlog ships seeded with five real Omnigent features, so 
 cat examples/content_factory/backlog.md
 ```
 
-Four entries are `READY` — one of them deliberately thin, so a cycle will pick it up and you can watch the editor bounce it back as `REVISE` — and one is already `PUBLISHED`, which the state machine skips.
+Four entries are `READY` — one of them deliberately thin, so a cycle will pick it up and it is designed to elicit a `REVISE` (the editor may also return `REJECT`) — and one is already `PUBLISHED`, which the state machine skips.
 
 ---
 
@@ -161,7 +161,7 @@ Two complementary layers guard the same two shipping tools.
 | `guarded_tools` | builtin `risk_score` | Coarse unconditional brake. Knows nothing about slugs — escalates `publish_content` and `post_social` on **every** call, so the gate holds even if the custom policy is removed. |
 | `user_daily_cost_budget` | builtin | $5.00/day per user, ASKs at $0.50. |
 
-Each sub-agent additionally carries `cost_budget` ($1.00, ASK at $0.25) and `max_tool_calls_per_session` (250) to stop a runaway drafting loop.
+Each sub-agent additionally carries `cost_budget` ($1.00, ASK at $0.25) and `max_tool_calls_per_session` (250) to bound runaway tool use.
 
 The two shipping layers **do not produce two prompts.** The engine evaluates every policy and joins all ASK reasons into one pending approval, so the human sees a single request carrying both reason lines.
 
@@ -169,7 +169,7 @@ The two shipping layers **do not produce two prompts.** The engine evaluates eve
 
 Three rules, evaluated in this order:
 
-1. **R1 — DENY** `post_social` for a slug whose blog never reached `APPROVED`. *Short-form content cannot precede the long-form post it cites.* The factory structurally cannot tweet about a blog that doesn't exist yet.
+1. **R1 — DENY** `post_social` until this session has recorded a successful `update_backlog(status="APPROVED")` for that slug. The editorial intent is *short-form content cannot precede the long-form post it cites*; what R1 actually enforces is the recorded state transition, not the existence of a blog or an editor verdict. The supervisor performs that transition only after a `PASS`, which is what links the two.
 2. **R3 — DENY** once `max_publishes_per_cycle` (default 3) publishes have succeeded in the current cycle. A real stop, not a nag: the ceiling holds until the next cycle.
 3. **R2 — ASK** any other `publish_content` or `post_social`, naming the slug and what is being shipped.
 
