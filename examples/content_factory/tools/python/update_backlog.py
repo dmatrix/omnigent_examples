@@ -27,16 +27,18 @@ def update_backlog(slug: str, status: str) -> dict:
         return {"error": f"Unknown status: {status}. Valid statuses: {', '.join(VALID_STATUSES)}"}
 
     try:
-        with open(_backlog_path(), encoding="utf-8") as backlog_file:
+        with open(_backlog_path(), encoding="utf-8", newline="") as backlog_file:
             content = backlog_file.read()
     except OSError as error:
         return {"error": f"Unable to read backlog: {error}"}
 
     pattern = re.compile(
-        rf"(?ms)(^## {re.escape(slug)}\n.*?^- status: )([^\n]+)(?=\n)"
+        rf"(?ms)(^## {re.escape(slug)}\r?\n(?:(?!^## ).)*?^- status: )([^\r\n]+)(?=\r?\n)"
     )
     match = pattern.search(content)
     if match is None:
+        if re.search(rf"(?m)^## {re.escape(slug)}\r?$", content):
+            return {"error": f"Backlog entry has no status: {slug}"}
         return {"error": f"Unknown backlog slug: {slug}"}
 
     old_status = match.group(2)

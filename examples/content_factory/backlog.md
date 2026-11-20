@@ -22,13 +22,13 @@
 ## guarded-tools-escalation
 - status: PUBLISHED
 - title: Guarded Tools Turn Sensitive Agent Actions Into Approval Checkpoints
-- summary: Omnigent's guarded_tools policy can escalate selected tool calls for human approval while allowing ordinary workflow steps to continue.
+- summary: Omnigent's risk_score policy can escalate selected guarded_tools for human approval once accumulated session risk reaches a configured threshold, while ordinary workflow steps continue ungated.
 - sources:
   - https://github.com/dmatrix/omnigent
 
 ## recurring-schedules
-- status: DRAFTED
+- status: READY
 - title: Scheduled Agent Work
-- summary: Scheduled tasks.
+- summary: Omnigent supports recurring scheduled tasks defined with an RRULE.
 - sources:
   - https://github.com/dmatrix/omnigent

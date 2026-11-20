@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import glob
 import os
 import shutil
 
@@ -22,7 +21,11 @@ def publish_content(slug: str) -> dict:
     """
     artifacts = _artifacts_path()
     draft_path = os.path.join(artifacts, "drafts", f"{slug}.md")
-    source_paths = [draft_path, *sorted(glob.glob(os.path.join(artifacts, "social", f"{slug}-*.md")))]
+    social_paths = [
+        os.path.join(artifacts, "social", f"{slug}-{variant}.md")
+        for variant in ("linkedin", "x")
+    ]
+    source_paths = [draft_path, *social_paths]
     existing_paths = [path for path in source_paths if os.path.isfile(path)]
     if not os.path.isfile(draft_path):
         return {"error": f"Draft artifact not found for slug: {slug}"}
