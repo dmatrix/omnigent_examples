@@ -1,36 +1,23 @@
 """Custom policy: the content factory's publish gate.
 
-The single teaching point of this example: **unattended cycles produce
-freely; publication requires a signature.**
-
-So this policy draws a hard line between two tiers of tool:
-
-* The *free-flowing* tier — ``read_backlog``, ``update_backlog`` and
-  ``save_artifact``. Never gated, whatever else the session has done. A
-  scheduled 9am cycle must be able to research, draft, edit and stage every
-  artifact with nobody watching.
-* The *shipping* tier — ``publish_content`` and ``post_social``. Always
-  escalated to a human, and hard-DENIED when short-form social content would
-  go out ahead of the long-form post it cites.
-
-All cross-turn state lives in ``session_state`` and is mutated only through
-``state_updates``, the same shape ``bulk_access_guard`` uses. Approvals and
-publish counts are recorded on the ``tool_result`` phase rather than on
-``tool_call``, for two reasons: that is the only phase where a tool's
-*success* is observable, and the engine withholds ``state_updates`` on an ASK
-(see ``PolicyResponse.state_updates``), so a gated call could never record
-itself.
+Unattended cycles produce freely — ``read_backlog``, ``update_backlog`` and
+``save_artifact`` are never gated. Shipping is different: ``publish_content``
+and ``post_social`` face three rules, and cross-turn state lives in
+``session_state``, mutated only through ``state_updates``.
 """
 
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
 from omnigent.policies.schema import PolicyCallable, PolicyEvent, PolicyResponse
 
+# An explicit ALLOW, not ``None``. There is no distinct ABSTAIN verdict:
+# ``_coerce_to_policy_result`` (policies/function.py) maps ``None`` to ALLOW and
+# calls it a "defensive fallback". ALLOW masks nothing — the engine accumulates
+# ASKs across policies and short-circuits only on DENY.
 _ALLOW: PolicyResponse = {"result": "ALLOW"}
 
 # ``session_state`` keys. Deliberately NOT prefixed ``_policy_`` — the engine
@@ -41,31 +28,16 @@ _CYCLE_PUBLISHES_KEY = "_publish_gate_cycle_publishes"
 _PUBLISH_CONTENT = "publish_content"
 _POST_SOCIAL = "post_social"
 _UPDATE_BACKLOG = "update_backlog"
-
-# The shipping tier — every call here faces a rule below.
 _GUARDED_TOOLS = frozenset({_PUBLISH_CONTENT, _POST_SOCIAL})
-
-# The free-flowing tier. Spelled out rather than implied by the absence of a
-# rule, because the contrast between the two tiers *is* the example.
-_UNGATED_TOOLS = frozenset({"read_backlog", _UPDATE_BACKLOG, "save_artifact"})
-
 _APPROVED_STATUS = "APPROVED"
 
 
-# ── Event readers ────────────────────────────────────────────────────────────
-
-
 def _tool_name(event: PolicyEvent) -> str:
-    """Resolve the tool identity for an event across both enforcement paths.
+    """Resolve the tool identity across both enforcement paths.
 
-    The server-side engine sets ``event["target"]`` and shapes ``data`` as
-    ``{"name": ..., "arguments": {...}}``; the runner-local inner gate sets
-    ``target`` too but passes the bare argument dict as ``data``. Prefer
-    ``target`` (the dispatched identity, which an earlier policy cannot have
-    rewritten) and fall back to the payload.
-
-    :param event: The policy event.
-    :returns: The tool name, or ``""`` when it cannot be determined.
+    Prefer ``target`` (the dispatched identity, which an earlier policy cannot
+    have rewritten); fall back to the payload, which the runner-local inner
+    gate shapes differently from the server engine.
     """
     target = event.get("target")
     if isinstance(target, str) and target:
@@ -80,33 +52,17 @@ def _tool_name(event: PolicyEvent) -> str:
 
 
 def _tool_args(data: object) -> dict[str, Any]:  # type: ignore[explicit-any]
-    """Extract the tool-call argument dict from an event payload.
-
-    :param data: ``event["data"]`` on ``tool_call``, or ``event["request_data"]``
-        on ``tool_result``.
-    :returns: The arguments dict, or ``{}`` when the payload carries none.
-    """
+    """Extract a tool-call argument dict from an event payload."""
     if not isinstance(data, dict):
         return {}
     args = data.get("arguments")
-    if isinstance(args, dict):
-        return args
     # Inner path: ``data`` already *is* the argument dict.
-    return data
+    return args if isinstance(args, dict) else data
 
 
 def _result_payload(data: object) -> object:
-    """Parse a ``tool_result`` payload into its structured form.
-
-    Handles the server shape (``{"result": "<json-or-text>"}``) and the
-    runner shape (a raw string or an already-structured value).
-
-    :param data: The raw ``event["data"]`` on a ``tool_result`` event.
-    :returns: The parsed structure when the payload was JSON, else the raw value.
-    """
-    inner = data
-    if isinstance(data, dict) and "result" in data:
-        inner = data["result"]
+    """Parse a ``tool_result`` payload, server- or runner-shaped."""
+    inner = data["result"] if isinstance(data, dict) and "result" in data else data
     if isinstance(inner, str):
         try:
             return json.loads(inner)
@@ -116,61 +72,53 @@ def _result_payload(data: object) -> object:
 
 
 def _succeeded(payload: object) -> bool:
-    """Decide whether a tool result represents a successful call.
+    """True only for a result dict carrying no ``error``.
 
-    Every content-factory tool returns a JSON-serializable dict and signals
-    failure with an ``error`` key. Anything that is not a dict counts as a
-    failure: this gate fails closed, so an unconfirmed ``update_backlog``
-    never unlocks ``post_social``.
-
-    :param payload: A parsed tool-result payload.
-    :returns: ``True`` only for a dict carrying no ``error``.
+    Every content-factory tool returns a dict and flags failure with ``error``.
+    Anything else counts as failure, so this gate fails closed: an unconfirmed
+    ``update_backlog`` never unlocks ``post_social``.
     """
     return isinstance(payload, dict) and not payload.get("error")
 
 
-# ── State readers ────────────────────────────────────────────────────────────
+def _state_available(event: PolicyEvent) -> bool:
+    """Whether this event's ``session_state`` is authoritative.
+
+    ``_build_event`` (policies/function.py) flattens an absent
+    ``session_state`` to ``{}``, so an empty dict alone is ambiguous: "server
+    engine, nothing approved yet" or "runner-local gate, no state at all".
+    ``conversation_id`` disambiguates — the engine injects it on every
+    ``evaluate`` (runtime/policies/engine.py) and it is documented as ``None``
+    "only in contexts with no engine", i.e. exactly the runner-local gate.
+    """
+    context = event.get("context") or {}
+    conversation_id = context.get("conversation_id")
+    return isinstance(conversation_id, str) and bool(conversation_id)
+
+
+def _read_state(state: dict[str, object], key: str) -> object:
+    """Decode one ``session_state`` value; ``None`` when absent or corrupt."""
+    raw = state.get(key)
+    try:
+        return json.loads(raw) if isinstance(raw, str) else raw
+    except (ValueError, TypeError):
+        return None
 
 
 def _approved_slugs(state: dict[str, object]) -> list[str]:
-    """Read the slugs this session has seen reach ``APPROVED``.
-
-    :param state: The event's ``session_state``.
-    :returns: Approved slugs, or ``[]`` when none are recorded or the stored
-        value is unreadable.
-    """
-    raw = state.get(_APPROVED_SLUGS_KEY, "[]")
-    try:
-        value = json.loads(raw) if isinstance(raw, str) else raw
-    except (ValueError, TypeError):
-        return []
+    """Slugs this session has seen reach ``APPROVED``."""
+    value = _read_state(state, _APPROVED_SLUGS_KEY)
     return [str(item) for item in value] if isinstance(value, list) else []
 
 
 def _cycle_id() -> str:
-    """Identify the current cycle.
-
-    Cycles are daily (``rrule: FREQ=DAILY``) and their artifact is
-    ``artifacts/cycles/<YYYY-MM-DD>-cycle.md``, so the UTC calendar day *is*
-    the cycle identity. A count carrying an older day has expired.
-
-    :returns: The current UTC date as ``"YYYY-MM-DD"``.
-    """
+    """The current cycle: cycles are daily, so the UTC day is the identity."""
     return datetime.now(UTC).strftime("%Y-%m-%d")
 
 
 def _cycle_publishes(state: dict[str, object]) -> int:
-    """Read the number of successful publishes recorded for the current cycle.
-
-    :param state: The event's ``session_state``.
-    :returns: The count for today's cycle; ``0`` when the stored record
-        belongs to an earlier cycle or is unreadable.
-    """
-    raw = state.get(_CYCLE_PUBLISHES_KEY, "")
-    try:
-        value = json.loads(raw) if isinstance(raw, str) else raw
-    except (ValueError, TypeError):
-        return 0
+    """Successful publishes recorded for the current cycle; 0 if stale."""
+    value = _read_state(state, _CYCLE_PUBLISHES_KEY)
     if not isinstance(value, dict) or str(value.get("cycle", "")) != _cycle_id():
         return 0
     try:
@@ -179,154 +127,75 @@ def _cycle_publishes(state: dict[str, object]) -> int:
         return 0
 
 
-# ── Rules ────────────────────────────────────────────────────────────────────
-
-
-@dataclass(frozen=True)
-class _GateCtx:
-    """Everything the three rules need about one guarded ``tool_call``.
-
-    :param tool: The guarded tool being called.
-    :param slug: The backlog slug from the call arguments.
-    :param channel: The ``post_social`` channel, ``""`` for ``publish_content``.
-    :param approved: Slugs already seen reach ``APPROVED`` this session.
-    :param publishes: Successful publishes already seen this cycle.
-    :param max_publishes_per_cycle: The batch-publish ceiling.
-    """
-
-    tool: str
-    slug: str
-    channel: str
-    approved: tuple[str, ...]
-    publishes: int
-    max_publishes_per_cycle: int
-
-
-def _artifact_kind(ctx: _GateCtx) -> str:
-    """Name the artifact a guarded call is about to ship, for the ASK reason.
-
-    :param ctx: The gate context.
-    :returns: A human-readable artifact description.
-    """
-    if ctx.tool == _POST_SOCIAL:
-        channel = ctx.channel or "social"
-        return f"{channel} short-form post"
+def _artifact_kind(tool: str, channel: str) -> str:
+    """Name the artifact a guarded call is about to ship."""
+    if tool == _POST_SOCIAL:
+        return f"{channel or 'social'} short-form post"
     return "long-form blog draft (plus any staged social variants)"
 
 
-def _rule_r1_social_before_approval(ctx: _GateCtx) -> PolicyResponse | None:
-    """R1 — DENY short-form content that would precede its long-form post.
+def _decide_tool_call(event: PolicyEvent, max_publishes_per_cycle: int) -> PolicyResponse:
+    """Apply R1 (DENY) then R3 (DENY) then R2 (ASK) to a ``tool_call`` event."""
+    tool = _tool_name(event)
+    # The producing tier — read_backlog, update_backlog, save_artifact — is
+    # absent from _GUARDED_TOOLS and falls out here, ungated, on every call.
+    if tool not in _GUARDED_TOOLS:
+        return _ALLOW
 
-    :param ctx: The gate context.
-    :returns: A DENY response, or ``None`` when the rule does not apply.
-    """
-    if ctx.tool != _POST_SOCIAL or ctx.slug in ctx.approved:
-        return None
-    return {
-        "result": "DENY",
-        "reason": (
-            f"Publish gate: posting social content for '{ctx.slug}' is denied. "
-            f"No successful update_backlog(slug='{ctx.slug}', "
-            f"status='{_APPROVED_STATUS}') has been seen in this session, so the "
-            f"blog post for '{ctx.slug}' is not approved yet. Short-form content "
-            f"cannot precede the long-form post it cites."
-        ),
-    }
+    args = _tool_args(event.get("data"))
+    slug = str(args.get("slug", "")).strip() or "(no slug given)"
+    state = event.get("session_state") or {}
 
+    # R1 and R3 are stateful, and only the server engine persists state. The
+    # runner-local gate builds a fresh EvaluationContext per call and drops
+    # returned state_updates (runner/policy.py), so its session_state is
+    # permanently {} — deciding R1 there would deny EVERY post_social, a
+    # properly approved one included. Both stateful rules therefore defer when
+    # state is unavailable rather than judge on state known to be missing. Not
+    # a hole: stateless R2 below still ASKs on every guarded call there, as
+    # does the guarded_tools risk_score layer. A present-but-empty state on
+    # the server is a different case and still denies — that is R1's point.
+    if _state_available(event):
+        # R1 — short-form content may not precede the post it cites.
+        if tool == _POST_SOCIAL and slug not in _approved_slugs(state):
+            return {
+                "result": "DENY",
+                "reason": (
+                    f"Posting social content for '{slug}' is denied: no successful "
+                    f"update_backlog(slug='{slug}', status='{_APPROVED_STATUS}') in "
+                    f"this session, so the blog post for '{slug}' is not approved "
+                    f"yet. Short-form content cannot precede the long-form post it "
+                    f"cites."
+                ),
+            }
 
-def _rule_r2_shipping_needs_signature(ctx: _GateCtx) -> PolicyResponse | None:
-    """R2 — ASK on any other publish or post call.
+        # R3 — the cycle's publish ceiling is a hard stop, not a prompt.
+        published = _cycle_publishes(state)
+        if published >= max_publishes_per_cycle:
+            return {
+                "result": "DENY",
+                "reason": (
+                    f"Batch-publish ceiling reached: {published} successful "
+                    f"publishes already in cycle {_cycle_id()} (limit "
+                    f"{max_publishes_per_cycle}). {tool} for '{slug}' is refused "
+                    f"until the next cycle."
+                ),
+            }
 
-    :param ctx: The gate context.
-    :returns: An ASK response, or ``None`` when the rule does not apply.
-    """
-    if ctx.tool not in _GUARDED_TOOLS:
-        return None
+    # R2 — anything else that ships needs a human signature.
+    channel = str(args.get("channel", "")).strip()
     return {
         "result": "ASK",
         "reason": (
-            f"Publish gate: {ctx.tool} is about to ship the {_artifact_kind(ctx)} "
-            f"for '{ctx.slug}'. Drafting, editing and staging run unattended, but "
+            f"{tool} is about to ship the {_artifact_kind(tool, channel)} for "
+            f"'{slug}'. Drafting, editing and staging run unattended, but "
             f"publication requires a human signature. Approve?"
         ),
     }
 
 
-def _rule_r3_batch_ceiling(ctx: _GateCtx) -> PolicyResponse | None:
-    """R3 — ASK once the cycle's batch-publish ceiling has been reached.
-
-    Note on precedence: the contract fixes the rule order as R1, R2, R3, and
-    R2 matches *every* guarded tool. R3 is therefore a backstop that the
-    stated order never reaches — see this module's note in the PR. It is kept
-    as a live predicate rather than folded into R2 so the ceiling stays an
-    explicit, separately-reasoned rule; moving it ahead of R2 is the one-line
-    change that makes its reason surface.
-
-    :param ctx: The gate context.
-    :returns: An ASK response, or ``None`` when the rule does not apply.
-    """
-    if ctx.tool not in _GUARDED_TOOLS or ctx.publishes < ctx.max_publishes_per_cycle:
-        return None
-    return {
-        "result": "ASK",
-        "reason": (
-            f"Publish gate: batch-publish ceiling reached — {ctx.publishes} "
-            f"successful publishes already in cycle {_cycle_id()} (limit: "
-            f"{ctx.max_publishes_per_cycle}). {ctx.tool} for '{ctx.slug}' needs a "
-            f"fresh human signature before this cycle ships anything else. Approve?"
-        ),
-    }
-
-
-_RULES = (
-    _rule_r1_social_before_approval,
-    _rule_r2_shipping_needs_signature,
-    _rule_r3_batch_ceiling,
-)
-
-
-# ── Phase handlers ───────────────────────────────────────────────────────────
-
-
-def _decide_tool_call(event: PolicyEvent, max_publishes_per_cycle: int) -> PolicyResponse:
-    """Apply R1 → R2 → R3 to a ``tool_call`` event.
-
-    :param event: The ``tool_call`` policy event.
-    :param max_publishes_per_cycle: The batch-publish ceiling.
-    :returns: The first matching rule's verdict, else ALLOW.
-    """
-    tool = _tool_name(event)
-    # The free-flowing tier short-circuits before any rule can see it, so no
-    # future rule can accidentally gate the ungated tools.
-    if tool in _UNGATED_TOOLS or tool not in _GUARDED_TOOLS:
-        return _ALLOW
-
-    args = _tool_args(event.get("data"))
-    state = event.get("session_state") or {}
-    ctx = _GateCtx(
-        tool=tool,
-        slug=str(args.get("slug", "")).strip() or "(no slug given)",
-        channel=str(args.get("channel", "")).strip(),
-        approved=tuple(_approved_slugs(state)),
-        publishes=_cycle_publishes(state),
-        max_publishes_per_cycle=max_publishes_per_cycle,
-    )
-
-    for rule in _RULES:
-        decision = rule(ctx)
-        if decision is not None:
-            return decision
-    return _ALLOW
-
-
 def _record_approved_slug(event: PolicyEvent, payload: object) -> PolicyResponse:
-    """Record a slug that just reached ``APPROVED``, so R1 can let it through.
-
-    :param event: The ``update_backlog`` ``tool_result`` event.
-    :param payload: Its parsed result payload.
-    :returns: ALLOW, carrying a ``state_updates`` entry when a new slug was
-        approved.
-    """
+    """Record a slug that just reached ``APPROVED``, so R1 can pass it."""
     if not _succeeded(payload):
         return _ALLOW
     result = payload if isinstance(payload, dict) else {}
@@ -343,46 +212,31 @@ def _record_approved_slug(event: PolicyEvent, payload: object) -> PolicyResponse
     seen = _approved_slugs(event.get("session_state") or {})
     if slug in seen:
         return _ALLOW
+    value = json.dumps([*seen, slug])
     return {
         "result": "ALLOW",
-        "state_updates": [
-            {
-                "key": _APPROVED_SLUGS_KEY,
-                "action": "set",
-                "value": json.dumps([*seen, slug]),
-            },
-        ],
+        "state_updates": [{"key": _APPROVED_SLUGS_KEY, "action": "set", "value": value}],
     }
 
 
 def _record_publish(event: PolicyEvent, payload: object) -> PolicyResponse:
-    """Count a successful publish against the current cycle's ceiling.
-
-    :param event: The ``publish_content`` / ``post_social`` ``tool_result`` event.
-    :param payload: Its parsed result payload.
-    :returns: ALLOW, carrying a ``state_updates`` entry on success.
-    """
+    """Count a successful publish against the current cycle's ceiling."""
     if not _succeeded(payload):
         return _ALLOW
     count = _cycle_publishes(event.get("session_state") or {}) + 1
+    value = json.dumps({"cycle": _cycle_id(), "count": count})
     return {
         "result": "ALLOW",
-        "state_updates": [
-            {
-                "key": _CYCLE_PUBLISHES_KEY,
-                "action": "set",
-                "value": json.dumps({"cycle": _cycle_id(), "count": count}),
-            },
-        ],
+        "state_updates": [{"key": _CYCLE_PUBLISHES_KEY, "action": "set", "value": value}],
     }
 
 
 def _decide_tool_result(event: PolicyEvent) -> PolicyResponse:
-    """Record session state from a completed tool call. Never gates.
+    """Record session state from a completed call.
 
-    :param event: The ``tool_result`` policy event.
-    :returns: An ALLOW response, with ``state_updates`` when there is
-        something to remember.
+    *This* policy never gates a tool result, only ever returning ALLOW here.
+    The framework does allow gating one: the server withholds or suppresses
+    output on ASK / DENY and the runner collapses a result ASK into a denial.
     """
     tool = _tool_name(event)
     if tool not in {_UPDATE_BACKLOG, *_GUARDED_TOOLS}:
@@ -393,9 +247,6 @@ def _decide_tool_result(event: PolicyEvent) -> PolicyResponse:
     return _record_publish(event, payload)
 
 
-# ── Factory ──────────────────────────────────────────────────────────────────
-
-
 def publish_gate(
     *,
     max_publishes_per_cycle: int = 3,
@@ -403,7 +254,7 @@ def publish_gate(
     """Factory: gate publication while leaving drafting and staging free.
 
     :param max_publishes_per_cycle: Successful publishes allowed in one daily
-        cycle before the batch-publish ceiling rule applies.
+        cycle before further shipping is refused until the next cycle.
     :returns: A one-argument policy callable.
     """
 
@@ -420,23 +271,22 @@ def publish_gate(
 
 POLICY_REGISTRY: list[dict[str, Any]] = [  # type: ignore[explicit-any]
     {
-        "handler": (
-            "examples.content_factory.policies.publish_gate.publish_gate"
-        ),
+        "handler": "examples.content_factory.policies.publish_gate.publish_gate",
         "kind": "factory",
         "name": "Content Factory Publish Gate",
         "description": (
             "DENIES short-form social posts for a slug whose long-form post is "
-            "not yet APPROVED, ASKs on every publish_content / post_social "
-            "call, and ASKs again once a cycle's batch-publish ceiling is "
-            "reached. Drafting, editing and artifact staging stay ungated."
+            "not yet APPROVED, DENIES all further shipping once a cycle's "
+            "batch-publish ceiling is reached, and ASKs on every other "
+            "publish_content / post_social call. Drafting, editing and artifact "
+            "staging stay ungated."
         ),
         "params_schema": {
             "type": "object",
             "properties": {
                 "max_publishes_per_cycle": {
                     "type": "integer",
-                    "description": "Successful publishes per cycle before the ceiling ASK",
+                    "description": "Successful publishes per cycle before shipping is refused",
                     "default": 3,
                 },
             },

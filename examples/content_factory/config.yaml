@@ -91,7 +91,19 @@ tools:
 
 guardrails:
   policies:
-    # --- Custom: the publish gate (DENY social-before-approval, ASK to ship) ---
+    # Two complementary layers guard the same two shipping tools.
+    #
+    # publish_gate is the fine-grained, slug-aware one: it DENIES a social
+    # post whose blog post is not yet APPROVED, DENIES anything further once
+    # the cycle's publish ceiling is hit, and otherwise ASKs with a reason
+    # naming the slug and the artifact. guarded_tools below is the coarse
+    # unconditional brake: it knows nothing about slugs and simply escalates
+    # publish_content and post_social every time, so the gate holds even if
+    # the custom policy is removed or its state is unavailable.
+    #
+    # The two do not produce two prompts. The engine evaluates every policy
+    # and joins all ASK reasons into ONE pending approval, so the human sees a
+    # single request carrying both reason lines.
 
     publish_gate:
       type: function
@@ -100,10 +112,9 @@ guardrails:
         arguments:
           max_publishes_per_cycle: 3
 
-    # --- Guarded tools: shipping always escalates to a human ---
-    # threshold 0 with no tool_points means the session score is always at
-    # the threshold, so every guarded tool escalates on every call. The
-    # drafting and staging tools are absent from guarded_tools and stay free.
+    # threshold 0 with no tool_points means the session score is always at the
+    # threshold, so each guarded tool escalates on every call. Non-guarded
+    # tools abstain, so drafting and staging stay free.
 
     guarded_tools:
       type: function
