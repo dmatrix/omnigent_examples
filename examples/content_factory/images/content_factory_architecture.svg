@@ -1,0 +1,180 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 880" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <linearGradient id="userG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#48c9b0"/>
+      <stop offset="100%" stop-color="#1abc9c"/>
+    </linearGradient>
+    <linearGradient id="agentG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2980b9"/>
+      <stop offset="100%" stop-color="#1a5276"/>
+    </linearGradient>
+    <linearGradient id="codexG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e97c00"/>
+      <stop offset="100%" stop-color="#f5a623"/>
+    </linearGradient>
+    <linearGradient id="claudeG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#533483"/>
+      <stop offset="100%" stop-color="#6c3d9e"/>
+    </linearGradient>
+    <linearGradient id="policyG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e94560"/>
+      <stop offset="100%" stop-color="#c73e54"/>
+    </linearGradient>
+    <linearGradient id="freeG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1b6b4a"/>
+      <stop offset="100%" stop-color="#148f4b"/>
+    </linearGradient>
+    <linearGradient id="schedG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0f3460"/>
+      <stop offset="100%" stop-color="#1a5276"/>
+    </linearGradient>
+    <linearGradient id="dbG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1b4f72"/>
+      <stop offset="100%" stop-color="#154360"/>
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#7ec8e3"/>
+    </marker>
+    <marker id="arrRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#e94560"/>
+    </marker>
+    <marker id="arrGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#2ecc71"/>
+    </marker>
+  </defs>
+
+  <rect width="900" height="880" fill="url(#bg)"/>
+
+  <!-- Subtle grid -->
+  <g opacity="0.03" stroke="#fff" stroke-width="0.5">
+    <line x1="0" y1="100" x2="900" y2="100"/><line x1="0" y1="200" x2="900" y2="200"/>
+    <line x1="0" y1="300" x2="900" y2="300"/><line x1="0" y1="400" x2="900" y2="400"/>
+    <line x1="0" y1="500" x2="900" y2="500"/><line x1="0" y1="600" x2="900" y2="600"/>
+    <line x1="0" y1="700" x2="900" y2="700"/><line x1="0" y1="800" x2="900" y2="800"/>
+    <line x1="150" y1="0" x2="150" y2="880"/><line x1="300" y1="0" x2="300" y2="880"/>
+    <line x1="450" y1="0" x2="450" y2="880"/><line x1="600" y1="0" x2="600" y2="880"/>
+    <line x1="750" y1="0" x2="750" y2="880"/>
+  </g>
+
+  <!-- Title -->
+  <text x="450" y="40" text-anchor="middle" font-size="25" font-weight="600" fill="#fff">Content Factory</text>
+  <text x="450" y="65" text-anchor="middle" font-size="13" fill="#7ec8e3">Steps 1–11 run unattended · step 12 needs a human signature</text>
+
+  <!-- Row A: schedule + backlog -->
+  <g filter="url(#shadow)">
+    <rect x="40" y="95" width="265" height="66" rx="10" fill="url(#schedG)"/>
+    <rect x="595" y="95" width="265" height="66" rx="10" fill="url(#dbG)"/>
+  </g>
+  <text x="172" y="120" text-anchor="middle" font-size="14" font-weight="600" fill="#fff">Recurring schedule</text>
+  <text x="172" y="139" text-anchor="middle" font-size="11" font-family="monospace" fill="#a8e6cf">FREQ=DAILY;BYHOUR=9</text>
+  <text x="172" y="154" text-anchor="middle" font-size="10" fill="#f5b7b1">sys_scheduled_task_create — itself gated</text>
+
+  <text x="727" y="120" text-anchor="middle" font-size="14" font-weight="600" fill="#fff">backlog.md</text>
+  <text x="727" y="139" text-anchor="middle" font-size="11" fill="#7ec8e3">READY → DRAFTED → EDITED</text>
+  <text x="727" y="154" text-anchor="middle" font-size="11" fill="#7ec8e3">→ APPROVED → PUBLISHED</text>
+
+  <!-- Row B: supervisor -->
+  <g filter="url(#shadow)">
+    <rect x="300" y="195" width="300" height="76" rx="10" fill="url(#agentG)"/>
+  </g>
+  <text x="450" y="221" text-anchor="middle" font-size="16" font-weight="600" fill="#fff">content_factory</text>
+  <text x="450" y="241" text-anchor="middle" font-size="11" fill="#a8e6cf">supervisor · claude-sdk</text>
+  <text x="450" y="259" text-anchor="middle" font-size="11" fill="#ffd5dd">writes nothing — delegates every word</text>
+
+  <path d="M 172 161 L 172 178 L 360 178 L 360 195" stroke="#7ec8e3" stroke-width="2" fill="none" marker-end="url(#arr)"/>
+  <path d="M 727 161 L 727 178 L 540 178 L 540 195" stroke="#7ec8e3" stroke-width="2" fill="none" marker-end="url(#arr)"/>
+
+  <!-- Row C: three sub-agents -->
+  <g filter="url(#shadow)">
+    <rect x="35" y="315" width="262" height="86" rx="10" fill="url(#codexG)"/>
+    <rect x="319" y="315" width="262" height="86" rx="10" fill="url(#claudeG)"/>
+    <rect x="603" y="315" width="262" height="86" rx="10" fill="url(#claudeG)"/>
+  </g>
+  <text x="166" y="341" text-anchor="middle" font-size="15" font-weight="600" fill="#fff">blog_writer</text>
+  <text x="166" y="360" text-anchor="middle" font-size="11" fill="#2c1a00">Codex</text>
+  <text x="166" y="379" text-anchor="middle" font-size="11" fill="#fff">drafts the post</text>
+  <text x="166" y="394" text-anchor="middle" font-size="10" fill="#fdebd0">only agent with web_search</text>
+
+  <text x="450" y="341" text-anchor="middle" font-size="15" font-weight="600" fill="#fff">editor</text>
+  <text x="450" y="360" text-anchor="middle" font-size="11" fill="#d7bde2">Claude</text>
+  <text x="450" y="379" text-anchor="middle" font-size="11" fill="#fff">PASS · REVISE · REJECT</text>
+  <text x="450" y="394" text-anchor="middle" font-size="10" fill="#d7bde2">REVISE loops back to drafting</text>
+
+  <text x="734" y="341" text-anchor="middle" font-size="15" font-weight="600" fill="#fff">social_writer</text>
+  <text x="734" y="360" text-anchor="middle" font-size="11" fill="#d7bde2">Claude</text>
+  <text x="734" y="379" text-anchor="middle" font-size="11" fill="#fff">X thread + LinkedIn</text>
+  <text x="734" y="394" text-anchor="middle" font-size="10" fill="#d7bde2">only from a PASSed draft</text>
+
+  <path d="M 380 271 L 380 295 L 166 295 L 166 315" stroke="#7ec8e3" stroke-width="2" fill="none" marker-end="url(#arr)"/>
+  <path d="M 450 271 L 450 315" stroke="#7ec8e3" stroke-width="2" fill="none" marker-end="url(#arr)"/>
+  <path d="M 520 271 L 520 295 L 734 295 L 734 315" stroke="#7ec8e3" stroke-width="2" fill="none" marker-end="url(#arr)"/>
+
+  <!-- REVISE loop -->
+  <path d="M 319 358 L 297 358" stroke="#f5a623" stroke-width="2" fill="none" stroke-dasharray="5,4" marker-end="url(#arr)"/>
+
+  <!-- Row D: ungated tier -->
+  <g filter="url(#shadow)">
+    <rect x="35" y="430" width="830" height="92" rx="10" fill="url(#freeG)"/>
+  </g>
+  <text x="58" y="455" font-size="13" font-weight="600" fill="#fff">UNGATED TIER — no human in the loop</text>
+  <g font-size="11" font-family="monospace" fill="#fff">
+    <rect x="58" y="468" width="150" height="26" rx="6" fill="#0d4a32"/>
+    <text x="133" y="485" text-anchor="middle">read_backlog</text>
+    <rect x="222" y="468" width="160" height="26" rx="6" fill="#0d4a32"/>
+    <text x="302" y="485" text-anchor="middle">update_backlog</text>
+    <rect x="396" y="468" width="150" height="26" rx="6" fill="#0d4a32"/>
+    <text x="471" y="485" text-anchor="middle">save_artifact</text>
+  </g>
+  <text x="58" y="512" font-size="11" fill="#a8e6cf">artifacts/outlines/ · artifacts/drafts/ · artifacts/social/ · artifacts/cycles/ — staged freely, cheap to throw away</text>
+
+  <path d="M 166 401 L 166 415 L 450 415 L 450 430" stroke="#2ecc71" stroke-width="2" fill="none" marker-end="url(#arrGreen)"/>
+  <path d="M 734 401 L 734 415 L 470 415 L 470 430" stroke="#2ecc71" stroke-width="2" fill="none" marker-end="url(#arrGreen)"/>
+
+  <!-- Row E: THE GATE -->
+  <g filter="url(#shadow)">
+    <rect x="35" y="562" width="620" height="112" rx="10" fill="url(#policyG)"/>
+    <rect x="675" y="562" width="190" height="112" rx="10" fill="url(#userG)"/>
+  </g>
+  <text x="58" y="587" font-size="14" font-weight="600" fill="#fff">THE GATE — two complementary policies, one prompt</text>
+  <text x="58" y="610" font-size="11" font-family="monospace" fill="#ffecd2">publish_gate  (custom, stateful, slug-aware)</text>
+  <text x="72" y="628" font-size="10.5" fill="#fff">R1  DENY  social post whose blog is not APPROVED</text>
+  <text x="72" y="644" font-size="10.5" fill="#fff">R3  DENY  past the per-cycle publish ceiling (3)</text>
+  <text x="72" y="660" font-size="10.5" fill="#fff">R2  ASK   anything else, naming the slug</text>
+  <text x="380" y="610" font-size="11" font-family="monospace" fill="#ffecd2">guarded_tools  (builtin risk_score)</text>
+  <text x="394" y="628" font-size="10.5" fill="#fff">threshold 0 → ASK on</text>
+  <text x="394" y="644" font-size="10.5" fill="#fff">every guarded call,</text>
+  <text x="394" y="660" font-size="10.5" fill="#fff">slug-blind coarse brake</text>
+
+  <text x="770" y="600" text-anchor="middle" font-size="14" font-weight="600" fill="#0b3b30">Human</text>
+  <text x="770" y="622" text-anchor="middle" font-size="11" fill="#0b3b30">one pending approval</text>
+  <text x="770" y="640" text-anchor="middle" font-size="11" fill="#0b3b30">carrying both reasons</text>
+  <text x="770" y="662" text-anchor="middle" font-size="11" font-weight="600" fill="#7b241c">approve · deny</text>
+
+  <path d="M 450 522 L 450 562" stroke="#e94560" stroke-width="2.5" fill="none" marker-end="url(#arrRed)"/>
+  <path d="M 655 618 L 675 618" stroke="#fff" stroke-width="2" fill="none" marker-end="url(#arr)"/>
+
+  <!-- Row F: guarded tools -->
+  <g filter="url(#shadow)">
+    <rect x="140" y="716" width="240" height="62" rx="10" fill="#7b241c"/>
+    <rect x="520" y="716" width="240" height="62" rx="10" fill="#7b241c"/>
+  </g>
+  <text x="260" y="740" text-anchor="middle" font-size="13" font-weight="600" font-family="monospace" fill="#fff">publish_content</text>
+  <text x="260" y="762" text-anchor="middle" font-size="10.5" fill="#f5b7b1">drafts → artifacts/published/</text>
+  <text x="640" y="740" text-anchor="middle" font-size="13" font-weight="600" font-family="monospace" fill="#fff">post_social</text>
+  <text x="640" y="762" text-anchor="middle" font-size="10.5" fill="#f5b7b1">outbound to X / LinkedIn (stub)</text>
+
+  <path d="M 770 674 L 770 696 L 640 696 L 640 716" stroke="#1abc9c" stroke-width="2" fill="none" marker-end="url(#arrGreen)"/>
+  <path d="M 770 674 L 770 696 L 260 696 L 260 716" stroke="#1abc9c" stroke-width="2" fill="none" marker-end="url(#arrGreen)"/>
+  <text x="450" y="692" text-anchor="middle" font-size="10" fill="#a8e6cf">only after approval</text>
+
+  <!-- Footer note -->
+  <text x="450" y="818" text-anchor="middle" font-size="11.5" fill="#7ec8e3">Stateful rules are decided on the server, which holds session_state; the runner-local path defers and lets the coarse brake ASK.</text>
+  <text x="450" y="844" text-anchor="middle" font-size="11.5" fill="#f5b7b1">Drafting is cheap and reversible, so it is unattended. Publishing is neither, so it asks.</text>
+</svg>
