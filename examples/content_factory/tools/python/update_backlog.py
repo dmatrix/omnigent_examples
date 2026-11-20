@@ -33,7 +33,7 @@ def update_backlog(slug: str, status: str) -> dict:
         return {"error": f"Unable to read backlog: {error}"}
 
     pattern = re.compile(
-        rf"(?ms)(^## {re.escape(slug)}\r?\n(?:(?!^## ).)*?^- status: )([^\r\n]+)(?=\r?\n)"
+        rf"(?ms)(^## {re.escape(slug)}\r?\n(?:(?!^## ).)*?^- status: )([^\r\n]+)(?=\r?\n|\Z)"
     )
     match = pattern.search(content)
     if match is None:
