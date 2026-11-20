@@ -189,22 +189,27 @@ tools:
   builtins: [web_search]
 ```
 
-The **only** agent with `tools:`, and the only one with research access. Its
-prompt restricts it to the URLs in the backlog entry's `sources:` list, and
-requires it to say so in the draft if a source is unreachable rather than
-substituting another.
+The only **sub-agent** with an explicit `tools:` block, and the only agent
+configured with `web_search`. (The supervisor also has a `tools:` block, but it
+contains `agents:` rather than builtins.) Its prompt restricts it to the URLs in
+the backlog entry's `sources:` list, and requires it to say so in the draft if a
+source is unreachable rather than substituting another.
 
 ### `agents/editor/config.yaml`
 
-Claude on `claude-sdk`. Returns `PASS` / `REVISE` / `REJECT` against the rubric
-in `skills/blog-style/SKILL.md`. No tools — it reads the staged draft through
-`os_env`.
+Claude on `claude-sdk`. Returns `PASS` / `REVISE` / `REJECT`. No explicit
+`tools:` block — the supervisor sends it the draft and the backlog entry
+directly, and its prompt forbids it from writing files. Framework-owned tool
+groups are still enabled by default.
 
 ### `agents/social_writer/config.yaml`
 
 Claude on `claude-sdk`. Derives the X thread and LinkedIn post. The ordering
-constraint (only from a PASSed draft) is enforced twice: editorially by its
-prompt, and structurally by `publish_gate` R1.
+constraint is enforced at two different strengths, and the difference matters:
+its **prompt** requires a PASSed draft, while **`publish_gate` R1**
+structurally requires a prior successful `update_backlog(status="APPROVED")`.
+R1 cannot see an editor invocation or a verdict — it checks the recorded state
+transition, which the supervisor only performs after a `PASS`.
 
 ### Sub-agent guardrails
 
@@ -213,8 +218,8 @@ cost_budget:          max_cost_usd: 1.0, ask_thresholds_usd: [0.25]
 max_tool_calls_per_session:  limit 250
 ```
 
-The per-invocation cap catches a runaway sub-agent; the tool-call limit stops a
-drafting loop. The supervisor has no tool-call limit.
+The per-invocation cap catches a runaway sub-agent; the tool-call limit bounds
+runaway tool use. The supervisor has no tool-call limit.
 
 ---
 

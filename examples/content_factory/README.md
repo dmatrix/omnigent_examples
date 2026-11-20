@@ -12,7 +12,7 @@ A **software factory** is a pipeline that produces artifacts continuously and un
 
 This example draws that line explicitly, and puts it in one place: a **stateful contextual policy**.
 
-The factory runs on a daily [recurring schedule](https://www.databricks.com/blog/contextual-policies-omnigent-using-session-state-better-govern-ai-agents). Each cycle is a four-stage assembly line across **three harnesses**:
+On its first fresh run the supervisor **proposes** a daily [recurring schedule](https://www.databricks.com/blog/contextual-policies-omnigent-using-session-state-better-govern-ai-agents) — creating it needs your approval, so the factory does not start running on a timer until you say yes. Each cycle is a four-stage assembly line across **three harnesses**:
 
 | Stage | Agent | Harness | Produces |
 |---|---|---|---|
@@ -37,12 +37,12 @@ artifacts/published/<slug>/…            ← GATED    publish_content
 (outbound post to X / LinkedIn)         ← GATED    post_social
 ```
 
-Drafting is cheap and reversible, so it is unattended. Publishing is neither, so it asks. **Steps 1–11 of a cycle need no human at all. Only step 12 does.**
+Drafting is cheap and reversible, so it is unattended. Publishing is neither, so it asks. **Within a cycle, steps 1–11 need no human at all — only step 12 does.** (Setting up the schedule in the first place is also approval-gated; see [Continuous Operation](#continuous-operation).)
 
 ### Five tools
 
 - **`read_backlog`** — pulls the next `READY` feature from `backlog.md`. Free.
-- **`update_backlog`** — advances one entry through `READY → DRAFTED → EDITED → APPROVED → PUBLISHED`. Free.
+- **`update_backlog`** — sets one entry to any valid backlog status (`READY`, `DRAFTED`, `EDITED`, `APPROVED`, `PUBLISHED`). It validates the value, not the transition — the intended progression comes from the supervisor prompt. Free.
 - **`save_artifact`** — stages an outline, draft, social post or cycle log. Free.
 - **`publish_content`** — promotes a staged draft into `artifacts/published/`. **Guarded.**
 - **`post_social`** — the outbound egress action, a stub that does not actually post. **Guarded.**
@@ -59,7 +59,7 @@ Nothing to build. The backlog ships seeded with five real Omnigent features, so 
 cat examples/content_factory/backlog.md
 ```
 
-Three entries are `READY`, one is already `PUBLISHED` (the state machine skips it), and one is deliberately thin so you can watch the editor bounce it back as `REVISE`.
+Four entries are `READY` — one of them deliberately thin, so a cycle will pick it up and you can watch the editor bounce it back as `REVISE` — and one is already `PUBLISHED`, which the state machine skips.
 
 ---
 
@@ -123,8 +123,8 @@ The supervisor calls `sys_scheduled_task_create` with those parameters, and each
 
 Two other mechanisms exist if a daily RRULE is the wrong shape:
 
-- `sys_timer_set` with `repeat` — a short in-session loop, good for demos, but it dies with the runner.
-- `sys_reminder_set` — a durable one-shot wake-up.
+- `sys_timer_set` with `repeat` — a short runner-local loop, good for demos, but it dies with the runner. Timer tools are **off by default**: this config omits `timers:`, so you must add top-level `timers: true` to use it.
+- `sys_reminder_set` — a durable one-shot wake-up. Part of the scheduled-task tool group, which is enabled by default.
 
 ---
 

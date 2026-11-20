@@ -38,8 +38,9 @@ it's an argument to `risk_score_policy`. People always assume the former.
 cat examples/content_factory/backlog.md
 ```
 
-Three `READY`, one `PUBLISHED`, one deliberately thin. Flag the thin one now so
-the audience is waiting for it in Act 4:
+Four `READY` — one of them deliberately thin — and one already `PUBLISHED`,
+which the state machine skips. Flag the thin one now so the audience is waiting
+for it in Act 4:
 
 > That last entry is too vague to write 900 honest words from. Watch what the
 > editor does with it.
@@ -65,9 +66,9 @@ its harness by design:
 
 Then the point:
 
-> Eleven steps, two vendors, four artifacts on disk. Nobody approved anything.
-> That's deliberate — if drafting needed a signature, the factory would be a
-> very slow text editor.
+> Eleven steps, two vendors, five artifacts on disk — outline, draft, X thread,
+> LinkedIn post, cycle log. Nobody approved anything. That's deliberate — if
+> drafting needed a signature, the factory would be a very slow text editor.
 
 Show the staged output:
 
@@ -79,9 +80,13 @@ find examples/content_factory/artifacts -type f | sort
 
 ### Act 4: The bounce (1 min) — "The editor is not a rubber stamp"
 
-Run a cycle against the thin backlog entry. The editor returns `REVISE`, and
-the supervisor is forbidden by its prompt from proceeding — it routes the
-feedback back to `blog_writer` rather than shrugging and publishing.
+Run cycles until the thin entry comes up — it is seeded `READY`, so a normal
+cycle will select it. To go straight there, set the other `READY` entries to
+`DRAFTED` first, or just ask the factory to run the next cycle repeatedly.
+
+The editor returns `REVISE`, and the supervisor is forbidden by its prompt from
+proceeding — it routes the feedback back to `blog_writer` rather than shrugging
+and publishing.
 
 > The supervisor cannot overrule the editor, and cannot substitute its own
 > opinion of the draft. The verdict is the verdict.
@@ -132,9 +137,9 @@ nags is not a ceiling. It holds until the next cycle.
 grep -A4 'Continuous operation' examples/content_factory/config.yaml
 ```
 
-The supervisor calls `sys_scheduled_task_create` with
-`FREQ=DAILY;BYHOUR=9;BYMINUTE=0` on first run. Close on the detail that lands
-best:
+On its first fresh run the supervisor *proposes* the schedule, calling
+`sys_scheduled_task_create` with `FREQ=DAILY;BYHOUR=9;BYMINUTE=0`. Close on the
+detail that lands best:
 
 > Creating that schedule is itself approval-gated. The first thing this agent
 > ever asks you to approve is its own existence — which is exactly the right

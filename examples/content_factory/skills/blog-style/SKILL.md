@@ -5,10 +5,13 @@ description: The content factory's editorial rubric. Use when drafting or review
 
 # Blog Style — the factory's editorial rubric
 
-This is the standard the `editor` applies and the standard `blog_writer` should
-write to. It is deliberately strict about sourcing, because the factory drafts
-unattended and a confidently wrong post is the most expensive thing it can
-produce.
+Use this rubric when drafting or reviewing factory output. It is deliberately
+strict about sourcing, because the factory drafts unattended and a confidently
+wrong post is the most expensive thing it can produce.
+
+The `editor` sub-agent carries its own checklist in its prompt; this skill is
+the fuller statement of the same standard. Where the two ever disagree, **the
+sub-agent prompt wins** — it is the operative instruction.
 
 ## Verdicts
 
@@ -76,14 +79,18 @@ dashes over semicolons. No emoji in the blog body.
 ## Short-form derivation
 
 Short-form copy is derived **from a PASSed draft only** — never written ahead of
-it. The policy enforces this, but the rule is editorial first: a social post is
-a pointer to something that exists.
+it. This is enforced at two strengths: editorially by the `social_writer`
+prompt, and structurally by `publish_gate` R1, which DENIES `post_social` for a
+slug with no prior successful `update_backlog(status="APPROVED")`. R1 cannot
+see the editor's verdict itself — it checks the recorded state transition,
+which the supervisor performs only after a `PASS`. The rule is editorial first:
+a social post is a pointer to something that exists.
 
-**X thread.** 3–5 posts. The first post must stand alone and contain the single
-most surprising true fact from the piece. No "a thread 🧵". No hashtags. Final
-post carries the link.
+**X thread.** 4–6 posts. The first post must stand alone and contain the single
+most surprising true fact from the piece. No "a thread 🧵". At most one hashtag
+across the whole thread. Final post carries the link.
 
-**LinkedIn.** 120–200 words, one idea, one concrete detail from the post, and a
+**LinkedIn.** 150–250 words, one idea, one concrete detail from the post, and a
 closing line that invites disagreement rather than applause. No hashtag block.
 
 Both must be checkable against the blog draft line by line. Any claim in
