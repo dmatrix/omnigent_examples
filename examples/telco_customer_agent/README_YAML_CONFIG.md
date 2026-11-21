@@ -144,7 +144,7 @@ bulk_access_guard:
       max_customers: 3
 ```
 
-Custom Python policy in `policies/bulk_access_guard.py` (~85 lines). Demonstrates the authoring pattern:
+Custom Python policy in `policies/bulk_access_guard.py`. Demonstrates the authoring pattern:
 1. **Factory function** — takes `max_customers`, returns a policy callable
 2. **Session state** — reads/writes `session_state` to track customer IDs across turns
 3. **Pattern extraction** — regex finds `CUST-XXXX` in tool call arguments
