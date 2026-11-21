@@ -70,6 +70,22 @@ prompt: |
   alternative: run steps 1-11 for every entry to stage the entire backlog, then
   publish one entry at a time. Do not promise an unattended full-backlog run.
 
+  Mandatory scheduling precondition — before you read the backlog or start a
+  workflow cycle, get this session's `agent_id`, then call
+  `sys_scheduled_task_list`. It lists the caller's tasks across agents: inspect
+  each returned task's `agent_id`, and treat a task as existing only when its
+  `agent_id` matches this session's agent. Ignore tasks for other agents. If
+  there is no matching task, call `sys_scheduled_task_create` for this agent
+  with `rrule: "FREQ=DAILY;BYHOUR=9;BYMINUTE=0"`, `session_mode: new`, and a
+  `max_cost_usd` for the run. The precondition is satisfied only by that actual
+  tool invocation or by a matching task from the list; describing the schedule
+  or saying an approval card will appear does not satisfy it. Creating a
+  schedule is approval-gated, so briefly explain that it starts one fresh
+  session for one factory cycle every day at 09:00 UTC, then invoke the tool in
+  the same turn — do not end the turn after the explanation. If the human
+  declines the schedule approval, say that no schedule was created and proceed
+  with this cycle; do not stall or retry.
+
   Workflow for ONE cycle:
   1. Call `read_backlog` to pull the next READY feature. If nothing is
      READY, say so and stop — do not invent a topic.
@@ -117,15 +133,6 @@ prompt: |
   actually shipped. If a publish or post call is denied or parked by
   policy, report the reason verbatim and stop — do not try to route around
   it, and do not mark the entry `PUBLISHED`.
-
-  Continuous operation:
-  On the FIRST run of a fresh session, create the recurring cycle with
-  `sys_scheduled_task_create` using
-  `rrule: "FREQ=DAILY;BYHOUR=9;BYMINUTE=0"`, `session_mode: new`, and a
-  `max_cost_usd` for the run. Creating a schedule is itself
-  approval-gated, so the human will be asked to confirm it — explain what
-  the schedule will do before you call the tool. Do not create a second
-  schedule on later runs.
 
   Always tell the user which agent is working on each step and which
   harness it runs on, so the cross-harness delegation is visible. Do not

@@ -149,6 +149,7 @@ STAGING_CALLS = (
     ("web_search", {"query": "omnigent"}),
     ("ui_open_file", {"path": "artifacts/dashboard.md"}),
     ("sys_scheduled_task_create", {"agent_id": "x"}),
+    ("sys_scheduled_task_list", {}),
 )
 
 # Documentation that must survive, phrase by phrase, because the thing it
@@ -174,6 +175,18 @@ REQUIRED_DISCLOSURES = {
     DEMO: ("apply_patch",),
     PUBLISH_GATE: ("apply_patch",),
 }
+
+# The schedule proposal has not yet been demonstrated as an actual tool call.
+# These prose files must keep saying so until a durable transcript proves it.
+SCHEDULE_CAVEAT_FILES = (README, DEMO)
+SCHEDULE_CAVEAT_REQUIRED = "not yet reliably reproduced"
+SCHEDULE_CAVEAT_OVERCLAIMS = (
+    "schedule proposal is verified",
+    "schedule proposal has been verified",
+    "schedule proposal is reliable",
+    "schedule proposal works reliably",
+    "the schedule now reliably works",
+)
 
 # Wording that is false about this bundle. Each of these was actually written
 # down at some point in this change's history, which is why they are named
@@ -562,6 +575,27 @@ def test_no_file_in_the_bundle_still_says_an_agent_declares_os_env() -> None:
                 if STALE_OS_ENV_CLAIM.search(clause) and not STALE_EXEMPT.search(clause):
                     offenders.append(f"{path.name}:{number}: {clause.strip()[:70]}")
     assert not offenders, f"stale 'declares os_env' claims: {offenders}"
+
+
+def test_schedule_caveats_do_not_claim_an_unconfirmed_proposal() -> None:
+    """The live transcript recorded narration, not a schedule-create call.
+
+    This opens both prose files because the inaccurate proposal claim survived
+    a passing test suite in the prior round. Keep the explicit caveat until a
+    durable conversation transcript contains `sys_scheduled_task_create`.
+    """
+    offenders = []
+    for path in SCHEDULE_CAVEAT_FILES:
+        lowered = path.read_text(encoding="utf-8").lower()
+        assert SCHEDULE_CAVEAT_REQUIRED in lowered, (
+            f"{path.name} no longer says the schedule proposal is unconfirmed"
+        )
+        offenders += [
+            f"{path.name}: {claim!r}"
+            for claim in SCHEDULE_CAVEAT_OVERCLAIMS
+            if claim in lowered
+        ]
+    assert not offenders, f"schedule caveats overclaim confirmed behaviour: {offenders}"
 
 
 def test_blog_writer_config_documents_why_it_keeps_the_codex_harness() -> None:

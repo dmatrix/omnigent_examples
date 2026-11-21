@@ -158,22 +158,29 @@ The default config pins Databricks AI Gateway endpoints (`databricks-claude-sonn
 
 ## Continuous Operation
 
-There is **no cron field in agent YAML**. Recurring work is created at runtime, by the agent, through a tool — so the factory sets up its own schedule on first run:
+There is **no cron field in agent YAML**. Recurring work is created at runtime,
+by the agent, through a tool. Before starting a cycle, the factory checks the
+caller's schedules and creates one only when none targets this agent:
 
 ```yaml
 rrule: "FREQ=DAILY;BYHOUR=9;BYMINUTE=0"
 session_mode: new
 ```
 
-The supervisor calls `sys_scheduled_task_create` with those parameters, and each firing starts a fresh session that runs one cycle.
+The intended `sys_scheduled_task_create` call uses those parameters, and each
+firing starts a fresh session that runs one cycle.
 
 **Creating a schedule is itself approval-gated.** The first thing you will be asked to approve is the factory's own existence — which is the right default for an agent that proposes to wake up every morning and write on your behalf.
 
-> **Observed behaviour, honestly:** in two live runs the supervisor did **not**
-> propose the schedule — it went straight into the content workflow. The tool is
-> present (`sys_scheduled_task_create` resolves; all builtin tool groups default
-> on), so this is prompt noncompliance, not a missing capability. Treat the
-> schedule step as intended behaviour that is not yet reliably reproduced.
+> **Observed behaviour, honestly:** the earlier two live runs skipped the
+> schedule because its instruction was trailing prose after the thirteen
+> workflow steps, not because the capability was absent. The prompt now makes
+> schedule discovery a mandatory precondition, and a fresh run did call
+> `sys_scheduled_task_list` before reading the backlog. But it then narrated
+> creation rather than invoking `sys_scheduled_task_create`, so the schedule
+> proposal is not yet reliably reproduced. That check used the required
+> ephemeral route (`--server local --no-session`); persistent local and remote
+> runs still reject this example's custom policy before a session starts.
 
 Two other mechanisms exist if a daily RRULE is the wrong shape:
 
