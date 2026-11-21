@@ -78,40 +78,76 @@ publish_gate:
   function:
     path: examples.content_factory.policies.publish_gate.publish_gate
     arguments:
-      max_publishes_per_cycle: 3
+      max_articles_per_cycle: 3
 ```
 
 `path` is a dotted import path to a **factory function** that returns the policy
 callable; `arguments` are bound to that factory's signature. The policy keeps
 state in `session_state` across turns and returns `state_updates`.
 
-Three rules, in evaluation order:
+Four rules. R1, R3 and R2 are evaluated in that order on the two guarded
+shipping tools; R4 stands alone on `update_backlog`:
 
 | Rule | Verdict | Condition |
 |---|---|---|
 | R1 | **DENY** | `post_social` for a slug with no prior successful `update_backlog(status="APPROVED")` |
-| R3 | **DENY** | this slug is **not already** among the articles shipped this cycle **and** the cycle's article ceiling (`max_publishes_per_cycle`) is already reached |
+| R3 | **DENY** | this slug is **not already** among the articles shipped this cycle **and** the cycle's article ceiling (`max_articles_per_cycle`) is already reached |
 | R2 | **ASK** | any other `publish_content` or `post_social`, reason naming the slug and artifact |
+| R4 | **DENY** | `update_backlog(status="PUBLISHED")` for a slug this session did not watch *fully* ship — `publish_content` succeeded **and** every staged social variant was posted |
+
+R4 is the odd one out and deliberately so: it is the only rule that looks at a
+tool outside the guarded pair, so it lives in its own early branch rather than
+threaded through the R1 → R3 → R2 chain. It cannot affect those three, and it
+does not gate `update_backlog` for `READY`, `DRAFTED`, `EDITED` or `APPROVED`.
 
 R3 counts **articles** — distinct backlog slugs — not guarded calls. One article
 ships in three guarded calls (`publish_content` plus a `post_social` per
 channel), so a call-based count would stop the second article mid-flight at
-`max_publishes_per_cycle: 3`. The two-part condition is what gives the rule its
+`max_articles_per_cycle: 3`. The two-part condition is what gives the rule its
 semantics: **finish what you started, but do not start a new one.** A slug the
 cycle has already counted is never refused by R3, so no article is left
 published with its social copy stranded; a new slug is refused on its first
 call.
 
-The argument keeps the name `max_publishes_per_cycle`, since that is the key in
-`config.yaml`; read it as *articles per cycle*.
+The argument is named `max_articles_per_cycle` for exactly that reason — it
+counts articles, so it says so. Note what it bounds: the articles a cycle may
+**start**. Because an already-counted slug is exempt, the same article can be
+re-shipped inside the cycle without R3 noticing; R2 is what holds there, asking
+on every shipping call. Do not read `3` as a cap on outbound actions.
 
 Order matters. R1 before R3 means an unapproved post at the ceiling reports the
 *sequencing* violation, which is the more useful message. R3 before R2 is what
 makes the ceiling a real stop rather than a differently-worded ASK — an earlier
 draft of this policy had R2 first, which silently made R3 unreachable.
 
-`read_backlog`, `update_backlog` and `save_artifact` are never gated on any
-path.
+`read_backlog` and `save_artifact` are never gated on any path, and neither is
+`update_backlog` for any status that describes work in progress. The terminal
+`PUBLISHED` status is the one checked call — R4 above — because that one is not
+a description of work but a claim the work finished, and it is the column a
+status dashboard reads. R4 answers `DENY` or `ALLOW`, never `ASK`, so the
+producing tier stays unattended end to end.
+
+### Why R4 reads a different record from R3
+
+The policy keeps **two** shipping records under separate scopes, and merging
+them would be a bug:
+
+| key | scope | whose record |
+|---|---|---|
+| `_publish_gate_cycle_slugs` | one UTC day | R3's ceiling — resetting at midnight is the point |
+| `_publish_gate_ship_progress` | the session, per slug | R4's completeness check |
+
+If R4 read the ceiling's record it would DENY a legitimate `PUBLISHED` write
+whenever the publish and the status write straddled UTC midnight, and the first
+call of a new cycle would reset that record out from under a perfectly good
+article. R4 therefore uses the session scope, which matches R1's: in the normal
+flow steps 12 and 13 happen moments apart in one session.
+
+The cost of that choice, stated plainly: the daily schedule uses
+`session_mode: new`, so a `PUBLISHED` write in a *later* session than the
+publish is refused. And R4 is not a security boundary — the supervisor has
+`os_env: caller_process` with `sandbox: none`, so it could rewrite
+`backlog.md` directly. R4 raises the floor on careless optimism.
 
 ### Builtin: `guarded_tools`
 
@@ -303,9 +339,11 @@ guardrails
    the cycle's shipped set; that article's later calls find it already there and
    add nothing, which is what makes the set size an article count.
 6. Once `publish_content` and every `post_social` for the slug have succeeded,
-   the supervisor's step 13 sets the entry to `PUBLISHED`. That write is
-   ungated, and it does **not** disturb R1's approved-slug record — `PUBLISHED`
-   neither removes an `APPROVED` entry nor creates one.
+   the supervisor's step 13 sets the entry to `PUBLISHED`. R4 checks that claim
+   against `_publish_gate_ship_progress` and **ALLOW**s it, because the session
+   watched the whole thing ship. The write does **not** disturb R1's
+   approved-slug record — `PUBLISHED` neither removes an `APPROVED` entry nor
+   creates one.
 
 ### Flow 3: the fourth article in one cycle
 
@@ -320,12 +358,30 @@ slugs is at the same ceiling, but its slug is already in the set, so R3 skips it
 and R2 **ASK**s as usual. The in-flight article finishes; the fourth never
 starts.
 
+### Flow 4: a `PUBLISHED` claim for a half-shipped article
+
+1. `publish_content(slug="e")` succeeds; the staged `e-x.md` and
+   `e-linkedin.md` posts are never posted.
+2. The supervisor calls `update_backlog(slug="e", status="PUBLISHED")`.
+3. R4 reads `_publish_gate_ship_progress["e"]`: `published` is true, but both
+   staged channels are outstanding.
+4. **DENY**, naming the outstanding posts. The entry stays `APPROVED`.
+
+Had the cycle staged only a LinkedIn variant and posted it, the same write would
+be **ALLOW**ed — completeness is measured against what was staged, not against a
+fixed list of channels.
+
 ### Why state is read on `tool_result`, not `tool_call`
 
 The engine withholds `state_updates` when a policy returns `ASK`, so a gated
 call can never record itself from `tool_call`. The policy therefore gates on
 `tool_call` and does its bookkeeping on `tool_result`. Success is read
 fail-closed: a result dict with no `error` counts, anything else does not.
+
+Three tools feed that bookkeeping, and one of them is a tool the policy never
+gates: `save_artifact`. Watching its results is how R4 learns which social
+variants a cycle staged, and therefore which posts an article owes before it can
+call itself published. Observing a tool is not gating it.
 
 ### The two evaluation paths
 
