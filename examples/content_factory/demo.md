@@ -397,6 +397,11 @@ On its first fresh run the supervisor *proposes* this via
 `sys_scheduled_task_create`. Each firing starts a new session and runs one
 cycle.
 
+**Heads up:** across two runs the supervisor skipped this step and went straight
+to drafting. The tool is available — this is the prompt not being followed
+reliably, not a configuration gap. If no proposal appears, that is the known
+behaviour rather than something you did wrong.
+
 **Creating a schedule is itself approval-gated.** The first thing this agent
 asks you to approve is its own existence — which is the right default for
 something proposing to wake up every morning and write in your name.

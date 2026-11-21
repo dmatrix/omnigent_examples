@@ -40,7 +40,7 @@ omnigent run examples/cross_harness_coding/ --server https://omnigent-<id>.aws.d
 # once you have run `omnigent login`, because a configured remote becomes the
 # default for a plain `omnigent run`. PYTHONPATH is needed so the CLI preflight
 # can import the `examples.*` policy modules.
-PYTHONPATH=$(pwd) omnigent run examples/content_factory/ --server local
+PYTHONPATH=$(pwd) omnigent run examples/content_factory/ --server local --no-session
 
 # Fresh session (no persistence)
 omnigent run examples/telco_customer_agent/ --no-session
@@ -174,20 +174,54 @@ of the example that uses it, and is auto-discovered from there.
   **Unaffected:** `cross_harness_coding`, `harness_portability`, `slow_burn_guard`
   -- these use only `omnigent.policies.builtins.*`.
 
-  **Workaround -- run locally:**
+  **`--server local` alone is NOT enough.** Verified by running both forms:
+
+  | invocation | custom handler accepted? |
+  |---|---|
+  | `--server local --no-session` | yes -- session created |
+  | `--server local` (persistent) | **no** -- rejected before session creation |
+
+  Persistent local mode goes through the host daemon (loopback `:6767`), which
+  uploads the agent as a session bundle and validates it with
+  `enforce_handler_allowlist=True` -- the same check a remote server applies.
+  Only `--no-session` takes the legacy in-process ephemeral path, which trusts
+  a locally authored spec.
+
+  **Ephemeral smoke run -- the only working one-command route:**
 
   ```bash
-  PYTHONPATH=$(pwd) omnigent run examples/content_factory/ --server local
+  PYTHONPATH=$(pwd) omnigent run examples/content_factory/ --server local --no-session
   ```
 
-  `--server local` spawns a loopback server and bypasses the uploaded-bundle
-  allowlist; `PYTHONPATH` makes the `examples.*` policy module importable, which
-  CLI preflight does not do from the workspace directory on its own.
+  `PYTHONPATH=$(pwd)` makes the `examples.*` policy module importable; CLI
+  preflight does not import from the workspace directory on its own.
+  `--no-session` is **required**, not optional.
 
-  **To use a remote server**, an admin must install the policy module into both
-  the server and runner Python environments, have it export a `POLICY_REGISTRY`
-  list, add its dotted path to `policy_modules:` in the server config, and
-  restart.
+  **What ephemeral costs you.** The database, artifacts, schedules and
+  conversation state are per-run and temporary. State accumulates *within* one
+  invocation but not across them, so anything depending on durable
+  `session_state` -- including `content_factory`'s own R1/R3/R4 publish rules --
+  cannot be validated across separate CLI runs this way.
+
+  **A second, independent wall for uploaded bundles.** A bundle may also not
+  ship server-side Python/TypeScript tool files at all:
+
+  ```
+  uploaded agent bundle may not ship a server-side Python/TS tool file
+  (tool 'post_social' -> 'tools/python/post_social.py'); its module body is
+  imported and executed in-process on the runner at tool discovery, so it is
+  rejected from untrusted uploads
+  ```
+
+  This applies to bundle uploads to a persistent local daemon as well as to a
+  remote server, and does **not** apply to the `--no-session` route or to a
+  pre-registered trusted operator agent. So passing `--server local` cannot make
+  these examples persistent -- two separate checks block it.
+
+  **For a persistent or remote deployment**, an operator must install the policy
+  module into both the server and runner Python environments, have it export a
+  `POLICY_REGISTRY` list, add its dotted path to `policy_modules:` in the server
+  config, pre-register the agent as an operator-owned agent, and restart.
 
 - **`omnigent login` silently changes what a plain `omnigent run` does.** Once a
   remote server is configured it becomes the default target, so
