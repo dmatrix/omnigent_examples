@@ -34,7 +34,11 @@ Harness and model live **here**, not at the top level. There is no top-level
 
 ### OS Environment
 
+**Absent, on purpose.** The supervisor, `editor` and `social_writer` declare no
+`os_env` at all. Only `blog_writer` still has one:
+
 ```yaml
+# agents/blog_writer/config.yaml — the only config with this block
 os_env:
   type: caller_process
   cwd: .
@@ -42,8 +46,40 @@ os_env:
     type: none
 ```
 
-Identical in all four configs. `caller_process` + `cwd: .` is what lets the
-tools resolve `backlog.md` and `artifacts/` relative to the repo root.
+All four configs used to carry it. It was removed from three because a real run
+of this example used `sys_os_edit` to rewrite
+`agents/blog_writer/config.yaml` — switching it to `harness: codex-native` with
+`yolo: true` — after a machine-level sandbox failure launching Codex. It turned
+a sandbox off to clear an obstacle, in an example about human approval for
+irreversible actions.
+
+`os_env` *is* the capability: the loader registers `sys_os_read` /
+`sys_os_write` / `sys_os_edit` / `sys_os_shell` for an agent only when the spec
+declares the block, and skips registration entirely when it does not. On
+`claude-sdk` the native `Write` / `Edit` / `Bash` tools are never exposed
+either (the harness's base set is `Skill` + `ToolSearch`, with `Bash` added
+only for a *sandboxed* CLI). So with no `os_env`, those three agents hold no
+file-write tool of any kind.
+
+It was not needed. `cwd: .` is not what lets the five tools resolve
+`backlog.md` and `artifacts/` — the tools run as server-side subprocesses and
+resolve paths from `os.getcwd()`, which is the workspace root, independent of
+any agent's `os_env`. Removing the block costs the example nothing; verified by
+running all five tools.
+
+`blog_writer` keeps its block because the Codex harness launch is sensitive to
+exactly the sandbox configuration that failed in that run. That leaves a real
+one-hop bypass — the supervisor can ask a sub-agent that *can* write files to
+write one. Documented, not closed. See
+[README.md](README.md#what-this-does-not-close).
+
+Why not a constrained sandbox instead? `os_env.sandbox` accepts a `write_paths`
+allowlist, which would be a kernel-level boundary and would cover shell too.
+Both `type: darwin_seatbelt` and `type: auto` fail launch preparation on the
+development machine (`Cannot validate trusted runtime: mutable hard-link
+alias…`), and `windows_jobobject` provides no filesystem isolation and is
+rejected for sandboxed `claude-sdk` launches. A config that will not start is
+how you get the next `yolo: true`. If your host supports a sandbox, prefer it.
 
 ### Tools
 
@@ -159,9 +195,11 @@ flow steps 12 and 13 happen moments apart in one session.
 
 The cost of that choice, stated plainly: the daily schedule uses
 `session_mode: new`, so a `PUBLISHED` write in a *later* session than the
-publish is refused. And R4 is not a security boundary — the supervisor has
-`os_env: caller_process` with `sandbox: none`, so it could rewrite
-`backlog.md` directly. R4 raises the floor on careless optimism.
+publish is refused. And R4 is not a security boundary: it gates a tool call, so it says
+nothing about a supervisor that rewrites `backlog.md` directly instead of
+calling `update_backlog`. That route is now shut by the supervisor holding no
+file-write tool (see [OS Environment](#os-environment)) — a different mechanism,
+not a stronger R4. R4 raises the floor on careless optimism.
 
 ### Builtin: `guarded_tools`
 
@@ -189,6 +227,49 @@ zero points and abstain, so drafting and staging stay free.
 This layer is deliberately redundant with `publish_gate`. It knows nothing about
 slugs or state, so it keeps the gate standing if the custom policy is removed,
 misconfigured, or evaluating on a path where its state is unavailable.
+
+### Builtin: `no_self_modification`
+
+```yaml
+no_self_modification:
+  type: function
+  function:
+    path: omnigent.policies.builtins.orchestration.read_only_os
+    arguments:
+      deny_reason: |
+        The supervisor may not write files. ...
+```
+
+A backstop for the missing [`os_env`](#os-environment), not the mechanism.
+`read_only_os` DENIES `sys_os_write` / `sys_os_edit` and the native `Write` /
+`Edit` / `MultiEdit` / `NotebookEdit` aliases, and abstains on everything else
+— so all five staging tools, sub-agent dispatch and every read stay untouched.
+
+**It is inert as configured.** The supervisor declares no `os_env`, so it holds
+none of the tools this policy gates. It is here because `os_env` is the
+boilerplate CLAUDE.md documents for filesystem access: re-adding the block is a
+plausible accident, and this makes that accident non-silent rather than a
+restored capability.
+
+Two things worth noting about the shape:
+
+- **`DENY`, not `ASK`.** The self-edit it exists to prevent happened in a
+  headless run, and the model's own written justification for disabling the
+  sandbox was that headless sub-agents cannot answer approval prompts. An `ASK`
+  nobody can answer is the pressure that produced the edit.
+- **It is a registry builtin.** A custom handler here would make the supervisor
+  unloadable against a remote Omnigent server. This bundle already needs
+  `--server local` for `publish_gate`, but there is no reason to deepen that.
+
+It does not gate `sys_os_shell`. Moot while `os_env` is absent — there is no
+shell tool either — but it is why this is the second layer and not the first.
+
+Placement matters, for an unrelated reason: `read_backlog` finds
+`article_ceiling` by scanning `config.yaml` for `guardrails:` → `  policies:` →
+`    publish_gate:` → `      function:` → `        arguments:` as an ordered
+line sequence. A policy inserted *between* those lines would silently break the
+dashboard's ceiling. This one sits after `publish_gate`, and
+`test_self_edit_guard.py` asserts it stays there.
 
 ### Cost governance
 
@@ -249,8 +330,8 @@ failed publish leaves the entry at `APPROVED`.
 
 ## Sub-agents
 
-One file per `agents/<name>/` directory, nothing else in it. 62, 60 and 59 lines
-respectively.
+One file per `agents/<name>/` directory, nothing else in it. Only
+`blog_writer` declares [`os_env`](#os-environment).
 
 ### `agents/blog_writer/config.yaml`
 
@@ -274,7 +355,9 @@ source is unreachable rather than substituting another.
 
 Claude on `claude-sdk`. Returns `PASS` / `REVISE` / `REJECT`. No explicit
 `tools:` block — the supervisor sends it the draft and the backlog entry
-directly, and its prompt forbids it from writing files. Framework-owned tool
+directly. Its prompt forbids it from writing files, and with no
+[`os_env`](#os-environment) it also cannot: that closes the delegation route
+around the supervisor's own lack of filesystem access. Framework-owned tool
 groups are still enabled by default.
 
 ### `agents/social_writer/config.yaml`
@@ -310,6 +393,9 @@ runaway tool use. The supervisor has no tool-call limit.
 - **No `tools:` block on the supervisor beyond `agents:`** — the five factory
   tools are auto-discovered.
 - **No `skills:` key** — `skills/blog-style/` is found by convention.
+- **No `os_env` on the supervisor, `editor` or `social_writer`** — and
+  that is the point, not an omission. See
+  [OS Environment](#os-environment).
 
 ---
 
@@ -324,7 +410,7 @@ executor
   model
   config.harness
 prompt
-os_env
+os_env                           blog_writer only — see OS Environment
   type
   cwd
   sandbox.type
