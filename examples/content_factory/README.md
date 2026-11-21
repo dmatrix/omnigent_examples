@@ -48,20 +48,22 @@ transitions — cycle start, `DRAFTED`, `APPROVED`, the approval gate, and real
 opens that file once per session so the UI can keep a persistent pane beside
 the transcript. The table is **read-only and derived from disk**: it shows each
 backlog status plus only the outline, draft, social, published, and posting
-files that actually exist. It never pretends to know a non-durable sub-agent
-step.
+files that actually exist. It reports articles published to date from durable
+published draft files, never as the session-scoped publish-ceiling state. It
+never pretends to know a non-durable sub-agent step.
 
 There is deliberately **no Start button**. Example agents have no
 agent-configurable button surface, so starting a cycle remains a chat message;
 the framework's native Approve/Reject card already supplies the real review
-button at the publish gate. The dashboard shows the article ceiling and marks
-the current publish attempt when that ceiling denies it.
+button at the publish gate. It shows articles published to date separately from
+the configured article ceiling, and marks the current publish attempt when that
+ceiling denies it.
 
-### Six tools
+### Five tools
 
-- **`read_backlog`** — pulls the next `READY` feature from `backlog.md`. Free.
-- **`read_dashboard`** — returns the entire file-order backlog and its real
-  artifact state from `backlog.md` and `artifacts/`. Read-only and free.
+- **`read_backlog`** — pulls the next `READY` feature from `backlog.md`; its
+  `include_artifacts=True` mode returns the entire file-order, disk-derived
+  dashboard. Free.
 - **`update_backlog`** — sets one entry to any valid backlog status (`READY`, `DRAFTED`, `EDITED`, `APPROVED`, `PUBLISHED`). It validates the value, not the transition — the intended progression comes from the supervisor prompt. The supervisor writes `DRAFTED` at step 5, `APPROVED` at step 8 and the terminal `PUBLISHED` at step 13, once publishing has actually succeeded. (`EDITED` is valid but unused.) **Free for every status except `PUBLISHED`,** which `publish_gate` R4 checks against what actually shipped — see [R4](#custom-policy-publish_gate).
 - **`save_artifact`** — stages an outline, draft, social post or cycle log. Free.
 - **`publish_content`** — promotes a staged draft into `artifacts/published/`. **Guarded.**
@@ -222,7 +224,9 @@ Four rules. R4 stands on its own — it is the only one that looks at a tool out
 
 ### What is and is not gated
 
-`read_backlog` and `save_artifact` are **never** gated on any path. `update_backlog` is never gated either for `READY`, `DRAFTED`, `EDITED` or `APPROVED` — every status that describes work in progress.
+`read_backlog` (including its dashboard mode) and `save_artifact` are **never**
+gated on any path. `update_backlog` is never gated either for `READY`,
+`DRAFTED`, `EDITED` or `APPROVED` — every status that describes work in progress.
 
 The one exception is the terminal `PUBLISHED` transition, and it is worth being exact about why that does not blunt the contrast: **R4 gates no work.** The producing tier still runs start to finish with no human and no check. What R4 checks is the *claim that the work is finished* — and it answers with a `DENY` or an `ALLOW`, never an `ASK`, so the unattended path stays unattended. The lesson is unchanged: cheap reversible work runs free, outward-facing irreversible action needs a signature, and a record of what shipped has to match what shipped.
 
@@ -299,7 +303,7 @@ examples/content_factory/
 │   └── social_writer/config.yaml   Claude — X + LinkedIn
 ├── policies/
 │   └── publish_gate.py             the gate: R1 / R3 / R4 DENY, R2 ASK
-├── tools/python/                   six tools, two of them guarded
+├── tools/python/                   five tools, two of them guarded
 ├── tests/                          executable specs for the gate, staging, and dashboard
 ├── skills/blog-style/SKILL.md      the editor's rubric
 ├── backlog.md                      five seeded Omnigent features

@@ -1,22 +1,24 @@
 # Tests
 
-An executable spec for the two pieces of this example with behaviour too subtle
+An executable spec for the three pieces of this example with behaviour too subtle
 to verify by reading: the `publish_gate` policy (four interacting rules over two
-differently-scoped pieces of session state) and `save_artifact` (one kind
-appends, four truncate).
+differently-scoped pieces of session state), `save_artifact` (`cycle` appends;
+outline, draft, social, and dashboard overwrite), and the disk-derived
+`read_backlog(include_artifacts=True)` dashboard mode.
 
 ```bash
 # plain python, no dependencies, from the repo root
 python examples/content_factory/tests/test_publish_gate.py
 python examples/content_factory/tests/test_save_artifact.py
+python examples/content_factory/tests/test_read_dashboard.py
 
 # or under pytest
 pytest examples/content_factory/tests/
 ```
 
-Stdlib only. Both modules load their subject by file path and stub the
-Omnigent import it uses for type aliases, so they run on a bare checkout with
-no Omnigent installed.
+Stdlib only. The modules load their subjects by file path and stub the Omnigent
+imports they use for decorators or type aliases, so they run on a bare checkout
+with no Omnigent installed.
 
 `tests/` is a sibling of `tools/`, not a child of `tools/python/`, so nothing
 here is auto-discovered as an agent tool. Keep it that way — a module placed

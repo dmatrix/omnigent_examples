@@ -59,16 +59,18 @@ Bare names only. The framework discovers `agents/<name>/config.yaml` for each
 entry, registers them as callable tools, and spawns child sessions on
 invocation.
 
-**The six factory tools are not listed here.** They are auto-discovered from
+**The five factory tools are not listed here.** They are auto-discovered from
 `tools/python/`, and the policies below reference them by name even though they
 never appear in a `tools:` block. Same for `skills/blog-style/SKILL.md` — there
 is no `skills:` key; the directory is the declaration.
 
-`read_dashboard()` is one of those auto-discovered tools. It is read-only: it
-parses the same Markdown backlog parser as `read_backlog`, then inventories
-`artifacts/` for every slug. Its JSON snapshot has `entries` (file-order
-`slug`, `title`, `status`, and artifact booleans/lists),
-`shipped_article_count`, optional `article_ceiling`, and `utc_date`.
+`read_backlog(include_artifacts=True)` is the read-only dashboard mode. It uses
+the same parser as normal backlog reads, then inventories `artifacts/` for every
+slug. Its JSON snapshot has `entries` (file-order `slug`, `title`, `status`, and
+artifact booleans/lists), `published_article_count`, optional
+`article_ceiling`, and `utc_date`. The publication total is all-time durable
+disk state, not the session-scoped R3 ceiling state, so it is never rendered as
+a fraction of that ceiling.
 
 `save_artifact(kind="dashboard", slug="dashboard", content=...)` writes the
 current Markdown snapshot to `artifacts/dashboard.md`. It overwrites just like
@@ -131,7 +133,8 @@ Order matters. R1 before R3 means an unapproved post at the ceiling reports the
 makes the ceiling a real stop rather than a differently-worded ASK — an earlier
 draft of this policy had R2 first, which silently made R3 unreachable.
 
-`read_backlog` and `save_artifact` are never gated on any path, and neither is
+`read_backlog` (including dashboard mode) and `save_artifact` are never gated
+on any path, and neither is
 `update_backlog` for any status that describes work in progress. The terminal
 `PUBLISHED` status is the one checked call — R4 above — because that one is not
 a description of work but a claim the work finished, and it is the column a
@@ -212,7 +215,7 @@ slug-specific one from `publish_gate` and the blanket one from `guarded_tools`.
 
 ## Prompt
 
-The supervisor `prompt:` is a `|` literal block and carries five things worth
+The supervisor `prompt:` is a `|` literal block and carries six things worth
 copying into your own supervisor:
 
 1. **A hard delegation ban** — "never write, draft, edit or rewrite a blog or a
@@ -225,7 +228,8 @@ copying into your own supervisor:
 4. **A visibility rule** — name the agent and the harness, "do not state the
    model name."
 5. **A disk-derived dashboard rule** — render only from a fresh
-   `read_dashboard` call at meaningful state transitions, persist that table,
+   `read_backlog(include_artifacts=True)` call at meaningful state transitions,
+   persist that table,
    and open it once per session with `ui_open_file`.
 6. **A coordinator constraint** — report what sub-agents produced; do not add
    your own critique. The editor's verdict is the verdict.
@@ -303,7 +307,7 @@ runaway tool use. The supervisor has no tool-call limit.
   them would break continuous operation.
 - **No `guardrails.labels:`** — this example gates on *state*, not on taint
   labels. See [secure_code_assistant](../secure_code_assistant/) for labels.
-- **No `tools:` block on the supervisor beyond `agents:`** — the six factory
+- **No `tools:` block on the supervisor beyond `agents:`** — the five factory
   tools are auto-discovered.
 - **No `skills:` key** — `skills/blog-style/` is found by convention.
 
