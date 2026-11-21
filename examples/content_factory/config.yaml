@@ -216,12 +216,17 @@ guardrails:
 
     # --- Self-modification brake ---
     #
-    # A BACKSTOP. The real mechanism is the absence of `os_env`, which is why
-    # the supervisor holds no file tool for this policy to gate; as configured
-    # today it is inert. It exists so that re-adding an `os_env` block -- the
-    # boilerplate CLAUDE.md documents, and the thing that let a real run
-    # rewrite `agents/blog_writer/config.yaml` -- does not silently restore
-    # the capability.
+    # A BACKSTOP, and only for part of the surface it names. The real
+    # mechanism is the absence of `os_env`, which is why no agent is granted
+    # a `sys_os_*` tool -- so for THOSE names this policy is inert today. It
+    # exists so that re-adding an `os_env` block -- the boilerplate CLAUDE.md
+    # documents, and the thing that let a real run rewrite
+    # `agents/blog_writer/config.yaml` -- does not silently restore the
+    # capability.
+    #
+    # `shell` / `apply_patch` are a different story: those are in the list
+    # below and `agents/blog_writer` DOES hold `apply_patch`. See the note at
+    # the end of this comment -- naming them does not gate them.
     #
     # CEL rather than the `read_only_os` builtin, deliberately. `read_only_os`
     # matches write/edit names only and ALLOWS `sys_os_shell`

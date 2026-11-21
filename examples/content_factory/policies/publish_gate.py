@@ -265,11 +265,18 @@ def _decide_published_claim(
     later session cannot post social copy for an article it did not watch
     reach ``APPROVED`` (R1). Re-run the cycle, or edit ``backlog.md`` by hand.
 
-    And what R4 is NOT: a security boundary. The supervisor declares
-    ``os_env: caller_process`` with ``sandbox: none``, so it can edit
-    ``backlog.md`` directly through the framework's ``sys_os_*`` tools and
-    never call ``update_backlog`` at all. R4 raises the floor on careless
-    optimism; it does not stop a determined agent.
+    And what R4 is NOT: a security boundary. It gates a tool call, so it says
+    nothing about an agent that edits ``backlog.md`` directly and never calls
+    ``update_backlog`` at all. The caveat still holds; only its mechanism has
+    changed. It used to be the supervisor's own ``os_env: caller_process`` with
+    ``sandbox: none``, which handed it the framework's ``sys_os_*`` tools --
+    and a real run used exactly that to rewrite a sub-agent's config. No agent
+    in this bundle declares ``os_env`` now. What remains is ``blog_writer``,
+    which runs ``harness: codex``: Codex's own ``apply_patch`` is not an
+    Omnigent tool, is not gated by any policy (native calls arrive already
+    executed), and can write anywhere in the workspace. So the supervisor is
+    one delegation hop from a direct ``backlog.md`` edit. R4 raises the floor
+    on careless optimism; it does not stop a determined agent.
     """
     status = str(args.get("status", "")).strip().upper()
     # Every other status describes work in progress and stays free: READY,

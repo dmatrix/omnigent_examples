@@ -209,7 +209,7 @@ Two complementary layers guard the same two shipping tools.
 |---|---|---|
 | `publish_gate` | custom, stateful | Slug-aware. DENIES a social post whose blog is not yet `APPROVED`; DENIES shipping a *new* article once the cycle ceiling is hit, while letting an article already started finish; DENIES a `PUBLISHED` backlog write for an article that did not fully ship; otherwise ASKS with a reason naming the slug and artifact. |
 | `guarded_tools` | builtin `risk_score` | Coarse unconditional brake. Knows nothing about slugs — escalates `publish_content` and `post_social` on **every** call, so the gate holds even if the custom policy is removed. |
-| `no_self_modification` | builtin `cel` | Backstop. DENIES every Omnigent file **and shell** tool (`sys_os_write` / `sys_os_edit` / `sys_os_shell` plus the native `Write` / `Edit` / `MultiEdit` / `NotebookEdit` / `Bash` / `shell` / `apply_patch` aliases). Inert as configured — no agent declares `os_env`, so none holds such a tool — and there so that re-adding one does not silently restore the capability. See [Why the supervisor has no filesystem access](#why-the-supervisor-has-no-filesystem-access). |
+| `no_self_modification` | builtin `cel` | Backstop. DENIES `sys_os_write` / `sys_os_edit` / `sys_os_shell` and the native `Write` / `Edit` / `MultiEdit` / `NotebookEdit` / `Bash` / `shell` / `apply_patch` aliases. **Inert for the `sys_os_*` family**, because no agent declares `os_env` and so none is granted those tools — it is there so re-adding `os_env` cannot silently restore them. It does **not** protect against `blog_writer`'s native Codex `apply_patch`, which that agent does hold: native calls cannot be gated by any policy. See [What this does not close](#what-this-does-not-close). |
 | `user_daily_cost_budget` | builtin | $5.00/day per user, ASKs at $0.50. |
 
 Each sub-agent additionally carries `cost_budget` ($1.00, ASK at $0.25) and `max_tool_calls_per_session` (250) to bound runaway tool use.
@@ -321,12 +321,22 @@ was never a trade-off against `save_artifact` or `update_backlog`. On
 a *sandboxed* CLI), so removing `os_env` leaves the supervisor with no
 file-write tool of any kind.
 
-`no_self_modification` is the second layer: a `cel` policy DENYing every
-Omnigent file *and shell* tool by name. It is **inert as configured** — there
-is no such tool to gate — and it is there because `os_env` is the boilerplate
-CLAUDE.md documents, so re-adding it is a plausible accident. For the
-`sys_os_*` family the gate is real: those calls route through Omnigent's
-dispatch bridge and are evaluated before they run.
+`no_self_modification` is the second layer: a `cel` policy DENYing the
+Omnigent file and shell tools by name. Be precise about what that buys, because
+the list and the capability do not line up:
+
+- **For `sys_os_write` / `sys_os_edit` / `sys_os_shell` the gate is real but
+  currently has nothing to gate.** Those calls route through Omnigent's
+  dispatch bridge and are evaluated *before* they run, so a `DENY` prevents the
+  write. No agent declares `os_env`, so none is granted them — the policy is
+  inert *for this family*, and exists so that re-adding `os_env` (the
+  boilerplate CLAUDE.md documents) cannot silently restore the capability.
+- **For `blog_writer`'s native Codex `shell` / `apply_patch` it buys nothing at
+  all.** Those names are in the list, and that agent really does hold
+  `apply_patch` — but native Codex calls reach Omnigent *already executed*, so
+  naming them records intent and cannot enforce it. Listing them is honest
+  signposting, not protection. See
+  [What this does not close](#what-this-does-not-close).
 
 It is CEL rather than the `read_only_os` builtin because `read_only_os` matches
 write/edit names only and allows `sys_os_shell`, and a shell redirect rewrites

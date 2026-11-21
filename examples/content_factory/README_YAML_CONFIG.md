@@ -284,10 +284,18 @@ A backstop for the absent [`os_env`](#os-environment), not the mechanism. It
 DENIES the listed tools and abstains on everything else — so all five staging
 tools, sub-agent dispatch and every read stay untouched.
 
-**It is inert as configured.** No agent declares `os_env`, so none holds the
-tools this gates. It is here because `os_env` is the boilerplate CLAUDE.md
-documents for filesystem access: re-adding the block is a plausible accident,
-and this makes that accident non-silent rather than a restored capability.
+**It is inert for the `sys_os_*` family, and powerless over the rest.** Those
+two halves need separating, because the tool list is wider than the protection:
+
+- `sys_os_write` / `sys_os_edit` / `sys_os_shell` — no agent declares `os_env`,
+  so none is granted these, and the policy has nothing to act on today. It is
+  here because `os_env` is the boilerplate CLAUDE.md documents for filesystem
+  access: re-adding the block is a plausible accident, and this makes that
+  accident non-silent rather than a restored capability. For these names the
+  gate is genuine (see below).
+- `shell` / `apply_patch` — `blog_writer` **does** hold Codex's native
+  `apply_patch`. Naming it here cannot stop it; see below. It is listed so a
+  reader does not have to infer the omission.
 
 **Why CEL and not `read_only_os`.** The first version of this used
 `omnigent.policies.builtins.orchestration.read_only_os`, which matches
@@ -403,9 +411,11 @@ source is unreachable rather than substituting another.
 Claude on `claude-sdk`. Returns `PASS` / `REVISE` / `REJECT`. No explicit
 `tools:` block — the supervisor sends it the draft and the backlog entry
 directly. Its prompt forbids it from writing files, and with no
-[`os_env`](#os-environment) it also cannot: that closes the delegation route
-around the supervisor's own lack of filesystem access. Framework-owned tool
-groups are still enabled by default.
+[`os_env`](#os-environment) it also cannot — closing *this* delegation route
+around the supervisor's own lack of filesystem access. It does not close them
+all: `blog_writer` still holds Codex's native `apply_patch`
+([above](#blog_writer-is-a-partial-exception-and-the-honest-version-matters)).
+Framework-owned tool groups are still enabled by default.
 
 ### `agents/social_writer/config.yaml`
 

@@ -56,6 +56,23 @@ SUPERVISOR = EXAMPLE_ROOT / "config.yaml"
 AGENTS = EXAMPLE_ROOT / "agents"
 README = EXAMPLE_ROOT / "README.md"
 README_YAML = EXAMPLE_ROOT / "README_YAML_CONFIG.md"
+DEMO = EXAMPLE_ROOT / "demo.md"
+PUBLISH_GATE = EXAMPLE_ROOT / "policies" / "publish_gate.py"
+
+# Every file in the bundle that carries prose about the guard. The honesty
+# cases sweep all of them, not just the two READMEs: the files that went stale
+# last round were the two that nobody was looking at.
+PROSE_FILES = (
+    SUPERVISOR,
+    AGENTS / "blog_writer" / "config.yaml",
+    AGENTS / "editor" / "config.yaml",
+    AGENTS / "social_writer" / "config.yaml",
+    README,
+    README_YAML,
+    DEMO,
+    PUBLISH_GATE,
+    EXAMPLE_ROOT / "tests" / "README.md",
+)
 
 # Every agent in the bundle. "<supervisor>" is the root config.yaml.
 ALL_AGENTS = ("<supervisor>", "blog_writer", "editor", "social_writer")
@@ -150,7 +167,46 @@ REQUIRED_DISCLOSURES = {
         "apply_patch",
         "workspace-write",
     ),
+    # demo.md and publish_gate.py both carried the pre-change claim that the
+    # supervisor holds `os_env`, and neither was in the first fix's diff --
+    # which is exactly how a half-applied honesty fix hides. They are pinned
+    # here so the next one cannot.
+    DEMO: ("apply_patch",),
+    PUBLISH_GATE: ("apply_patch",),
 }
+
+# Wording that is false about this bundle. Each of these was actually written
+# down at some point in this change's history, which is why they are named
+# individually rather than gestured at.
+FORBIDDEN_CLAIMS = (
+    # Round-2 overclaim: true of sys_os_*, false of blog_writer's apply_patch,
+    # which IS in the backstop's tool list.
+    "no agent holds such a tool",
+    "none holds such a tool",
+    "no agent holds the tools",
+    "none holds the tools",
+    "so none holds",
+    "there is no such tool to gate",
+    # Claims the residual bypass does not exist.
+    "no bypass remains",
+    "no bypass exists",
+    "the bypass is closed",
+    "all four agents are fully",
+    "structurally impossible for every agent",
+)
+
+# Claims that the supervisor still has the capability this change removed.
+# Matched as a regex because the prose varies; negated forms are excluded so
+# the historical explanations ("it used to declare os_env") stay legal.
+STALE_OS_ENV_CLAIM = re.compile(
+    r"(?:supervisor|agent)[^.\n]{0,90}(?:declares|has)\s+[`\s]*os_env",
+    re.IGNORECASE,
+)
+STALE_EXEMPT = re.compile(
+    r"no agent|none declares|none of them|used to|no longer|cannot|does not|"
+    r"not declare|never declared",
+    re.IGNORECASE,
+)
 
 
 class Skipped(Exception):
@@ -447,19 +503,35 @@ def test_both_readmes_disclose_the_residual_codex_bypass() -> None:
         )
 
 
-def test_neither_readme_claims_the_bundle_is_fully_protected() -> None:
-    """Guards against the specific false claim a reviewer introduced."""
-    forbidden = (
-        "no bypass remains",
-        "no bypass exists",
-        "the bypass is closed",
-        "all four agents are fully",
-        "structurally impossible for every agent",
-    )
-    for path in (README, README_YAML):
+def test_no_file_in_the_bundle_claims_full_protection() -> None:
+    """Sweeps every prose file for wording that is false about this bundle.
+
+    Not just the READMEs. The claims this catches were real: "no agent holds
+    such a tool" was written in both READMEs while `blog_writer` demonstrably
+    held `apply_patch`, which is in the backstop's own tool list.
+    """
+    offenders = []
+    for path in PROSE_FILES:
         lowered = path.read_text(encoding="utf-8").lower()
-        for claim in forbidden:
-            assert claim not in lowered, f"{path.name} falsely claims: {claim!r}"
+        offenders += [
+            f"{path.name}: {claim!r}" for claim in FORBIDDEN_CLAIMS if claim in lowered
+        ]
+    assert not offenders, f"false claims found: {offenders}"
+
+
+def test_no_file_in_the_bundle_still_says_an_agent_declares_os_env() -> None:
+    """The claim this whole change falsifies must not survive anywhere.
+
+    `demo.md` and `policies/publish_gate.py` both asserted the supervisor
+    declares `os_env` for a full round after it stopped being true, because
+    neither was in the diff that made it untrue.
+    """
+    offenders = []
+    for path in PROSE_FILES:
+        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            if STALE_OS_ENV_CLAIM.search(line) and not STALE_EXEMPT.search(line):
+                offenders.append(f"{path.name}:{number}: {line.strip()[:70]}")
+    assert not offenders, f"stale 'declares os_env' claims: {offenders}"
 
 
 def test_blog_writer_config_documents_why_it_keeps_the_codex_harness() -> None:

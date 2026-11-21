@@ -373,6 +373,63 @@ def test_ceiling_reads_only_publish_gates_own_argument():
     assert "article_ceiling" not in gate_without_ceiling
 
 
+def test_ceiling_rejects_a_decoy_nested_inside_publish_gates_arguments():
+    """The value must be a DIRECT child of `arguments`, not any descendant.
+
+    The key-path walk alone was not enough: it scoped the search to
+    publish_gate's own `arguments` block but then scanned every line inside it,
+    so a decoy one level deeper was accepted as the ceiling.
+    """
+    with sandbox() as root:
+        _backlog(root)
+        root.joinpath("config.yaml").write_text(
+            """guardrails:
+  policies:
+    publish_gate:
+      function:
+        arguments:
+          unrelated:
+            max_articles_per_cycle: 99
+""",
+            encoding="utf-8",
+        )
+        nested_only = _snapshot()
+
+        # A real direct child alongside the nested decoy: read the child, not
+        # the decoy, whichever order they appear in.
+        root.joinpath("config.yaml").write_text(
+            """guardrails:
+  policies:
+    publish_gate:
+      function:
+        arguments:
+          unrelated:
+            max_articles_per_cycle: 99
+          max_articles_per_cycle: 3
+""",
+            encoding="utf-8",
+        )
+        decoy_first = _snapshot()
+
+        root.joinpath("config.yaml").write_text(
+            """guardrails:
+  policies:
+    publish_gate:
+      function:
+        arguments:
+          max_articles_per_cycle: 3
+          unrelated:
+            max_articles_per_cycle: 99
+""",
+            encoding="utf-8",
+        )
+        decoy_last = _snapshot()
+
+    assert "article_ceiling" not in nested_only
+    assert decoy_first["article_ceiling"] == 3
+    assert decoy_last["article_ceiling"] == 3
+
+
 def test_ceiling_is_omitted_when_the_key_path_is_broken_at_any_level():
     """Each missing level omits rather than guesses, as before."""
     broken = {

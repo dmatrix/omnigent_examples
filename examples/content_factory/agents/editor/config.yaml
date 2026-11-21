@@ -42,6 +42,11 @@ prompt: |
 # supervisor holds no file-write tool either, and leaving one here would
 # have let it delegate the write instead. See
 # ../../README.md "Why the supervisor has no filesystem access".
+#
+# This closes ONE delegation route, not all of them: `agents/blog_writer`
+# runs `harness: codex` and still holds Codex's native `apply_patch`,
+# which no policy can gate. See ../../README.md "What this does not
+# close".
 
 guardrails:
   policies:

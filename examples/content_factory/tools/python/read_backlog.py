@@ -47,6 +47,18 @@ def _parse_backlog(content: str) -> list[dict]:
 _CEILING_PATH = ("guardrails", "policies", "publish_gate", "function", "arguments")
 
 
+def _block_level(block: list[str]) -> int | None:
+    """The indent of *block*'s own mapping level: its first content line.
+
+    Blank and comment lines carry no level, so they are skipped. ``None`` for a
+    block with no content at all.
+    """
+    for line in block:
+        if line.strip() and not line.lstrip().startswith("#"):
+            return len(line) - len(line.lstrip())
+    return None
+
+
 def _child_lines(block: list[str], key: str) -> list[str] | None:
     """Return the lines nested under mapping entry *key* within *block*.
 
@@ -64,13 +76,13 @@ def _child_lines(block: list[str], key: str) -> list[str] | None:
     :param key: The mapping key to descend into.
     :returns: The child lines, or ``None`` when *key* is absent at this level.
     """
-    level = None
+    level = _block_level(block)
+    if level is None:
+        return None
     for index, line in enumerate(block):
         if not line.strip() or line.lstrip().startswith("#"):
             continue
         indent = len(line) - len(line.lstrip())
-        if level is None:
-            level = indent
         if indent > level:
             continue
         if indent < level:
@@ -94,7 +106,9 @@ def _article_ceiling() -> int | None:
 
     Descends `_CEILING_PATH` by indentation rather than scanning config.yaml as
     an ordered line sequence, so adding or reordering sibling policies cannot
-    silently drop the dashboard's ceiling.
+    silently drop the dashboard's ceiling. The value is then read only from a
+    DIRECT child of publish_gate's `arguments` -- not a sibling policy's
+    identically named argument, and not one nested deeper inside it.
 
     Omits rather than guesses on every failure mode, as before: an unreadable
     config, a missing or renamed `publish_gate`, a non-integer value, and a
@@ -116,7 +130,22 @@ def _article_ceiling() -> int | None:
     if block is None:
         return None
 
+    # A DIRECT child of `arguments`, not any descendant. Scanning descendants
+    # would accept a decoy nested one level deeper --
+    #
+    #     arguments:
+    #       unrelated:
+    #         max_articles_per_cycle: 99
+    #
+    # -- which is not publish_gate's argument and must not be read as one.
+    level = _block_level(block)
+    if level is None:
+        return None
     for line in block:
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        if len(line) - len(line.lstrip()) != level:
+            continue
         match = re.fullmatch(r"\s*max_articles_per_cycle:\s*(\d+)\s*", line)
         if match:
             return int(match.group(1))
