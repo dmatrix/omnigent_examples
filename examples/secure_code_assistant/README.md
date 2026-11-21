@@ -52,6 +52,19 @@ The CLI opens an interactive REPL. A Web UI is also available at the Databricks 
 
 ## Run Locally
 
+> **This example uses a custom policy, so it needs a local server.** If you have
+> run `omnigent login`, a plain `omnigent run` targets your configured remote
+> server, which rejects unregistered policy handlers before the session starts.
+> Use `--server local` and set `PYTHONPATH` so the policy module is importable:
+>
+> ```bash
+> PYTHONPATH=$(pwd) omnigent run examples/secure_code_assistant/ --server local
+> ```
+>
+> See "Custom policies do not run against a remote server" in the repo-root
+> `CLAUDE.md` for what a remote deployment would require.
+
+
 The default config uses `claude-sonnet-4-6` via direct Anthropic API. No Databricks dependency.
 
 ### 1. Configure credentials (one-time)
