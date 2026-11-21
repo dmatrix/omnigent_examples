@@ -30,8 +30,17 @@ omnigent run examples/secure_code_assistant/ --model gpt-5.5 --harness openai-ag
 omnigent run examples/secure_code_assistant/ --model claude-sonnet-4-6 --harness claude-sdk
 
 # Run against Databricks-hosted server
+# NOTE: only works for examples whose policies are all builtins -- see
+# "Custom policies do not run against a remote server" under Known Issues.
 omnigent login https://omnigent-<id>.aws.databricksapps.com
-omnigent run examples/telco_customer_agent/ --server https://omnigent-<id>.aws.databricksapps.com
+omnigent run examples/cross_harness_coding/ --server https://omnigent-<id>.aws.databricksapps.com
+
+# Force a LOCAL server, ignoring any configured remote default.
+# Required for content_factory, telco_customer_agent and secure_code_assistant
+# once you have run `omnigent login`, because a configured remote becomes the
+# default for a plain `omnigent run`. PYTHONPATH is needed so the CLI preflight
+# can import the `examples.*` policy modules.
+PYTHONPATH=$(pwd) omnigent run examples/content_factory/ --server local
 
 # Fresh session (no persistence)
 omnigent run examples/telco_customer_agent/ --no-session
@@ -141,6 +150,49 @@ There is no shared tool library. Every tool lives in the `tools/python/` directo
 of the example that uses it, and is auto-discovered from there.
 
 ## Known Issues
+
+- **Custom policies do not run against a remote server.** A remote Omnigent
+  server rejects any agent bundle whose policy `function.path` is not in the
+  server's policy registry, before a session is created:
+
+  ```
+  Error: Could not start a session on https://<host>/api/2.0/omnigent:
+  Policy 'publish_gate': handler 'examples.content_factory.policies.publish_gate.publish_gate'
+  is not a registered policy handler. Uploaded agent bundles may only use handlers
+  from the policy registry; a server admin must add custom handlers via the
+  'policy_modules' config.
+  ```
+
+  This is deliberate -- it stops an uploaded bundle injecting arbitrary Python.
+  There is no way for a bundle to self-register a handler.
+
+  **Affected examples** (3 of 6): `content_factory` (`publish_gate`),
+  `telco_customer_agent` (`bulk_access_guard`, plus `make_fixed_action_callable`),
+  and `secure_code_assistant` (`make_fixed_action_callable` x4). Note that
+  `omnigent.policies.function.make_fixed_action_callable` is a framework path but
+  is **not** in the registry, so taint/label policies trip this too.
+  **Unaffected:** `cross_harness_coding`, `harness_portability`, `slow_burn_guard`
+  -- these use only `omnigent.policies.builtins.*`.
+
+  **Workaround -- run locally:**
+
+  ```bash
+  PYTHONPATH=$(pwd) omnigent run examples/content_factory/ --server local
+  ```
+
+  `--server local` spawns a loopback server and bypasses the uploaded-bundle
+  allowlist; `PYTHONPATH` makes the `examples.*` policy module importable, which
+  CLI preflight does not do from the workspace directory on its own.
+
+  **To use a remote server**, an admin must install the policy module into both
+  the server and runner Python environments, have it export a `POLICY_REGISTRY`
+  list, add its dotted path to `policy_modules:` in the server config, and
+  restart.
+
+- **`omnigent login` silently changes what a plain `omnigent run` does.** Once a
+  remote server is configured it becomes the default target, so
+  `omnigent run examples/<dir>/` is no longer a local run. Pass
+  `--server local` when you want the local path.
 
 - **Module-level heavy imports hang auto-discovery.** The framework imports every `.py` in `tools/python/` at agent load time. Module-level `import pandas` or `import mlflow` blocks indefinitely. Use lazy imports inside function bodies.
 - **Tool subprocesses don't inherit shell env vars.** Tools run in isolated subprocesses. Use a `.env` file at the repo root for API keys -- the tool must load it explicitly.
