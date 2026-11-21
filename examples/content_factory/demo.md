@@ -170,9 +170,10 @@ good exercise if you want to go further.
 Run one factory cycle.
 ```
 
-On a **fresh** session the supervisor will first propose a daily schedule. Say
-no for now — Part 4 covers it — or approve it and carry on; it does not affect
-this cycle.
+On a **fresh** session the supervisor first checks your scheduled tasks for one
+targeting this agent. It is meant to create the daily schedule only when none
+matches, but that proposal is not yet reliably reproduced, so do not expect an
+approval card to decline. Part 4 explains the current evidence.
 
 Then watch thirteen steps. The supervisor announces which agent and which
 harness is working at each one, by design.
@@ -392,25 +393,25 @@ misreport it.
 ## Part 4 — Make it continuous
 
 Agent YAML has **no cron field**. Recurring work is created at runtime, by the
-agent, through a tool — so the factory sets up its own schedule:
+agent, through a tool. Before a cycle, the factory checks the caller's tasks
+and creates one only when none targets this agent:
 
 ```yaml
 rrule: "FREQ=DAILY;BYHOUR=9;BYMINUTE=0"
 session_mode: new
 ```
 
-On its first fresh run the supervisor *proposes* this via
-`sys_scheduled_task_create`. Each firing starts a new session and runs one
-cycle.
+The intended `sys_scheduled_task_create` call uses these parameters. Each
+firing starts a new session and runs one cycle.
 
-**Verified behaviour:** two earlier runs skipped this step because the schedule
-instruction was trailing prose after the thirteen workflow steps, not because
-the tool was unavailable. It is now a mandatory precondition: the supervisor
-lists its schedules and proposes one only when none exists for this agent. In a
-fresh live run on November 21, 2026, it checked for a schedule and proposed the
-daily task before reading the backlog. This was verified only with the required
-ephemeral route (`--server local --no-session`); persistent local and remote
-runs still reject this example's custom policy before a session starts.
+**Current evidence, honestly:** two earlier runs skipped this step because the
+schedule instruction was trailing prose after the thirteen workflow steps, not
+because the tool was unavailable. It is now a mandatory precondition, and a
+fresh run did call `sys_scheduled_task_list` before reading the backlog. But it
+then narrated creation rather than invoking `sys_scheduled_task_create`, so the
+schedule proposal is not yet reliably reproduced. This check used only the
+required ephemeral route (`--server local --no-session`); persistent local and
+remote runs still reject this example's custom policy before a session starts.
 
 **Creating a schedule is itself approval-gated.** The first thing this agent
 asks you to approve is its own existence — which is the right default for

@@ -71,16 +71,20 @@ prompt: |
   publish one entry at a time. Do not promise an unattended full-backlog run.
 
   Mandatory scheduling precondition — before you read the backlog or start a
-  workflow cycle, call `sys_scheduled_task_list` to check whether this agent
-  already has a recurring schedule. If no schedule exists for this agent,
-  explain that it will start one fresh session for one factory cycle every day
-  at 09:00, then call `sys_scheduled_task_create` with
-  `rrule: "FREQ=DAILY;BYHOUR=9;BYMINUTE=0"`, `session_mode: new`, and a
-  `max_cost_usd` for the run. Creating a schedule is itself approval-gated, so
-  explain what the schedule will do before you call the tool. Only skip
-  creating it when `sys_scheduled_task_list` shows an existing schedule for
-  this agent. If the human declines the schedule approval, say that no
-  schedule was created and proceed with this cycle; do not stall or retry.
+  workflow cycle, get this session's `agent_id`, then call
+  `sys_scheduled_task_list`. It lists the caller's tasks across agents: inspect
+  each returned task's `agent_id`, and treat a task as existing only when its
+  `agent_id` matches this session's agent. Ignore tasks for other agents. If
+  there is no matching task, call `sys_scheduled_task_create` for this agent
+  with `rrule: "FREQ=DAILY;BYHOUR=9;BYMINUTE=0"`, `session_mode: new`, and a
+  `max_cost_usd` for the run. The precondition is satisfied only by that actual
+  tool invocation or by a matching task from the list; describing the schedule
+  or saying an approval card will appear does not satisfy it. Creating a
+  schedule is approval-gated, so briefly explain that it starts one fresh
+  session for one factory cycle every day at 09:00 UTC, then invoke the tool in
+  the same turn — do not end the turn after the explanation. If the human
+  declines the schedule approval, say that no schedule was created and proceed
+  with this cycle; do not stall or retry.
 
   Workflow for ONE cycle:
   1. Call `read_backlog` to pull the next READY feature. If nothing is
