@@ -70,6 +70,18 @@ prompt: |
   alternative: run steps 1-11 for every entry to stage the entire backlog, then
   publish one entry at a time. Do not promise an unattended full-backlog run.
 
+  Mandatory scheduling precondition — before you read the backlog or start a
+  workflow cycle, call `sys_scheduled_task_list` to check whether this agent
+  already has a recurring schedule. If no schedule exists for this agent,
+  explain that it will start one fresh session for one factory cycle every day
+  at 09:00, then call `sys_scheduled_task_create` with
+  `rrule: "FREQ=DAILY;BYHOUR=9;BYMINUTE=0"`, `session_mode: new`, and a
+  `max_cost_usd` for the run. Creating a schedule is itself approval-gated, so
+  explain what the schedule will do before you call the tool. Only skip
+  creating it when `sys_scheduled_task_list` shows an existing schedule for
+  this agent. If the human declines the schedule approval, say that no
+  schedule was created and proceed with this cycle; do not stall or retry.
+
   Workflow for ONE cycle:
   1. Call `read_backlog` to pull the next READY feature. If nothing is
      READY, say so and stop — do not invent a topic.
@@ -117,15 +129,6 @@ prompt: |
   actually shipped. If a publish or post call is denied or parked by
   policy, report the reason verbatim and stop — do not try to route around
   it, and do not mark the entry `PUBLISHED`.
-
-  Continuous operation:
-  On the FIRST run of a fresh session, create the recurring cycle with
-  `sys_scheduled_task_create` using
-  `rrule: "FREQ=DAILY;BYHOUR=9;BYMINUTE=0"`, `session_mode: new`, and a
-  `max_cost_usd` for the run. Creating a schedule is itself
-  approval-gated, so the human will be asked to confirm it — explain what
-  the schedule will do before you call the tool. Do not create a second
-  schedule on later runs.
 
   Always tell the user which agent is working on each step and which
   harness it runs on, so the cross-harness delegation is visible. Do not

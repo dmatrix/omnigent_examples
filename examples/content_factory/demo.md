@@ -403,10 +403,14 @@ On its first fresh run the supervisor *proposes* this via
 `sys_scheduled_task_create`. Each firing starts a new session and runs one
 cycle.
 
-**Heads up:** across two runs the supervisor skipped this step and went straight
-to drafting. The tool is available — this is the prompt not being followed
-reliably, not a configuration gap. If no proposal appears, that is the known
-behaviour rather than something you did wrong.
+**Verified behaviour:** two earlier runs skipped this step because the schedule
+instruction was trailing prose after the thirteen workflow steps, not because
+the tool was unavailable. It is now a mandatory precondition: the supervisor
+lists its schedules and proposes one only when none exists for this agent. In a
+fresh live run on November 21, 2026, it checked for a schedule and proposed the
+daily task before reading the backlog. This was verified only with the required
+ephemeral route (`--server local --no-session`); persistent local and remote
+runs still reject this example's custom policy before a session starts.
 
 **Creating a schedule is itself approval-gated.** The first thing this agent
 asks you to approve is its own existence — which is the right default for

@@ -169,11 +169,15 @@ The supervisor calls `sys_scheduled_task_create` with those parameters, and each
 
 **Creating a schedule is itself approval-gated.** The first thing you will be asked to approve is the factory's own existence — which is the right default for an agent that proposes to wake up every morning and write on your behalf.
 
-> **Observed behaviour, honestly:** in two live runs the supervisor did **not**
-> propose the schedule — it went straight into the content workflow. The tool is
-> present (`sys_scheduled_task_create` resolves; all builtin tool groups default
-> on), so this is prompt noncompliance, not a missing capability. Treat the
-> schedule step as intended behaviour that is not yet reliably reproduced.
+> **Observed behaviour, honestly:** the earlier two live runs skipped the
+> schedule because its instruction was trailing prose after the thirteen
+> workflow steps, not because the capability was absent. The prompt now makes
+> schedule discovery and proposal a mandatory precondition: it lists existing
+> tasks and creates one only when none exists for this agent. In a fresh live
+> run on November 21, 2026, the supervisor checked for a schedule and proposed
+> the daily task before reading the backlog. That verification uses the required
+> ephemeral route (`--server local --no-session`); persistent local and remote
+> runs still reject this example's custom policy before a session starts.
 
 Two other mechanisms exist if a daily RRULE is the wrong shape:
 
