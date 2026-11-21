@@ -1,6 +1,6 @@
 """Executable spec for ``tools/python/save_artifact.py``.
 
-The ``cycle`` kind appends and the other four truncate, which is easy to
+The ``cycle`` kind appends and every other kind truncates, which is easy to
 regress in opposite directions. Run it either way::
 
     python examples/content_factory/tests/test_save_artifact.py
@@ -118,10 +118,11 @@ OVERWRITE_KINDS = [
     ("draft", {}, "drafts/alpha.md"),
     ("social", {"variant": "x"}, "social/alpha-x.md"),
     ("social", {"variant": "linkedin"}, "social/alpha-linkedin.md"),
+    ("dashboard", {}, "dashboard.md"),
 ]
 
 
-def test_outline_draft_and_social_are_truncated_on_rewrite():
+def test_non_cycle_kinds_are_truncated_on_rewrite():
     for kind, extra, tail in OVERWRITE_KINDS:
         with sandbox():
             save_artifact(kind=kind, slug="alpha", content="FIRST VERSION\n", **extra)
@@ -153,6 +154,7 @@ def test_each_kind_keeps_its_destination():
         staged = sorted(p.relative_to(artifacts).as_posix() for p in artifacts.rglob("*.md"))
         assert staged == [
             f"cycles/{datetime.now(UTC):%Y-%m-%d}-cycle.md",
+            "dashboard.md",
             "drafts/alpha.md",
             "outlines/alpha.md",
             "social/alpha-linkedin.md",
@@ -162,7 +164,9 @@ def test_each_kind_keeps_its_destination():
 
 # ══ the error path is unchanged ════════════════════════════════════════════
 
-BAD_KIND = {"error": "kind must be cycle, outline, draft, or social with variant x or linkedin"}
+BAD_KIND = {
+    "error": "kind must be cycle, outline, draft, dashboard, or social with variant x or linkedin"
+}
 
 
 def test_unknown_kind_and_bad_variant_are_rejected():

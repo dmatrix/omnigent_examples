@@ -38,7 +38,7 @@ def _cycle_entry_separator(path: str, slug: str) -> str:
 def save_artifact(kind: str, slug: str, content: str, variant: str = "") -> dict:
     """Save a staged artifact locally.
 
-    :param kind: Artifact kind: cycle, outline, draft, or social.
+    :param kind: Artifact kind: cycle, outline, draft, social, or dashboard.
     :param slug: Backlog slug associated with the artifact.
     :param content: Markdown content to save.
     :param variant: Social variant: x or linkedin.
@@ -48,7 +48,8 @@ def save_artifact(kind: str, slug: str, content: str, variant: str = "") -> dict
         cycle log accumulates one entry per cycle, so its reported size grows
         with each call. For ``outline``, ``draft`` and ``social`` the file is
         truncated and rewritten, so the resulting size equals the content size
-        as before.
+        as before. ``dashboard`` also overwrites because it is a current-state
+        snapshot at ``artifacts/dashboard.md``.
     """
     artifacts = _artifacts_path()
     if kind == "cycle":
@@ -59,8 +60,12 @@ def save_artifact(kind: str, slug: str, content: str, variant: str = "") -> dict
         path = os.path.join(artifacts, "drafts", f"{slug}.md")
     elif kind == "social" and variant in ("x", "linkedin"):
         path = os.path.join(artifacts, "social", f"{slug}-{variant}.md")
+    elif kind == "dashboard":
+        path = os.path.join(artifacts, "dashboard.md")
     else:
-        return {"error": "kind must be cycle, outline, draft, or social with variant x or linkedin"}
+        return {
+            "error": "kind must be cycle, outline, draft, dashboard, or social with variant x or linkedin"
+        }
 
     os.makedirs(os.path.dirname(path), exist_ok=True)
     if kind == "cycle":
@@ -73,8 +78,8 @@ def save_artifact(kind: str, slug: str, content: str, variant: str = "") -> dict
                 artifact_file.write(_cycle_entry_separator(path, slug))
             artifact_file.write(content)
     else:
-        # Outlines, drafts and social posts SHOULD be overwritten: a revised
-        # draft replaces the one the editor bounced.
+        # Outlines, drafts, social posts and the dashboard SHOULD be
+        # overwritten: revised state replaces the older snapshot.
         with open(path, "w", encoding="utf-8", newline="") as artifact_file:
             artifact_file.write(content)
     return {"path": path, "bytes": os.path.getsize(path), "kind": kind}
