@@ -9,6 +9,17 @@ executor:
   model: databricks-gpt-5-4
   config:
     harness: codex
+    # Turns off Codex's native shell tool. This agent researches and returns
+    # Markdown -- its prompt has always said it does not write files -- so a
+    # shell is a capability it has no use for.
+    #
+    # PARTIAL, and the README says so. On the ordinary (non-brokered) Codex
+    # route this sends only `features.shell_tool=false`
+    # (omnigent/inner/codex_executor.py:4035). Verified against codex-cli
+    # 0.149.1: that flips `shell_tool` and nothing else, and there is no
+    # feature flag that disables the `apply_patch` tool. So Codex can still
+    # edit files. See ../../README.md "What this does not close".
+    disable_native_tools: true
 
 prompt: |
   You are a technical blog writer powered by OpenAI. Your supervisor sends
@@ -35,11 +46,23 @@ prompt: |
   On editor feedback, apply the changes under the same research rule and
   return the full revised draft.
 
-os_env:
-  type: caller_process
-  cwd: .
-  sandbox:
-    type: none
+# No `os_env`, so the loader gives this agent no `sys_os_*` tools. Verified
+# by differential probe: removing the block changes nothing the Codex launch
+# depends on -- the spawn env, resolved OSEnvSpec, sandbox mode and harness
+# app are byte-identical before and after.
+#
+# It does narrow Codex's own sandbox. `_sandbox_mode`
+# (omnigent/inner/codex_executor.py:2830-2838) maps `sandbox: {type: none}` to
+# `danger-full-access` -- the whole filesystem -- and an absent `os_env` to
+# `read-only`. So removing the block is a real reduction.
+#
+# But NOT a closure, and the README says so plainly: because this agent is
+# passed AP-bridged tools, codex_executor.py:5494-5496 upgrades that
+# `read-only` back to `workspace-write`, and the bundle sits in the workspace.
+# Codex's `apply_patch` can therefore still rewrite this file. No Omnigent
+# policy can stop it either: native Codex calls arrive marked
+# `internally_executed` and have ALREADY run
+# (omnigent/runtime/harnesses/_executor_adapter.py:1311-1313).
 
 tools:
   builtins:

@@ -37,11 +37,16 @@ prompt: |
   You do not rewrite the draft and you do not write files — you return the
   verdict and the feedback, and the writer applies it.
 
-os_env:
-  type: caller_process
-  cwd: .
-  sandbox:
-    type: none
+# No `os_env`, so the loader gives this agent no `sys_os_*` tools at all.
+# Its prompt already said it does not write files; now it cannot. The
+# supervisor holds no file-write tool either, and leaving one here would
+# have let it delegate the write instead. See
+# ../../README.md "Why the supervisor has no filesystem access".
+#
+# This closes ONE delegation route, not all of them: `agents/blog_writer`
+# runs `harness: codex` and still holds Codex's native `apply_patch`,
+# which no policy can gate. See ../../README.md "What this does not
+# close".
 
 guardrails:
   policies:

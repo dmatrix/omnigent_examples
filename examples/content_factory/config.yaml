@@ -137,11 +137,25 @@ prompt: |
   the draft's quality — the editor's verdict is the verdict. You are a
   coordinator, not a writer and not a reviewer.
 
-os_env:
-  type: caller_process
-  cwd: .
-  sandbox:
-    type: none
+# No `os_env`. The supervisor deliberately has NO local filesystem
+# environment, so the loader registers none of the `sys_os_read` /
+# `sys_os_write` / `sys_os_edit` / `sys_os_shell` tools for it
+# (omnigent/tools/manager.py `_register_os_env_tools` is a no-op when the
+# spec declares no `os_env`), and the claude-sdk harness exposes no native
+# Write/Edit/Bash either (`_base_tools` is `Skill` + `ToolSearch`; `Bash` is
+# added only for a *sandboxed* CLI).
+#
+# It needs none of that. Every write the documented workflow performs goes
+# through one of the five staging tools below, which run as server-side
+# subprocesses rooted at the workspace cwd -- not in the agent's os_env.
+#
+# This is here because a supervisor run that hit a machine-level sandbox
+# failure launching the Codex sub-agent used `sys_os_edit` to rewrite
+# `agents/blog_writer/config.yaml`, switching that agent to
+# `harness: codex-native` with `yolo: true` to bypass the sandbox. Removing
+# the capability is the fix; a prompt rule is not, in an example whose whole
+# subject is that policy beats prompt. See README.md "Why the supervisor has
+# no filesystem access".
 
 tools:
   agents:
@@ -199,6 +213,59 @@ guardrails:
             Publication requires a human signature — the factory may draft,
             edit and stage unattended, but shipping content outward does not
             happen without approval.
+
+    # --- Self-modification brake ---
+    #
+    # A BACKSTOP, and only for part of the surface it names. The real
+    # mechanism is the absence of `os_env`, which is why no agent is granted
+    # a `sys_os_*` tool -- so for THOSE names this policy is inert today. It
+    # exists so that re-adding an `os_env` block -- the boilerplate CLAUDE.md
+    # documents, and the thing that let a real run rewrite
+    # `agents/blog_writer/config.yaml` -- does not silently restore the
+    # capability.
+    #
+    # `shell` / `apply_patch` are a different story: those are in the list
+    # below and `agents/blog_writer` DOES hold `apply_patch`. See the note at
+    # the end of this comment -- naming them does not gate them.
+    #
+    # CEL rather than the `read_only_os` builtin, deliberately. `read_only_os`
+    # matches write/edit names only and ALLOWS `sys_os_shell`
+    # (omnigent/policies/builtins/orchestration.py:671), and a shell redirect
+    # rewrites YAML just as well as an edit. CEL takes an explicit tool list,
+    # so the shell tools go in it. Still a registry builtin, so this does not
+    # change the example's remote-server story.
+    #
+    # The gate is real for these names: `sys_os_*` calls route through
+    # Omnigent's dispatch bridge and are evaluated BEFORE they run.
+    #
+    # It does NOT cover Codex's native `shell` / `apply_patch` on
+    # `agents/blog_writer`. Those are not gateable by any policy: they arrive
+    # already executed, marked `internally_executed`
+    # (omnigent/runtime/harnesses/_executor_adapter.py:1311-1313). Capability
+    # removal is the only lever there, and it is only partial. See README.md
+    # "What this does not close".
+    #
+    # DENY, not ASK. The observed self-edit happened in a headless run, and
+    # the model's own justification for disabling the sandbox was that
+    # "headless sub-agents cannot answer approval prompts". An ASK that nobody
+    # can answer is the pressure that produced the edit.
+
+    no_self_modification:
+      type: function
+      function:
+        path: omnigent.policies.builtins.cel.cel_policy
+        arguments:
+          expression: >-
+            event.type == "tool_call" && event.data.name in [
+            "sys_os_write", "sys_os_edit", "sys_os_shell",
+            "Write", "Edit", "MultiEdit", "NotebookEdit", "Bash",
+            "write", "edit", "bash", "shell", "apply_patch"]
+            ? {"result": "DENY"} : null
+          reason: >-
+            The supervisor may not write files or run shell. It coordinates
+            and stages through its own tools; it never edits the agent bundle,
+            its sub-agent configs, its policies or its tools. If a sub-agent
+            cannot launch, report the failure -- do not reconfigure it.
 
     # --- Cost governance ---
 

@@ -136,10 +136,14 @@ Three layers to that:
 
 1. **No tool is wired for it.** The five tools in `tools/python/` can read
    entries and change statuses. None writes a new one.
-2. **The capability nonetheless exists.** The supervisor declares
-   `os_env: {type: caller_process, sandbox: {type: none}}`, which grants
-   filesystem access through the framework's own `sys_os_*` tools. If you asked
-   it to append a topic to `backlog.md`, it could.
+2. **The supervisor cannot do it by hand either — not any more.** It used to:
+   it declared `os_env: {type: caller_process, sandbox: {type: none}}`, which
+   grants filesystem access through the framework's `sys_os_*` tools, and a run
+   used exactly that to rewrite a sub-agent's config. No agent in this bundle
+   declares `os_env` now, so none of them holds a `sys_os_*` tool. The capability
+   has not vanished entirely, though: `blog_writer` runs `harness: codex`, and
+   Codex's own `apply_patch` could append to `backlog.md` if the supervisor
+   asked it to. See [README.md](README.md#what-this-does-not-close).
 3. **Leaving it unwired is the point.** The backlog is the last place a human
    decides **what** gets written. If the factory fills its own queue it chooses
    its own subjects, and your only remaining control is a yes/no at publish
@@ -358,10 +362,12 @@ Note it is a `DENY`, not an `ASK`. Step 13 stays unattended; it just cannot lie.
 
 Two limits, stated because a reader will find them anyway: an article for which
 **no** social variant was staged counts as complete once published — R4 cannot
-require a post nobody wrote — and R4 is not a security boundary. The supervisor
-has `os_env: caller_process` with `sandbox: none`, so it could edit `backlog.md`
-directly and skip `update_backlog` entirely. R4 raises the floor on careless
-optimism; it does not stop a determined agent.
+require a post nobody wrote — and R4 is not a security boundary. It gates a tool
+call, so it has nothing to say about an agent that edits `backlog.md` directly
+and skips `update_backlog` entirely. That used to be the supervisor's own
+`os_env`; it no longer has one. It is now `blog_writer`'s Codex `apply_patch`,
+one delegation hop away — a different mechanism, same conclusion. R4 raises the
+floor on careless optimism; it does not stop a determined agent.
 
 ### What is and is not gated
 
