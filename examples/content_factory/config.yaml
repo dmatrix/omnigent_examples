@@ -53,10 +53,26 @@ prompt: |
       approve `publish_content` and `post_social`. Never call either one
       on your own initiative, and never treat your own reasoning as the
       approval.
+  13. Close the entry out — but ONLY on real success. After the human has
+      approved, and after `publish_content` AND every `post_social` call
+      for this slug have actually returned a successful result, call
+      `update_backlog(slug=<slug>, status="PUBLISHED")`. `PUBLISHED` is a
+      record of what shipped, so:
+      - never write it before the approval, or in anticipation of one;
+      - never write it if any shipping call was denied, parked, or
+        returned an error — leave the entry at `APPROVED`, say which call
+        failed and why, and stop;
+      - if only part of the shipping succeeded (say the blog published but
+        a social post was refused), the entry stays `APPROVED`. Report
+        exactly what shipped and what did not.
+      Do not invent any other status, and never write `PUBLISHED` for a
+      slug you did not just ship.
 
-  Steps 1-11 are designed to run unattended. Only step 12 needs a human.
-  If a publish or post call is denied or parked by policy, report the
-  reason verbatim and stop — do not try to route around it.
+  Steps 1-11 are designed to run unattended. Step 12 is the one place a
+  human is required; step 13 is bookkeeping that records what step 12
+  actually shipped. If a publish or post call is denied or parked by
+  policy, report the reason verbatim and stop — do not try to route around
+  it, and do not mark the entry `PUBLISHED`.
 
   Continuous operation:
   On the FIRST run of a fresh session, create the recurring cycle with
@@ -94,12 +110,15 @@ guardrails:
     # Two complementary layers guard the same two shipping tools.
     #
     # publish_gate is the fine-grained, slug-aware one: it DENIES a social
-    # post whose blog post is not yet APPROVED, DENIES anything further once
-    # the cycle's publish ceiling is hit, and otherwise ASKs with a reason
-    # naming the slug and the artifact. guarded_tools below is the coarse
-    # unconditional brake: it knows nothing about slugs and simply escalates
-    # publish_content and post_social every time, so the gate holds even if
-    # the custom policy is removed or its state is unavailable.
+    # post whose blog post is not yet APPROVED, DENIES shipping a NEW article
+    # once the cycle's article ceiling is hit (an article already started in
+    # that cycle may still finish its remaining posts), and otherwise ASKs
+    # with a reason naming the slug and the artifact.
+    #
+    # guarded_tools below is the coarse unconditional brake: it knows nothing
+    # about slugs and simply escalates publish_content and post_social every
+    # time, so the gate holds even if the custom policy is removed or its
+    # state is unavailable.
     #
     # The two do not produce two prompts. The engine evaluates every policy
     # and joins all ASK reasons into ONE pending approval, so the human sees a
@@ -110,6 +129,8 @@ guardrails:
       function:
         path: examples.content_factory.policies.publish_gate.publish_gate
         arguments:
+          # Distinct ARTICLES (slugs) per cycle, not guarded calls: one
+          # article normally takes three calls to ship.
           max_publishes_per_cycle: 3
 
     # threshold 0 with no tool_points means the session score is always at the
