@@ -226,7 +226,9 @@ of the example that uses it, and is auto-discovered from there.
 - **`omnigent login` silently changes what a plain `omnigent run` does.** Once a
   remote server is configured it becomes the default target, so
   `omnigent run examples/<dir>/` is no longer a local run. Pass
-  `--server local` when you want the local path.
+  `--server local` when you want the local path -- and for the three
+  custom-policy examples, `--server local --no-session`, per the previous
+  entry. `--server local` on its own is not enough for those.
 
 - **Module-level heavy imports hang auto-discovery.** The framework imports every `.py` in `tools/python/` at agent load time. Module-level `import pandas` or `import mlflow` blocks indefinitely. Use lazy imports inside function bodies.
 - **Tool subprocesses don't inherit shell env vars.** Tools run in isolated subprocesses. Use a `.env` file at the repo root for API keys -- the tool must load it explicitly.
