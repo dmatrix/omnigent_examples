@@ -173,6 +173,15 @@ this cycle.
 Then watch thirteen steps. The supervisor announces which agent and which
 harness is working at each one, by design.
 
+Before it starts, the supervisor renders a full-width Markdown dashboard of the
+whole backlog and opens the same read-only, disk-derived snapshot at
+`artifacts/dashboard.md`. It refreshes only at `DRAFTED`, `APPROVED`, the
+publish gate, and successful `PUBLISHED` — not after every step — so the table
+shows durable backlog and artifact facts without flooding the chat. There is no
+Start button to hunt for: example agents cannot configure one, so your `Run one
+factory cycle.` chat message starts the work. The native Approve/Reject card at
+step 12 is the review UI.
+
 | # | what happens | who | you? |
 |---|---|---|---|
 | 1 | pull the next `READY` topic | supervisor | — |
@@ -218,6 +227,12 @@ so a second cycle on the same day adds four new files and *appends* a second
 entry to the same `artifacts/cycles/<date>-cycle.md`, separated by a rule. So a
 multi-cycle day leaves you one log that reads as a sequence of cycles — rather
 than, as it used to, one log describing only the last one.
+
+If you ask for the whole backlog, expect an honest warning first: the $0.50
+daily-cost policy will likely ask during four entries across three sub-agents,
+and the three-articles-per-UTC-day ceiling stops the fourth publish. To stage
+everything, ask for steps 1–11 across the backlog, then approve publishing one
+entry at a time.
 
 ### See the editor push back
 

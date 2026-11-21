@@ -34,18 +34,48 @@ artifacts/drafts/<slug>.md              ← free     the blog post
 artifacts/social/<slug>-x.md            ← free     X thread
 artifacts/social/<slug>-linkedin.md     ← free     LinkedIn post
 artifacts/published/<slug>/…            ← GATED    publish_content
+artifacts/dashboard.md                  ← free     current disk-derived dashboard snapshot
 (outbound post to X / LinkedIn)         ← GATED    post_social
 ```
 
 Drafting is cheap and reversible, so it is unattended. Publishing is neither, so it asks. **Within a cycle, steps 1–11 need no human at all — step 12 is the one that does, and step 13 only records what step 12 actually shipped.** (Setting up the schedule in the first place is also approval-gated; see [Continuous Operation](#continuous-operation).)
 
-### Five tools
+### Dashboard: native to chat, durable on disk
+
+The supervisor renders a full-width Markdown table at the meaningful state
+transitions — cycle start, `DRAFTED`, `APPROVED`, the approval gate, and real
+`PUBLISHED` — and writes the same snapshot to `artifacts/dashboard.md`. It
+opens that file once per session so the UI can keep a persistent pane beside
+the transcript. The table is **read-only and derived from disk**: it shows each
+backlog status plus only the outline, draft, social, published, and posting
+files that actually exist. It never pretends to know a non-durable sub-agent
+step.
+
+There is deliberately **no Start button**. Example agents have no
+agent-configurable button surface, so starting a cycle remains a chat message;
+the framework's native Approve/Reject card already supplies the real review
+button at the publish gate. The dashboard shows the article ceiling and marks
+the current publish attempt when that ceiling denies it.
+
+### Six tools
 
 - **`read_backlog`** — pulls the next `READY` feature from `backlog.md`. Free.
+- **`read_dashboard`** — returns the entire file-order backlog and its real
+  artifact state from `backlog.md` and `artifacts/`. Read-only and free.
 - **`update_backlog`** — sets one entry to any valid backlog status (`READY`, `DRAFTED`, `EDITED`, `APPROVED`, `PUBLISHED`). It validates the value, not the transition — the intended progression comes from the supervisor prompt. The supervisor writes `DRAFTED` at step 5, `APPROVED` at step 8 and the terminal `PUBLISHED` at step 13, once publishing has actually succeeded. (`EDITED` is valid but unused.) **Free for every status except `PUBLISHED`,** which `publish_gate` R4 checks against what actually shipped — see [R4](#custom-policy-publish_gate).
 - **`save_artifact`** — stages an outline, draft, social post or cycle log. Free.
 - **`publish_content`** — promotes a staged draft into `artifacts/published/`. **Guarded.**
 - **`post_social`** — the outbound egress action, a stub that does not actually post. **Guarded.**
+
+### Whole-backlog runs are not unattended
+
+A request to run all four ready entries has two intentional stopping points:
+the supervisor's `user_daily_cost_budget` asks at **$0.50**, and four entries
+across three sub-agents will very likely cross it; the publish ceiling permits
+only **three distinct articles per UTC day**, so the fourth cannot ship that
+day. For a whole backlog, the honest option is to run steps 1–11 for every
+entry (stage everything), then publish one entry at a time. Do not expect an
+unattended end-to-end run.
 
 Runs on the **`claude-sdk` harness** with **`claude-sonnet-4-6`** for the supervisor, editor and social writer, and the **`codex` harness** with **`gpt-5-4`** for the blog writer. The gate is harness-independent — the same DENY fires whichever brains you swap in.
 
@@ -269,8 +299,8 @@ examples/content_factory/
 │   └── social_writer/config.yaml   Claude — X + LinkedIn
 ├── policies/
 │   └── publish_gate.py             the gate: R1 / R3 / R4 DENY, R2 ASK
-├── tools/python/                   five tools, two of them guarded
-├── tests/                          executable spec for the gate and the staging tool
+├── tools/python/                   six tools, two of them guarded
+├── tests/                          executable specs for the gate, staging, and dashboard
 ├── skills/blog-style/SKILL.md      the editor's rubric
 ├── backlog.md                      five seeded Omnigent features
 └── artifacts/                      everything the factory makes

@@ -59,10 +59,21 @@ Bare names only. The framework discovers `agents/<name>/config.yaml` for each
 entry, registers them as callable tools, and spawns child sessions on
 invocation.
 
-**The five factory tools are not listed here.** They are auto-discovered from
+**The six factory tools are not listed here.** They are auto-discovered from
 `tools/python/`, and the policies below reference them by name even though they
 never appear in a `tools:` block. Same for `skills/blog-style/SKILL.md` — there
 is no `skills:` key; the directory is the declaration.
+
+`read_dashboard()` is one of those auto-discovered tools. It is read-only: it
+parses the same Markdown backlog parser as `read_backlog`, then inventories
+`artifacts/` for every slug. Its JSON snapshot has `entries` (file-order
+`slug`, `title`, `status`, and artifact booleans/lists),
+`shipped_article_count`, optional `article_ceiling`, and `utc_date`.
+
+`save_artifact(kind="dashboard", slug="dashboard", content=...)` writes the
+current Markdown snapshot to `artifacts/dashboard.md`. It overwrites just like
+outline, draft, and social artifacts; the existing return contract remains
+exactly `{path, bytes, kind}`, and `bytes` remains the post-call file size.
 
 ---
 
@@ -213,8 +224,17 @@ copying into your own supervisor:
    after a human approval *and* a successful publish.
 4. **A visibility rule** — name the agent and the harness, "do not state the
    model name."
-5. **A coordinator constraint** — report what sub-agents produced; do not add
+5. **A disk-derived dashboard rule** — render only from a fresh
+   `read_dashboard` call at meaningful state transitions, persist that table,
+   and open it once per session with `ui_open_file`.
+6. **A coordinator constraint** — report what sub-agents produced; do not add
    your own critique. The editor's verdict is the verdict.
+
+The prompt also states two UX limits up front: no agent-configurable Start
+button exists, so a run begins with chat; and a whole-backlog run is not
+unattended because the $0.50 daily-cost ASK and three-articles-per-UTC-day
+ceiling can stop it. Its alternative stages steps 1–11 for all entries and
+publishes them one at a time.
 
 Step 12 is the gate, and the prompt says the quiet part out loud: *never treat
 your own reasoning as the approval.* Step 13 is the honesty clause on the other
@@ -283,7 +303,7 @@ runaway tool use. The supervisor has no tool-call limit.
   them would break continuous operation.
 - **No `guardrails.labels:`** — this example gates on *state*, not on taint
   labels. See [secure_code_assistant](../secure_code_assistant/) for labels.
-- **No `tools:` block on the supervisor beyond `agents:`** — the five factory
+- **No `tools:` block on the supervisor beyond `agents:`** — the six factory
   tools are auto-discovered.
 - **No `skills:` key** — `skills/blog-style/` is found by convention.
 

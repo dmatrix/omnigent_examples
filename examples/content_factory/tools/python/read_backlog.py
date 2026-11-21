@@ -13,6 +13,7 @@ def _backlog_path() -> str:
 
 
 def _parse_backlog(content: str) -> list[dict]:
+    """Parse the content-factory backlog Markdown in file order."""
     items = []
     for section in re.split(r"(?m)^## ", content)[1:]:
         lines = section.splitlines()

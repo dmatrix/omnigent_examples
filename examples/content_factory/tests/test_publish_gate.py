@@ -261,6 +261,9 @@ def test_failed_shipping_call_does_not_consume_the_ceiling():
     s.result("publish_content", {"error": "Draft artifact not found"}, slug="foxtrot")
     assert s.cycle_slugs() == []
     assert s.progress("foxtrot") == {}
+    denied = s.mark_published("foxtrot")
+    assert denied["result"] == "DENY"
+    assert "no successful publish_content or post_social" in denied["reason"]
 
 
 # ══ R1 / R2 — unchanged by R4 ══════════════════════════════════════════════
@@ -330,6 +333,14 @@ def test_update_backlog_is_free_for_every_status_except_published():
         }, status
     # Only the terminal claim is checked.
     assert s.mark_published("never-shipped")["result"] == "DENY"
+
+
+def test_non_terminal_backlog_statuses_are_free_on_the_runner_local_path():
+    local = Session(RUNNER_LOCAL)
+    for status in ("READY", "DRAFTED", "EDITED", "APPROVED"):
+        assert local.call("update_backlog", slug="runner-local", status=status) == {
+            "result": "ALLOW"
+        }, status
 
 
 # ══ R4 — PUBLISHED must match what shipped ═════════════════════════════════
