@@ -1,9 +1,27 @@
 """Custom policy: the content factory's publish gate.
 
-Unattended cycles produce freely — ``read_backlog``, ``update_backlog`` and
-``save_artifact`` are never gated. Shipping is different: ``publish_content``
-and ``post_social`` face three rules, and cross-turn state lives in
-``session_state``, mutated only through ``state_updates``.
+Unattended cycles produce freely: ``read_backlog`` and ``save_artifact`` are
+never gated, and neither is ``update_backlog`` for any status that describes
+work in progress. Shipping is different. ``publish_content`` and
+``post_social`` face three rules (R1, R3, R2), and a fourth rule R4 checks the
+one ``update_backlog`` call that is not a description of work but a *claim that
+the work finished*: the terminal ``PUBLISHED`` status.
+
+So the tiers are still "produce freely, ship under supervision" — R4 does not
+gate any work, it only refuses to record a completion that did not happen, and
+it does so with a DENY rather than an ASK, so no human is ever added to the
+unattended path.
+
+All cross-turn state lives in ``session_state``, mutated only through
+``state_updates``, under two deliberately separate scopes:
+
+- ``_publish_gate_cycle_slugs`` — CYCLE-scoped (one UTC day). The ceiling's
+  record. Resets at midnight, which is the point of it.
+- ``_publish_gate_ship_progress`` — SESSION-scoped, per slug. What this session
+  has actually watched ship. R4's record. Never resets inside a session,
+  because an article does not become unshipped at midnight.
+
+Mixing those two scopes would be a bug: see R4's docstring.
 """
 
 from __future__ import annotations
@@ -27,12 +45,22 @@ _APPROVED_SLUGS_KEY = "_publish_gate_approved_slugs"
 # in the current cycle. Renamed from ``_publish_gate_cycle_publishes``, which
 # held a call count, so a stale value from that shape is never half-parsed.
 _CYCLE_SLUGS_KEY = "_publish_gate_cycle_slugs"
+# Holds {<slug>: {"staged": [...], "published": bool, "posted": [...]}} — what
+# this SESSION has watched actually ship, per article. Deliberately NOT
+# cycle-scoped: R4 asks "did this ship?", and the answer does not change at
+# midnight the way the ceiling's does.
+_SHIP_PROGRESS_KEY = "_publish_gate_ship_progress"
 
 _PUBLISH_CONTENT = "publish_content"
 _POST_SOCIAL = "post_social"
 _UPDATE_BACKLOG = "update_backlog"
+_SAVE_ARTIFACT = "save_artifact"
 _GUARDED_TOOLS = frozenset({_PUBLISH_CONTENT, _POST_SOCIAL})
 _APPROVED_STATUS = "APPROVED"
+_PUBLISHED_STATUS = "PUBLISHED"
+# The channels post_social accepts, and therefore the social variants
+# save_artifact can stage. Kept in sync with both tools by hand.
+_SOCIAL_CHANNELS = ("x", "linkedin")
 
 
 def _tool_name(event: PolicyEvent) -> str:
@@ -114,6 +142,67 @@ def _approved_slugs(state: dict[str, object]) -> list[str]:
     return [str(item) for item in value] if isinstance(value, list) else []
 
 
+def _ship_progress(state: dict[str, object]) -> dict[str, dict[str, object]]:
+    """Per-slug shipping progress this session has witnessed.
+
+    Shape: ``{slug: {"staged": [...], "published": bool, "posted": [...]}}``.
+    Decoded defensively — a corrupt or foreign value reads as "nothing has
+    shipped", which makes R4 fail closed.
+    """
+    value = _read_state(state, _SHIP_PROGRESS_KEY)
+    if not isinstance(value, dict):
+        return {}
+    progress: dict[str, dict[str, object]] = {}
+    for slug, entry in value.items():
+        if isinstance(entry, dict):
+            progress[str(slug)] = dict(entry)
+    return progress
+
+
+def _entry_channels(entry: dict[str, object], key: str) -> list[str]:
+    """Read a channel list out of one progress entry."""
+    value = entry.get(key)
+    if not isinstance(value, list):
+        return []
+    return [str(item) for item in value if str(item) in _SOCIAL_CHANNELS]
+
+
+def _ship_completion(progress: dict[str, dict[str, object]], slug: str) -> tuple[bool, str]:
+    """Has ``slug`` FULLY shipped in this session? Plus why not, if not.
+
+    "Fully" is the whole point of R4, and it means two things together:
+
+    1. ``publish_content`` succeeded for the slug, and
+    2. every social variant the cycle STAGED for it was then posted.
+
+    Condition 2 is keyed on what was staged rather than on a fixed list of
+    channels, because a cycle may legitimately produce only one variant — and
+    a post that was never written cannot be demanded. The honest limit of that
+    choice: an article for which NO social variant was staged counts as
+    complete once published, so R4 cannot tell "this article had no social
+    copy by design" from "step 10 was skipped entirely". It still catches the
+    realistic failure, which is social copy staged and then never posted.
+    """
+    entry = progress.get(slug) or {}
+    if not entry:
+        return False, (
+            "this session has recorded no successful publish_content or "
+            "post_social for it at all"
+        )
+    if not entry.get("published"):
+        return False, "publish_content has not succeeded for it in this session"
+    posted = set(_entry_channels(entry, "posted"))
+    outstanding = [
+        channel for channel in _entry_channels(entry, "staged") if channel not in posted
+    ]
+    if outstanding:
+        return False, (
+            f"publish_content succeeded, but the staged {', '.join(outstanding)} "
+            f"post(s) were never posted — the article is only half shipped"
+        )
+    return True, ""
+
+
 def _cycle_id() -> str:
     """The current cycle: cycles are daily, so the UTC day is the identity."""
     return datetime.now(UTC).strftime("%Y-%m-%d")
@@ -141,27 +230,106 @@ def _artifact_kind(tool: str, channel: str) -> str:
     return "long-form blog draft (plus any staged social variants)"
 
 
-def _decide_tool_call(event: PolicyEvent, max_publishes_per_cycle: int) -> PolicyResponse:
-    """Apply R1 (DENY) then R3 (DENY) then R2 (ASK) to a ``tool_call`` event."""
+def _decide_published_claim(
+    event: PolicyEvent, args: dict[str, Any], state: dict[str, object]
+) -> PolicyResponse:  # type: ignore[explicit-any]
+    """R4 — DENY a ``PUBLISHED`` claim this session cannot show actually shipped.
+
+    ``PUBLISHED`` is the one ``update_backlog`` status that is not a
+    description of work but an assertion that the work finished — and it is
+    the status a status dashboard reads. Step 13 of the supervisor prompt is
+    the only thing that orders it correctly, and a prompt is not enforcement:
+    a model under pressure can write it optimistically. R4 makes it
+    structural.
+
+    Scope matters, and getting it wrong here produces FALSE DENIALS of
+    legitimate writes. Two records could back this rule and only one is
+    right:
+
+    - the ceiling's ``_publish_gate_cycle_slugs`` is CYCLE-scoped and resets
+      at UTC midnight, so a publish at 23:59 and its status write at 00:01
+      would be refused — and the first call of each new cycle would reset it
+      out from under a perfectly good article.
+    - ``_publish_gate_ship_progress`` is SESSION-scoped, and in the normal
+      flow the publish and this write happen in the same session moments
+      apart (steps 12 and 13).
+
+    So R4 reads the session-scoped record, matching R1's existing scope: one
+    story for "what this session witnessed", with the cycle scope left to the
+    ceiling that needs it.
+
+    When a LEGITIMATE ``PUBLISHED`` write is still refused: when the publish
+    happened in a DIFFERENT session from the status write. The daily schedule
+    uses ``session_mode: new``, so if a cycle ships an article and then dies
+    before step 13, a later session cannot close the entry out — exactly as a
+    later session cannot post social copy for an article it did not watch
+    reach ``APPROVED`` (R1). Re-run the cycle, or edit ``backlog.md`` by hand.
+
+    And what R4 is NOT: a security boundary. The supervisor declares
+    ``os_env: caller_process`` with ``sandbox: none``, so it can edit
+    ``backlog.md`` directly through the framework's ``sys_os_*`` tools and
+    never call ``update_backlog`` at all. R4 raises the floor on careless
+    optimism; it does not stop a determined agent.
+    """
+    status = str(args.get("status", "")).strip().upper()
+    # Every other status describes work in progress and stays free: READY,
+    # DRAFTED, EDITED and APPROVED are never gated on any path.
+    if status != _PUBLISHED_STATUS:
+        return _ALLOW
+
+    # Stateful, so it defers on the runner-local path exactly as R1 and R3 do
+    # — a rule that DENIED on permanently-absent state would fail every
+    # PUBLISHED write there. Note the honest cost, which R1 does not pay:
+    # there is no coarse backstop on update_backlog, so a deferred R4 means
+    # the write goes through unchecked locally.
+    if not _state_available(event):
+        return _ALLOW
+
+    slug = str(args.get("slug", "")).strip() or "(no slug given)"
+    complete, unfinished_because = _ship_completion(_ship_progress(state), slug)
+    if complete:
+        return _ALLOW
+    return {
+        "result": "DENY",
+        "reason": (
+            f"Refusing to record '{slug}' as {_PUBLISHED_STATUS}: "
+            f"{unfinished_because}. {_PUBLISHED_STATUS} is a record of what "
+            f"shipped, not of what was intended, so it is only written once "
+            f"publish_content and every staged social post have actually "
+            f"succeeded in this session. Leave the entry at "
+            f"{_APPROVED_STATUS} and report what did not ship."
+        ),
+    }
+
+
+def _decide_tool_call(event: PolicyEvent, max_articles_per_cycle: int) -> PolicyResponse:
+    """Apply R4, then R1 (DENY), R3 (DENY) and R2 (ASK), to a ``tool_call``."""
     tool = _tool_name(event)
-    # The producing tier — read_backlog, update_backlog, save_artifact — is
+    args = _tool_args(event.get("data"))
+    state = event.get("session_state") or {}
+
+    # R4 targets a DIFFERENT tool from R1/R3's guarded pair, so it is its own
+    # early branch rather than a condition threaded through the chain below.
+    if tool == _UPDATE_BACKLOG:
+        return _decide_published_claim(event, args, state)
+
+    # The rest of the producing tier — read_backlog and save_artifact — is
     # absent from _GUARDED_TOOLS and falls out here, ungated, on every call.
     if tool not in _GUARDED_TOOLS:
         return _ALLOW
 
-    args = _tool_args(event.get("data"))
     slug = str(args.get("slug", "")).strip() or "(no slug given)"
-    state = event.get("session_state") or {}
 
     # R1 and R3 are stateful, and only the server engine persists state. The
     # runner-local gate builds a fresh EvaluationContext per call and drops
     # returned state_updates (runner/policy.py), so its session_state is
     # permanently {} — deciding R1 there would deny EVERY post_social, a
-    # properly approved one included. Both stateful rules therefore defer when
-    # state is unavailable rather than judge on state known to be missing. Not
-    # a hole: stateless R2 below still ASKs on every guarded call there, as
-    # does the guarded_tools risk_score layer. A present-but-empty state on
-    # the server is a different case and still denies — that is R1's point.
+    # properly approved one included. All three stateful rules therefore defer
+    # when state is unavailable (R4 does the same, above) rather than judge on
+    # state known to be missing. Not a hole here: stateless R2 below still ASKs
+    # on every guarded call there, as does the guarded_tools risk_score layer.
+    # A present-but-empty state on the server is a different case and still
+    # denies — that is R1's point.
     if _state_available(event):
         # R1 — short-form content may not precede the post it cites.
         if tool == _POST_SOCIAL and slug not in _approved_slugs(state):
@@ -186,13 +354,13 @@ def _decide_tool_call(event: PolicyEvent, max_publishes_per_cycle: int) -> Polic
         # is never refused here, so no article is left published with its
         # social copy stranded.
         shipped = _cycle_shipped_slugs(state)
-        if slug not in shipped and len(shipped) >= max_publishes_per_cycle:
+        if slug not in shipped and len(shipped) >= max_articles_per_cycle:
             return {
                 "result": "DENY",
                 "reason": (
                     f"Per-cycle article ceiling reached: {len(shipped)} article(s) "
                     f"already shipped in cycle {_cycle_id()} (limit "
-                    f"{max_publishes_per_cycle} per cycle), and '{slug}' is not "
+                    f"{max_articles_per_cycle} per cycle), and '{slug}' is not "
                     f"one of them. {tool} for '{slug}' is refused until the next "
                     f"cycle. Articles already started in this cycle may still be "
                     f"finished."
@@ -236,32 +404,120 @@ def _record_approved_slug(event: PolicyEvent, payload: object) -> PolicyResponse
     }
 
 
-def _record_shipped_slug(event: PolicyEvent, payload: object) -> PolicyResponse:
-    """Count a successful shipping call's slug against the cycle's ceiling.
+def _set_state(key: str, value: object) -> dict[str, object]:
+    """One ``state_updates`` entry, JSON-encoded like the rest of this policy."""
+    return {"key": key, "action": "set", "value": json.dumps(value)}
 
-    The first guarded call for a slug puts it in the cycle's shipped set; the
-    rest of that article's calls find it already there and add nothing. So the
-    set size is the number of ARTICLES shipped this cycle, however many
-    publish_content / post_social calls each one took.
+
+def _call_field(event: PolicyEvent, payload: object, field: str) -> str:
+    """Read one field from a tool result, falling back to the call arguments."""
+    result = payload if isinstance(payload, dict) else {}
+    value = str(result.get(field, "")).strip()
+    if value:
+        return value
+    # The server path carries the originating call; the runner-local one does
+    # not, but its state_updates are discarded anyway.
+    return str(_tool_args(event.get("request_data")).get(field, "")).strip()
+
+
+def _staged_social_target(event: PolicyEvent, payload: object) -> tuple[str, str]:
+    """``(slug, variant)`` for a successful social ``save_artifact``, else ``("", "")``.
+
+    ``save_artifact`` returns only ``{path, bytes, kind}``, so the slug and
+    variant come from the originating arguments where available and from the
+    staged path otherwise. The path is unambiguous even for slugs containing
+    hyphens, because the suffix is matched against the known channel names.
+    """
+    args = _tool_args(event.get("request_data"))
+    if str(args.get("kind", "")).strip().lower() == "social":
+        slug = str(args.get("slug", "")).strip()
+        variant = str(args.get("variant", "")).strip().lower()
+        if slug and variant in _SOCIAL_CHANNELS:
+            return slug, variant
+
+    result = payload if isinstance(payload, dict) else {}
+    if str(result.get("kind", "")).strip().lower() != "social":
+        return "", ""
+    name = str(result.get("path", "")).replace("\\", "/").rsplit("/", 1)[-1]
+    for channel in _SOCIAL_CHANNELS:
+        suffix = f"-{channel}.md"
+        if name.endswith(suffix) and len(name) > len(suffix):
+            return name[: -len(suffix)], channel
+    return "", ""
+
+
+def _record_staged_social(event: PolicyEvent, payload: object) -> PolicyResponse:
+    """Record that a social variant was staged, so R4 knows what owes a post.
+
+    ``save_artifact`` itself stays ungated — this is bookkeeping on its
+    *result*, and it is what lets R4 distinguish "this article had no social
+    copy" from "its social copy was written and never posted".
     """
     if not _succeeded(payload):
         return _ALLOW
-    result = payload if isinstance(payload, dict) else {}
-    slug = str(result.get("slug", "")).strip()
-    if not slug:
-        # Fall back to the originating call's arguments (server path only).
-        slug = str(_tool_args(event.get("request_data")).get("slug", "")).strip()
+    slug, variant = _staged_social_target(event, payload)
     if not slug:
         return _ALLOW
 
-    shipped = _cycle_shipped_slugs(event.get("session_state") or {})
-    if slug in shipped:
+    progress = _ship_progress(event.get("session_state") or {})
+    entry = dict(progress.get(slug) or {})
+    staged = _entry_channels(entry, "staged")
+    if variant in staged:
         return _ALLOW
-    value = json.dumps({"cycle": _cycle_id(), "slugs": [*shipped, slug]})
+    entry["staged"] = [*staged, variant]
+    progress[slug] = entry
     return {
         "result": "ALLOW",
-        "state_updates": [{"key": _CYCLE_SLUGS_KEY, "action": "set", "value": value}],
+        "state_updates": [_set_state(_SHIP_PROGRESS_KEY, progress)],
     }
+
+
+def _record_shipping_progress(
+    event: PolicyEvent, tool: str, payload: object
+) -> PolicyResponse:
+    """Record a successful shipping call against both shipping records.
+
+    Two updates, two scopes, deliberately not merged:
+
+    - the CYCLE-scoped ceiling set gains the slug on its FIRST successful
+      guarded call, so the set size counts articles rather than calls.
+    - the SESSION-scoped progress entry gains the specific fact that just
+      became true — ``published``, or one posted channel — so R4 can tell a
+      finished article from a half-shipped one.
+    """
+    if not _succeeded(payload):
+        return _ALLOW
+    slug = _call_field(event, payload, "slug")
+    if not slug:
+        return _ALLOW
+    state = event.get("session_state") or {}
+    updates: list[dict[str, object]] = []
+
+    shipped = _cycle_shipped_slugs(state)
+    if slug not in shipped:
+        updates.append(
+            _set_state(_CYCLE_SLUGS_KEY, {"cycle": _cycle_id(), "slugs": [*shipped, slug]})
+        )
+
+    progress = _ship_progress(state)
+    entry = dict(progress.get(slug) or {})
+    advanced = False
+    if tool == _PUBLISH_CONTENT and not entry.get("published"):
+        entry["published"] = True
+        advanced = True
+    elif tool == _POST_SOCIAL:
+        channel = _call_field(event, payload, "channel").lower()
+        posted = _entry_channels(entry, "posted")
+        if channel in _SOCIAL_CHANNELS and channel not in posted:
+            entry["posted"] = [*posted, channel]
+            advanced = True
+    if advanced:
+        progress[slug] = entry
+        updates.append(_set_state(_SHIP_PROGRESS_KEY, progress))
+
+    if not updates:
+        return _ALLOW
+    return {"result": "ALLOW", "state_updates": updates}
 
 
 def _decide_tool_result(event: PolicyEvent) -> PolicyResponse:
@@ -272,31 +528,36 @@ def _decide_tool_result(event: PolicyEvent) -> PolicyResponse:
     output on ASK / DENY and the runner collapses a result ASK into a denial.
     """
     tool = _tool_name(event)
-    if tool not in {_UPDATE_BACKLOG, *_GUARDED_TOOLS}:
+    if tool not in {_UPDATE_BACKLOG, _SAVE_ARTIFACT, *_GUARDED_TOOLS}:
         return _ALLOW
     payload = _result_payload(event.get("data"))
     if tool == _UPDATE_BACKLOG:
         return _record_approved_slug(event, payload)
-    return _record_shipped_slug(event, payload)
+    if tool == _SAVE_ARTIFACT:
+        return _record_staged_social(event, payload)
+    return _record_shipping_progress(event, tool, payload)
 
 
 def publish_gate(
     *,
-    max_publishes_per_cycle: int = 3,
+    max_articles_per_cycle: int = 3,
 ) -> PolicyCallable:
     """Factory: gate publication while leaving drafting and staging free.
 
-    :param max_publishes_per_cycle: Distinct articles (backlog slugs) that may
+    :param max_articles_per_cycle: Distinct articles (backlog slugs) that may
         be shipped in one daily cycle. Once that many have shipped, the first
         guarded call for a NEW slug is refused until the next cycle; slugs
-        already counted may still finish their remaining posts.
+        already counted may still finish their remaining posts. Note this
+        caps the articles a cycle may START, not the number of shipping
+        actions: an article already counted can be re-shipped within the same
+        cycle, though R2 still ASKs on every one of those calls.
     :returns: A one-argument policy callable.
     """
 
     def evaluate(event: PolicyEvent) -> PolicyResponse:
         phase = event.get("type")
         if phase == "tool_call":
-            return _decide_tool_call(event, max_publishes_per_cycle)
+            return _decide_tool_call(event, max_articles_per_cycle)
         if phase == "tool_result":
             return _decide_tool_result(event)
         return _ALLOW
@@ -314,17 +575,20 @@ POLICY_REGISTRY: list[dict[str, Any]] = [  # type: ignore[explicit-any]
             "not yet APPROVED, DENIES shipping a NEW article once a cycle's "
             "article ceiling is reached — articles already started in that "
             "cycle may still be finished — and ASKs on every other "
-            "publish_content / post_social call. Drafting, editing and artifact "
-            "staging stay ungated."
+            "publish_content / post_social call. Also DENIES an "
+            "update_backlog PUBLISHED claim for an article this session did "
+            "not watch fully ship. Drafting, editing and artifact staging stay "
+            "ungated, as does update_backlog for every status other than "
+            "PUBLISHED."
         ),
         "params_schema": {
             "type": "object",
             "properties": {
-                "max_publishes_per_cycle": {
+                "max_articles_per_cycle": {
                     "type": "integer",
                     "description": (
-                        "Distinct articles (slugs) shippable per cycle before a new one "
-                        "is refused"
+                        "Distinct articles (slugs) a cycle may start shipping before a "
+                        "new one is refused"
                     ),
                     "default": 3,
                 },

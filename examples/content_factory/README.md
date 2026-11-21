@@ -42,7 +42,7 @@ Drafting is cheap and reversible, so it is unattended. Publishing is neither, so
 ### Five tools
 
 - **`read_backlog`** — pulls the next `READY` feature from `backlog.md`. Free.
-- **`update_backlog`** — sets one entry to any valid backlog status (`READY`, `DRAFTED`, `EDITED`, `APPROVED`, `PUBLISHED`). It validates the value, not the transition — the intended progression comes from the supervisor prompt. The supervisor writes `DRAFTED` at step 5, `APPROVED` at step 8 and the terminal `PUBLISHED` at step 13, once publishing has actually succeeded. (`EDITED` is valid but unused.) Free.
+- **`update_backlog`** — sets one entry to any valid backlog status (`READY`, `DRAFTED`, `EDITED`, `APPROVED`, `PUBLISHED`). It validates the value, not the transition — the intended progression comes from the supervisor prompt. The supervisor writes `DRAFTED` at step 5, `APPROVED` at step 8 and the terminal `PUBLISHED` at step 13, once publishing has actually succeeded. (`EDITED` is valid but unused.) **Free for every status except `PUBLISHED`,** which `publish_gate` R4 checks against what actually shipped — see [R4](#custom-policy-publish_gate).
 - **`save_artifact`** — stages an outline, draft, social post or cycle log. Free.
 - **`publish_content`** — promotes a staged draft into `artifacts/published/`. **Guarded.**
 - **`post_social`** — the outbound egress action, a stub that does not actually post. **Guarded.**
@@ -144,9 +144,11 @@ Two other mechanisms exist if a daily RRULE is the wrong shape:
 | 10 | stage the X thread and LinkedIn post | supervisor | no |
 | 11 | write the cycle log | supervisor | no |
 | 12 | **`publish_content` / `post_social`** | human | **YES** |
-| 13 | `update_backlog` → `PUBLISHED`, on success only | supervisor | no |
+| 13 | `update_backlog` → `PUBLISHED`, on success only | supervisor | checked, not asked |
 
 Step 13 is what closes the state machine. It runs only after the human has approved and every shipping call for that slug has returned successfully — if a publish is denied, parked or errors, the entry stays `APPROVED` and the supervisor reports what failed. So `PUBLISHED` always means *shipped*, never *intended to ship*.
+
+And it is not left to the prompt to get that right: `publish_gate` **R4** DENIES a `PUBLISHED` write for an article the session did not watch fully ship. No human is asked — it is a `DENY` or an `ALLOW` — so step 13 stays unattended while the status column stays truthful.
 
 Step 7 is where the editor earns its keep: the supervisor is forbidden from proceeding past a `REVISE` verdict, and forbidden from substituting its own opinion for the editor's.
 
@@ -160,7 +162,7 @@ Two complementary layers guard the same two shipping tools.
 
 | Policy | Type | What it does |
 |---|---|---|
-| `publish_gate` | custom, stateful | Slug-aware. DENIES a social post whose blog is not yet `APPROVED`; DENIES shipping a *new* article once the cycle ceiling is hit, while letting an article already started finish; otherwise ASKS with a reason naming the slug and artifact. |
+| `publish_gate` | custom, stateful | Slug-aware. DENIES a social post whose blog is not yet `APPROVED`; DENIES shipping a *new* article once the cycle ceiling is hit, while letting an article already started finish; DENIES a `PUBLISHED` backlog write for an article that did not fully ship; otherwise ASKS with a reason naming the slug and artifact. |
 | `guarded_tools` | builtin `risk_score` | Coarse unconditional brake. Knows nothing about slugs — escalates `publish_content` and `post_social` on **every** call, so the gate holds even if the custom policy is removed. |
 | `user_daily_cost_budget` | builtin | $5.00/day per user, ASKs at $0.50. |
 
@@ -170,17 +172,29 @@ The two shipping layers **do not produce two prompts.** The engine evaluates eve
 
 ### Custom policy: `publish_gate`
 
-Three rules, evaluated in this order:
+Four rules. R4 stands on its own — it is the only one that looks at a tool outside the guarded pair — and R1, R3, R2 are evaluated in that order on `publish_content` / `post_social`:
 
 1. **R1 — DENY** `post_social` until this session has recorded a successful `update_backlog(status="APPROVED")` for that slug. The editorial intent is *short-form content cannot precede the long-form post it cites*; what R1 actually enforces is the recorded state transition, not the existence of a blog or an editor verdict. The supervisor performs that transition only after a `PASS`, which is what links the two.
-2. **R3 — DENY** once `max_publishes_per_cycle` (default 3) **articles** have shipped in the current cycle. The unit is the article — a *distinct backlog slug* — not the guarded call, because shipping one article fully takes three guarded calls (`publish_content`, plus a `post_social` per channel). Counting calls would hard-stop the second article partway through.
+2. **R3 — DENY** once `max_articles_per_cycle` (default 3) **articles** have shipped in the current cycle. The unit is the article — a *distinct backlog slug* — not the guarded call, because shipping one article fully takes three guarded calls (`publish_content`, plus a `post_social` per channel). Counting calls would hard-stop the second article partway through.
 
    So the rule is **you may finish an article you have started, but you may not start a new one past the ceiling**: R3 refuses a slug only when that slug is *not already* in the cycle's shipped set *and* the set is full. At a ceiling of 3, with articles A and B shipped and C's `publish_content` just counted, C's remaining `post_social` calls still go through — nothing is left published with its social copy stranded — while a fourth slug D is refused on its first call.
 
    A real stop, not a nag: the ceiling holds until the next cycle (a UTC calendar day).
+
+   Be precise about what it caps, though: **articles started, not shipping actions.** Because an already-counted slug is exempt, the same article can be re-published within the cycle without the ceiling noticing. `max_articles_per_cycle: 3` does not bound the number of `publish_content` / `post_social` calls a cycle makes — R2 is what holds there, asking on every single one, so nothing ships unattended either way.
 3. **R2 — ASK** any other `publish_content` or `post_social`, naming the slug and what is being shipped.
 
-`save_artifact`, `read_backlog` and `update_backlog` are **never** gated on any path. The ungated tier is the whole contrast the example teaches.
+4. **R4 — DENY** an `update_backlog(status="PUBLISHED")` write for an article this session did not watch *fully* ship: `publish_content` succeeded **and** every social variant the cycle staged for it was then posted. It is a `DENY`, never an `ASK`, so no human joins the unattended path.
+
+   R4 exists because `PUBLISHED` is the one backlog status that is not a description of work but **a claim that the work finished** — and it is the column a status dashboard reads. Step 13 of the supervisor prompt orders it correctly, but a prompt is not enforcement: a model under pressure can write it optimistically and nothing would stop it.
+
+   Half-shipped is the failure that matters, not never-shipped. An article whose blog published while its staged social posts were skipped is exactly what a naive "did anything ship?" check waves through, so R4 tracks per-slug completion — what was staged, whether the blog published, which channels went out — and requires all of it. Two honest limits: an article for which **no** social variant was ever staged counts as complete once published (R4 cannot demand a post nobody wrote), and R4 is **not a security boundary** — the supervisor has `os_env: caller_process` with `sandbox: none`, so it could edit `backlog.md` directly and never call `update_backlog` at all. R4 raises the floor on careless optimism.
+
+### What is and is not gated
+
+`read_backlog` and `save_artifact` are **never** gated on any path. `update_backlog` is never gated either for `READY`, `DRAFTED`, `EDITED` or `APPROVED` — every status that describes work in progress.
+
+The one exception is the terminal `PUBLISHED` transition, and it is worth being exact about why that does not blunt the contrast: **R4 gates no work.** The producing tier still runs start to finish with no human and no check. What R4 checks is the *claim that the work is finished* — and it answers with a `DENY` or an `ALLOW`, never an `ASK`, so the unattended path stays unattended. The lesson is unchanged: cheap reversible work runs free, outward-facing irreversible action needs a signature, and a record of what shipped has to match what shipped.
 
 ### How the gate knows what was approved
 
@@ -191,13 +205,43 @@ One subtlety worth knowing if you write your own stateful policy. Policies are e
 - the **server** path, which has the persisted `session_state`
 - the **runner-local** path, which builds a fresh context with only the tool name and arguments, and discards any `state_updates` you return
 
-A stateful rule that DENIES on absent state would therefore fire *permanently* on the runner-local path — an approved post could never be sent. `publish_gate` detects this case via `conversation_id` (documented as `None` only in contexts with no engine) and **defers**, letting the server — which does have the state — make the stateful call. The coarse `guarded_tools` brake still ASKs locally, so deferring never lets anything through silently.
+A stateful rule that DENIES on absent state would therefore fire *permanently* on the runner-local path — an approved post could never be sent. `publish_gate` detects this case via `conversation_id` (documented as `None` only in contexts with no engine) and **defers**, letting the server — which does have the state — make the stateful call. All three stateful rules do this: R1, R3 and R4.
+
+For R1 and R3 that costs nothing, because the coarse `guarded_tools` brake still ASKs locally. **R4 is the one place where deferring is not free:** nothing else gates `update_backlog`, so a `PUBLISHED` write on the runner-local path goes through unchecked. That is still the right trade — denying on state known to be missing would fail *every* local `PUBLISHED` write — but it is a real limit, and the reason R4 is a backstop against careless optimism rather than a guarantee.
+
+### Two state scopes, deliberately not merged
+
+`publish_gate` keeps two separate shipping records, and the split is the most instructive thing in the file:
+
+| key | scope | whose record |
+|---|---|---|
+| `_publish_gate_cycle_slugs` | one UTC day | R3's ceiling. Resetting at midnight is the point of it. |
+| `_publish_gate_ship_progress` | the session, per slug | R4's completion check. An article does not become unshipped at midnight. |
+
+Keying R4 on the ceiling's record would be a bug with teeth: a publish at 23:59 and its status write at 00:01 would be refused, and the first call of a new cycle would reset the record out from under a perfectly good article. R4 therefore uses the session scope, matching R1's. The cost of *that* choice, stated plainly: since the daily schedule uses `session_mode: new`, a `PUBLISHED` write in a later session than the publish is refused. In the normal flow steps 12 and 13 are moments apart in one session, so it does not arise.
 
 ---
 
 ## Guardrails
 
 The research rule is worth calling out, because an unsupervised writer with a search tool is a liability. `blog_writer` is the **only** agent with `web_search`, and its prompt restricts it to the URLs listed in that backlog entry's `sources:` field — nothing else. If a source is missing or unreachable it must say so in the draft rather than substituting another source. A factory that quietly invents its citations is worse than one that stops.
+
+---
+
+## Tests
+
+The gate's four rules and `save_artifact`'s append-vs-truncate split are the two
+places where a careless edit changes behaviour silently, so both have an
+executable spec:
+
+```bash
+python examples/content_factory/tests/test_publish_gate.py
+python examples/content_factory/tests/test_save_artifact.py
+# or: pytest examples/content_factory/tests/
+```
+
+Stdlib only, and `tests/` sits outside `tools/python/` so nothing in it is
+auto-discovered as an agent tool.
 
 ---
 
@@ -210,6 +254,7 @@ See [demo.md](demo.md) for a ~12 minute script. The short version:
 3. Watch it stop at step 12 and ask.
 4. Try to post social copy for a slug that was never approved. **DENIED** — and read the reason.
 5. Ship three articles, then try a fourth. **DENIED** until the next cycle — but the third article's remaining social posts still go out.
+6. Ask it to mark something `PUBLISHED` that never shipped. **DENIED** — the status column cannot lie.
 
 ---
 
@@ -223,8 +268,9 @@ examples/content_factory/
 │   ├── editor/config.yaml          Claude — PASS / REVISE / REJECT
 │   └── social_writer/config.yaml   Claude — X + LinkedIn
 ├── policies/
-│   └── publish_gate.py             the gate: R1 / R3 DENY, R2 ASK
+│   └── publish_gate.py             the gate: R1 / R3 / R4 DENY, R2 ASK
 ├── tools/python/                   five tools, two of them guarded
+├── tests/                          executable spec for the gate and the staging tool
 ├── skills/blog-style/SKILL.md      the editor's rubric
 ├── backlog.md                      five seeded Omnigent features
 └── artifacts/                      everything the factory makes

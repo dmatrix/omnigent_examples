@@ -66,7 +66,10 @@ prompt: |
         a social post was refused), the entry stays `APPROVED`. Report
         exactly what shipped and what did not.
       Do not invent any other status, and never write `PUBLISHED` for a
-      slug you did not just ship.
+      slug you did not just ship. This one is not on your honour: the
+      publish gate DENIES a `PUBLISHED` write for an article it did not
+      watch fully ship — `publish_content` plus every social post you
+      staged. Every other status stays ungated.
 
   Steps 1-11 are designed to run unattended. Step 12 is the one place a
   human is required; step 13 is bookkeeping that records what step 12
@@ -115,6 +118,12 @@ guardrails:
     # that cycle may still finish its remaining posts), and otherwise ASKs
     # with a reason naming the slug and the artifact.
     #
+    # It also guards one call on the otherwise-free producing tier: an
+    # update_backlog write of the terminal PUBLISHED status is DENIED unless
+    # the session actually watched that article ship. That is a claim the work
+    # finished, not a description of work, and it is the column a status
+    # dashboard reads. Every other status stays ungated.
+    #
     # guarded_tools below is the coarse unconditional brake: it knows nothing
     # about slugs and simply escalates publish_content and post_social every
     # time, so the gate holds even if the custom policy is removed or its
@@ -129,9 +138,9 @@ guardrails:
       function:
         path: examples.content_factory.policies.publish_gate.publish_gate
         arguments:
-          # Distinct ARTICLES (slugs) per cycle, not guarded calls: one
-          # article normally takes three calls to ship.
-          max_publishes_per_cycle: 3
+          # Distinct ARTICLES (slugs) a cycle may START shipping, not guarded
+          # calls: one article normally takes three calls to ship.
+          max_articles_per_cycle: 3
 
     # threshold 0 with no tool_points means the session score is always at the
     # threshold, so each guarded tool escalates on every call. Non-guarded

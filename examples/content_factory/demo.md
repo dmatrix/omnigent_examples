@@ -93,11 +93,18 @@ only on real success: if a shipping call is denied, parked or errors, the entry
 stays at `APPROVED` and the supervisor says what failed. An entry reading
 `PUBLISHED` therefore means *shipped*, never *about to ship*.
 
+That one is enforced, not merely instructed. `publish_gate` R4 DENIES a
+`PUBLISHED` write for an article the session did not watch fully ship — see
+[DENY #3](#deny-3--a-published-status-that-did-not-happen). It is the only
+`update_backlog` status that is checked at all.
+
 Two honest caveats:
 
 - `update_backlog` validates the **value**, not the transition. It will happily
-  set `PUBLISHED` on a `READY` entry. The intended order comes from the
-  supervisor's prompt, not from enforcement.
+  set `DRAFTED` on an entry that has no draft, or `APPROVED` on one no editor
+  saw. The intended order comes from the supervisor's prompt, not from
+  enforcement. `PUBLISHED` is the single exception, and the policy rather than
+  the tool is what enforces it.
 - `APPROVED` is load-bearing beyond bookkeeping. The `publish_gate` policy
   refuses to post social copy for a slug it has not seen recorded as `APPROVED`
   in this session. More on that in [Part 3](#part-3--try-to-break-the-gate).
@@ -284,7 +291,7 @@ the daily schedule.
 The unit is the **article**, meaning a distinct backlog slug — not the guarded
 call. That distinction is load-bearing, because shipping one article fully takes
 three guarded calls: `publish_content`, then a `post_social` per channel. If the
-ceiling counted calls, `max_publishes_per_cycle: 3` would stop the *second*
+ceiling counted calls, `max_articles_per_cycle: 3` would stop the *second*
 article on its first publish.
 
 So the semantics are **finish what you started, but do not start a new one**:
@@ -299,15 +306,63 @@ Without that exemption C would end up published with no social copy — stranded
 half-shipped by its own guardrail. Try it: at the ceiling, the article in flight
 finishes and the next one does not begin.
 
-### What is never gated
+The exemption has a consequence worth stating: the ceiling bounds the articles a
+cycle **starts**, not the shipping actions it takes. An already-counted slug can
+be re-published within the same cycle and R3 will not notice. `R2` is what holds
+there — it ASKs on every single shipping call — so nothing goes out unattended
+regardless, but do not read "3 per cycle" as a cap on outbound actions.
 
-```bash
-# all of these run freely, every time
-read_backlog · update_backlog · save_artifact
+### DENY #3 — a `PUBLISHED` status that did not happen
+
+The backlog's status column is about to be read by a dashboard, so the third
+`DENY` guards the *record* rather than the action. Ask for a status you have not
+earned:
+
+```
+Mark stateful-risk-scoring as PUBLISHED.
 ```
 
-That contrast is the whole lesson: drafting is cheap and reversible, so it is
-unattended. Publishing is neither, so it asks.
+**DENIED.** `publish_gate` R4 refuses a `PUBLISHED` write for an article this
+session did not watch *fully* ship. "Fully" is the operative word, and it is
+what makes the rule worth having:
+
+| what the session saw | `PUBLISHED` write |
+|---|---|
+| nothing shipped for the slug | **`DENY`** |
+| social posts went out, `publish_content` never succeeded | **`DENY`** |
+| `publish_content` succeeded, staged X and LinkedIn posts never posted | **`DENY`** — half shipped |
+| `publish_content` plus every staged post succeeded | `ALLOW` |
+
+That third row is the realistic failure. A check that only asked "did anything
+ship?" would wave it through and leave the dashboard reporting a half-published
+article as done — false confidence, which is worse than an honest prompt rule.
+
+Note it is a `DENY`, not an `ASK`. Step 13 stays unattended; it just cannot lie.
+
+Two limits, stated because a reader will find them anyway: an article for which
+**no** social variant was staged counts as complete once published — R4 cannot
+require a post nobody wrote — and R4 is not a security boundary. The supervisor
+has `os_env: caller_process` with `sandbox: none`, so it could edit `backlog.md`
+directly and skip `update_backlog` entirely. R4 raises the floor on careless
+optimism; it does not stop a determined agent.
+
+### What is and is not gated
+
+```bash
+# always free, every time, on every path
+read_backlog · save_artifact
+# free for READY, DRAFTED, EDITED, APPROVED — checked only for PUBLISHED
+update_backlog
+```
+
+That contrast is still the whole lesson: drafting is cheap and reversible, so it
+is unattended. Publishing is neither, so it asks.
+
+R4 does not dent it, and it is worth seeing why. **R4 gates no work.** The
+producing tier runs start to finish with nobody watching. What R4 checks is the
+claim that the work finished — and it answers `DENY` or `ALLOW`, never `ASK`, so
+no human is added to the unattended path. Free to do the work; not free to
+misreport it.
 
 ---
 
@@ -380,6 +435,7 @@ A ~12 minute version:
 | 2 | the gate — two policies, one prompt — then approve |
 | 1 | DENY: social copy before the post is approved |
 | 1 | DENY: the per-cycle ceiling — three articles, and the one in flight still finishes |
+| 1 | DENY: a `PUBLISHED` status for an article that only half shipped |
 | 2 | it schedules itself, and that is gated too |
 
 Never cut the unattended cycle or the gate. Those two together are the argument.
@@ -399,7 +455,7 @@ recorded `APPROVED` transition **in this session**. A fresh session starts with
 no memory, so re-run the cycle rather than jumping to step 12.
 
 **The publish ceiling will not lift.** It counts distinct articles (slugs)
-shipped, and is scoped to a UTC day. Raise `max_publishes_per_cycle` in
+shipped, and is scoped to a UTC day. Raise `max_articles_per_cycle` in
 `config.yaml`, or wait for the next cycle. If the slug you are shipping is
 already counted this cycle, the ceiling does not apply to it — a `DENY` naming
 the ceiling means that slug is a *new* article.
@@ -407,3 +463,11 @@ the ceiling means that slug is a *new* article.
 **Nothing posts to X or LinkedIn.** Correct — `post_social` is a local stub. It
 writes a simulated JSON record to `artifacts/published/<slug>/` and makes no
 network request.
+
+**A `PUBLISHED` write is denied and you think it should not be.** R4 needs the
+publish to have happened **in this session**, and needs it to be complete — if
+you staged an X post and a LinkedIn post, both have to have gone out. The
+message names which part is missing. A legitimate case it still refuses: the
+publish happened in an *earlier* session (the daily schedule uses
+`session_mode: new`), so a later session cannot close the entry out. Re-run the
+cycle, or edit `backlog.md` by hand.
