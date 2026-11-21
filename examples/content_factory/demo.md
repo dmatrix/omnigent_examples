@@ -1,170 +1,374 @@
-# Content Factory — Demo Script
+# Content Factory — Walkthrough
 
-## How to Demo (~12 min)
+A guided tour of this example. By the end you will have run a full production
+cycle, watched the factory stage five artifacts without asking you anything, and
+then watched it refuse to publish without your signature.
 
-The through-line: **a factory that works while you sleep, and knows what it may
-not ship without you.** Everything else is scaffolding for that one sentence.
+Read [README.md](README.md) first if you want the architecture. This file is the
+hands-on path.
+
+---
+
+## Before you start
 
 ```bash
+# Supervisor, editor and social writer run on claude-sdk
+export ANTHROPIC_API_KEY=sk-ant-...
+# blog_writer runs on codex
+export OPENAI_API_KEY=sk-...
+
 omnigent run examples/content_factory/
 ```
 
----
-
-### Act 1: The two tiers (2 min) — "The whole policy is a directory listing"
-
-Open `README.md` and show the `artifacts/` tree, then the config:
-
-```bash
-sed -n '/^artifacts/,/post_social/p' examples/content_factory/README.md
-grep -A6 'guarded_tools:' examples/content_factory/config.yaml
-```
-
-Say it plainly:
-
-> Five artifact kinds. Three are free, two are gated. The free ones are cheap
-> and reversible — an outline, a draft, a cycle log. The gated ones are
-> irreversible: promoting to `published/`, and posting outward. That's the
-> entire design, and it's two lines of `guarded_tools`.
-
-Then point at `threshold: 0` and note there is no `guarded_tools` builtin —
-it's an argument to `risk_score_policy`. People always assume the former.
+Nothing to build and no database to create. The example ships with its input
+queue already filled in.
 
 ---
 
-### Act 2: The backlog (1 min) — "Five features, one already shipped"
+## Part 1 — Understand the input: `backlog.md`
+
+Everything the factory does starts here, so it is worth five minutes before you
+run anything.
 
 ```bash
 cat examples/content_factory/backlog.md
 ```
 
-Four `READY` — one of them deliberately thin — and one already `PUBLISHED`,
-which the state machine skips. Flag the thin one now so the audience is waiting
-for it in Act 4:
+### What it is
 
-> That last entry is too vague to write 900 honest words from. Watch what the
-> editor does with it.
+A plain-Markdown work queue of **blog topics**. One `##` section per topic:
+
+```markdown
+## contextual-policies
+- status: READY
+- title: How Omnigent's Contextual Policies Gate Data, Not Just Tools
+- summary: Omnigent policies can evaluate runtime context and return ALLOW,
+  ASK, or DENY decisions. This lets an agent distinguish safe work from
+  actions that require a human decision.
+- sources:
+  - https://github.com/dmatrix/omnigent
+```
+
+| field | purpose |
+|---|---|
+| `## <slug>` | the entry's ID. Every artifact this topic produces is named after it. |
+| `status` | where the topic is in the pipeline. The factory reads and writes this. |
+| `title` | the working headline handed to the writer. |
+| `summary` | the brief. This is what the draft gets written **from**. |
+| `sources` | the **only** URLs `blog_writer` may research. |
+
+### ⚠️ The topics are subjects to write about, not parts of this example
+
+The shipped backlog is **self-referential**: the factory writes blog posts about
+Omnigent itself. So you will see entries like `cross-harness-delegation` and
+`guarded-tools-escalation`.
+
+Those are *article topics*. They are **not** components of the content factory,
+and `cross-harness-delegation` has nothing to do with the separate
+[cross_harness_coding](../cross_harness_coding/) example — it is simply a real
+Omnigent feature that makes a good blog post. Reading the backlog and thinking
+"why is a content demo talking about coding harnesses?" is an easy and
+reasonable mistake; the answer is that the backlog is *content*, not config.
+
+If that is distracting for your audience, replace the five entries with topics
+from your own domain. Nothing in the factory depends on what they say — see
+[Part 5](#part-5--add-your-own-topic).
+
+### What the statuses mean
+
+```
+READY  ──▶  DRAFTED  ──▶  APPROVED  ──▶  PUBLISHED
+```
+
+| status | set by | meaning |
+|---|---|---|
+| `READY` | you | available for the next cycle to pick up |
+| `DRAFTED` | the supervisor | a draft exists and is staged |
+| `APPROVED` | the supervisor | the editor returned `PASS` |
+| `PUBLISHED` | the supervisor | shipped (after your approval) |
+| `EDITED` | nobody | a valid value the workflow never writes |
+
+Two honest caveats:
+
+- `update_backlog` validates the **value**, not the transition. It will happily
+  set `PUBLISHED` on a `READY` entry. The intended order comes from the
+  supervisor's prompt, not from enforcement.
+- `APPROVED` is load-bearing beyond bookkeeping. The `publish_gate` policy
+  refuses to post social copy for a slug it has not seen recorded as `APPROVED`
+  in this session. More on that in [Part 3](#part-3--try-to-break-the-gate).
+
+As shipped: **four `READY`**, one already `PUBLISHED` (the factory skips it), and
+one of the `READY` four — `recurring-schedules` — deliberately too thin to write
+900 honest words from. Watch for that one in Part 2.
+
+### Who creates it, and how
+
+**You do, by hand.** It is a text file; edit it in any editor. There is no
+generator, no schema validation, and no CLI command.
+
+The factory only ever does two things to it:
+
+```
+read_backlog(status="READY", limit=1)     →  pull the next topic
+update_backlog(slug=..., status=...)      →  advance one entry's status
+```
+
+Neither can add, remove, or rewrite an entry. `update_backlog` changes exactly
+one `- status:` line and leaves every other byte of the file alone.
+
+### Can an agent create the backlog automatically?
+
+Short answer: **it could, but this example deliberately does not let it.**
+
+Three layers to that:
+
+1. **No tool is wired for it.** The five tools in `tools/python/` can read
+   entries and change statuses. None writes a new one.
+2. **The capability nonetheless exists.** The supervisor declares
+   `os_env: {type: caller_process, sandbox: {type: none}}`, which grants
+   filesystem access through the framework's own `sys_os_*` tools. If you asked
+   it to append a topic to `backlog.md`, it could.
+3. **Leaving it unwired is the point.** The backlog is the last place a human
+   decides **what** gets written. If the factory fills its own queue it chooses
+   its own subjects, and your only remaining control is a yes/no at publish
+   time — on an article whose premise you never agreed to. Approving *output*
+   is much weaker than choosing *input*.
+
+If you do want an automated backlog, the shape that keeps the human in the loop
+is a **proposal status**:
+
+- add an `add_backlog_item(slug, title, summary, sources)` tool,
+- have a research sub-agent write new entries as `status: PROPOSED`,
+- teach `read_backlog` to ignore `PROPOSED`,
+- and promote `PROPOSED` → `READY` yourself.
+
+Then the agent fills the funnel and you still pick what enters production. That
+is a genuine extension of this example rather than a change to it, and it is a
+good exercise if you want to go further.
 
 ---
 
-### Act 3: The unattended run (4 min) — "Steps 1 through 11, no human"
+## Part 2 — Run one cycle
 
 ```
 Run one factory cycle.
 ```
 
-Narrate the handoffs as they appear — the supervisor announces each agent and
-its harness by design:
+On a **fresh** session the supervisor will first propose a daily schedule. Say
+no for now — Part 4 covers it — or approve it and carry on; it does not affect
+this cycle.
 
-1. `read_backlog` pulls the next `READY` feature.
-2. The outline is staged.
-3. **Codex** drafts the post, researching only the URLs in that entry's
-   `sources:` list.
-4. **Claude** edits and returns a verdict.
-5. **Claude** derives the X thread and LinkedIn post.
-6. The cycle log is written.
+Then watch twelve steps. The supervisor announces which agent and which harness
+is working at each one, by design.
 
-Then the point:
+| # | what happens | who | you? |
+|---|---|---|---|
+| 1 | pull the next `READY` topic | supervisor | — |
+| 2 | stage an outline | supervisor | — |
+| 3 | **draft the blog post** | `blog_writer` (Codex) | — |
+| 4 | stage the draft | supervisor | — |
+| 5 | set status `DRAFTED` | supervisor | — |
+| 6 | **review the draft** | `editor` (Claude) | — |
+| 7 | on `REVISE`/`REJECT`, back to step 3 | supervisor | — |
+| 8 | set status `APPROVED` | supervisor | — |
+| 9 | **derive X + LinkedIn copy** | `social_writer` (Claude) | — |
+| 10 | stage both social pieces | supervisor | — |
+| 11 | write the cycle log | supervisor | — |
+| 12 | **publish / post** | — | **yes** |
 
-> Eleven steps, two vendors, five artifacts on disk — outline, draft, X thread,
-> LinkedIn post, cycle log. Nobody approved anything. That's deliberate — if
-> drafting needed a signature, the factory would be a very slow text editor.
+Default `limit=1` means step 1 takes the *first* `READY` entry, so your first
+cycle will draft `contextual-policies`.
 
-Show the staged output:
+### What to look for
+
+**Two vendors in one pipeline.** Codex writes, Claude edits. The draft is
+produced by one model family and judged by another.
+
+**The research leash.** `blog_writer` is the only agent with `web_search`, and
+its prompt restricts it to the URLs in that entry's `sources:` list. If a source
+is unreachable it must say so in the draft rather than substitute another.
+
+**Nobody approved anything.** Steps 1–11 run unattended. That is the design: if
+drafting needed a signature, the factory would be a slow text editor.
+
+When it stops, inspect what it made:
 
 ```bash
 find examples/content_factory/artifacts -type f | sort
 ```
 
----
+Five files for one topic — outline, draft, X thread, LinkedIn post, cycle log.
+All free. All cheap to throw away.
 
-### Act 4: The bounce (1 min) — "The editor is not a rubber stamp"
+### See the editor push back
 
-Run cycles until the thin entry comes up — it is seeded `READY`, so a normal
-cycle will select it. To go straight there, set the other `READY` entries to
-`DRAFTED` first, or just ask the factory to run the next cycle repeatedly.
+Run cycles until `recurring-schedules` comes up (it is `READY`, so a cycle will
+reach it). Its summary is one bare sentence — "Omnigent supports recurring
+scheduled tasks defined with an RRULE" — with no mechanism and no motivation.
 
-The entry is designed to elicit a `REVISE` (a `REJECT` is also a valid outcome
-for a draft this thin). Either way the supervisor is forbidden by its prompt
-from proceeding — it routes the feedback back to `blog_writer` rather than
-shrugging and publishing.
+The editor is designed to send that back as `REVISE`; `REJECT` is also a fair
+outcome for a draft that thin. Either way the supervisor is **forbidden by its
+prompt** from proceeding, so it routes the feedback back to `blog_writer`
+instead of shrugging and publishing.
 
-> The supervisor is forbidden by its prompt from overruling the editor or
-> substituting its own opinion of the draft. The verdict is the verdict. Note
-> this one is prompt-enforced, not policy-enforced — unlike the gate in Act 6.
-
----
-
-### Act 5: The gate (2 min) — "Step 12 needs you"
-
-The cycle stops and asks. Show the pending approval and read the reason aloud —
-it names the slug and the artifact.
-
-Point out that **two** policies fired and the human sees **one** prompt: the
-engine joins the slug-specific reason from `publish_gate` with the blanket
-reason from `guarded_tools` into a single pending approval.
-
-Approve it. The content ships to `artifacts/published/<slug>/`.
+Note the enforcement strength here: that one is a *prompt* rule. The gate in
+Part 3 is a *policy* rule. The difference matters.
 
 ---
 
-### Act 6: Sequencing (1 min) — "You can't tweet about a post that doesn't exist"
+## Part 3 — Try to break the gate
 
-Ask it to post social copy for a slug that was never approved:
+This is the part worth your attention. Everything above is plumbing.
+
+### The gate itself
+
+At step 12 the cycle stops and asks. Read the reason — it names the slug and
+what is about to ship.
+
+**Two policies fired, and you got one prompt.** The engine evaluates every
+policy and joins all `ASK` reasons into a single pending approval, so you see
+one request carrying both reasons:
+
+| policy | what it contributes |
+|---|---|
+| `publish_gate` | custom, stateful, slug-aware — the specific reason |
+| `guarded_tools` | builtin `risk_score`, slug-blind — the blanket brake |
+
+The second is deliberately redundant. It knows nothing about slugs or state, so
+the gate still holds if the custom policy is removed or misconfigured.
+
+Approve it. The content moves to `artifacts/published/<slug>/`.
+
+### DENY #1 — social copy before the post is approved
+
+Ask it to post for a slug that has not been through the editor:
 
 ```
-Post the LinkedIn copy for <a slug that has not passed the editor>.
+Post the LinkedIn copy for recurring-schedules.
 ```
 
-**DENIED**, before any approval prompt appears — R1 short-circuits the engine.
+**DENIED** — and note it happens *before* any approval prompt, because a `DENY`
+short-circuits the engine.
 
-> No social post for a slug this session never recorded as `APPROVED`. That
-> isn't a prompt instruction the model might forget under pressure — it's a
-> policy, outside the model, that the agent cannot talk its way past. Be precise
-> about what it checks: the recorded state transition, not the existence of a
-> blog. The supervisor only records `APPROVED` after a `PASS`, and that is what
-> connects the policy to the editorial rule.
+Be precise about what that rule checks. `publish_gate` R1 refuses because this
+session has no recorded successful `update_backlog(slug=..., status="APPROVED")`
+for that slug. It does **not** inspect an editor verdict or confirm a blog
+exists. The supervisor only records `APPROVED` after a `PASS`, and that is what
+connects the policy to the editorial rule.
 
----
+The useful part: this is not a prompt instruction the model might forget under
+pressure. It lives outside the model, and the agent cannot talk its way past it.
 
-### Act 7: The ceiling (1 min) — "Three a day, then stop"
+### DENY #2 — the per-cycle ceiling
 
-Publish until the cycle ceiling is reached, then try a fourth.
+Publish until three have succeeded in one cycle, then try a fourth.
 
-**DENIED** — and note that this is a DENY, not another ASK. A ceiling that only
-nags is not a ceiling. It holds until the next cycle.
+**DENIED**, and note it is a `DENY`, not another `ASK`. A ceiling that only nags
+is not a ceiling. It holds until the next cycle — a UTC calendar day, matching
+the daily schedule.
 
----
-
-### Act 8: Continuous operation (1 min) — "It schedules itself"
+### What is never gated
 
 ```bash
-grep -A4 'Continuous operation' examples/content_factory/config.yaml
+# all of these run freely, every time
+read_backlog · update_backlog · save_artifact
 ```
 
-On its first fresh run the supervisor *proposes* the schedule, calling
-`sys_scheduled_task_create` with `FREQ=DAILY;BYHOUR=9;BYMINUTE=0`. Close on the
-detail that lands best:
-
-> Creating that schedule is itself approval-gated. The first thing this agent
-> ever asks you to approve is its own existence — which is exactly the right
-> default for something that proposes to wake up every morning and write in
-> your name.
+That contrast is the whole lesson: drafting is cheap and reversible, so it is
+unattended. Publishing is neither, so it asks.
 
 ---
 
-### Timing Summary
+## Part 4 — Make it continuous
 
-| Act | Minutes | Beat |
-|---|---|---|
-| 1 | 2 | Two tiers, one config block |
-| 2 | 1 | The seeded backlog |
-| 3 | 4 | Eleven unattended steps, two vendors |
-| 4 | 1 | The editor bounces a thin entry |
-| 5 | 2 | The gate — two policies, one prompt |
-| 6 | 1 | DENY: social before long-form |
-| 7 | 1 | DENY: per-cycle ceiling |
-| 8 | 1 | It schedules itself, gated |
+Agent YAML has **no cron field**. Recurring work is created at runtime, by the
+agent, through a tool — so the factory sets up its own schedule:
 
-**Total: ~13 min.** Drop Acts 4 and 7 for a 9-minute version; never drop 3 or
-5, which are the whole argument.
+```yaml
+rrule: "FREQ=DAILY;BYHOUR=9;BYMINUTE=0"
+session_mode: new
+```
+
+On its first fresh run the supervisor *proposes* this via
+`sys_scheduled_task_create`. Each firing starts a new session and runs one
+cycle.
+
+**Creating a schedule is itself approval-gated.** The first thing this agent
+asks you to approve is its own existence — which is the right default for
+something proposing to wake up every morning and write in your name.
+
+```bash
+omnigent run examples/content_factory/   # then: "Show me the schedule you created."
+```
+
+---
+
+## Part 5 — Add your own topic
+
+The real test of whether you understand the example.
+
+```markdown
+## my-first-topic
+- status: READY
+- title: A Headline You Would Actually Click
+- summary: Two or three sentences of real detail. This is the brief the writer
+  drafts from, so a thin summary produces a thin draft the editor will bounce.
+- sources:
+  - https://example.com/the-one-page-you-want-cited
+```
+
+Append that to `backlog.md`, then:
+
+```
+Run one factory cycle.
+```
+
+Three rules worth respecting:
+
+1. **The slug must be unique** and is used verbatim in every artifact filename.
+2. **Do not start a line inside a field with `## `** — sections are split on
+   `^## `, so that manufactures a phantom entry which never surfaces.
+3. **Put real URLs in `sources:`.** They are the writer's only permitted
+   research, and it must flag a missing one rather than invent a replacement.
+
+The parser handles colons in titles and summaries, slugs that are prefixes of
+other slugs, empty `sources:` lists, and CRLF line endings. Any rejected update
+leaves the file byte-for-byte unchanged.
+
+---
+
+## Presenting this to an audience
+
+A ~12 minute version:
+
+| min | beat |
+|---|---|
+| 2 | `backlog.md` and the two-tier `artifacts/` layout — the design in two files |
+| 4 | one unattended cycle: Codex drafts, Claude edits, five artifacts, no human |
+| 2 | the gate — two policies, one prompt — then approve |
+| 1 | DENY: social copy before the post is approved |
+| 1 | DENY: the per-cycle ceiling |
+| 2 | it schedules itself, and that is gated too |
+
+Never cut the unattended cycle or the gate. Those two together are the argument.
+
+---
+
+## Troubleshooting
+
+**"Nothing is `READY`."** Every entry has moved on. Reset one:
+`update_backlog` back to `READY`, or edit the file.
+
+**The same topic keeps coming up.** Its status never advanced — the cycle
+probably stopped at the editor. Check `artifacts/drafts/`.
+
+**A social post is denied and you think it should not be.** The gate needs a
+recorded `APPROVED` transition **in this session**. A fresh session starts with
+no memory, so re-run the cycle rather than jumping to step 12.
+
+**The publish ceiling will not lift.** It is scoped to a UTC day. Raise
+`max_publishes_per_cycle` in `config.yaml`, or wait for the next cycle.
+
+**Nothing posts to X or LinkedIn.** Correct — `post_social` is a local stub. It
+writes a simulated JSON record to `artifacts/published/<slug>/` and makes no
+network request.
