@@ -91,7 +91,7 @@ Look up CUST-1004's account details
 
 **Watch:** On the 4th distinct customer → ASK: "Bulk access guard: this session has accessed 4 distinct customer records (limit: 3). Continue?"
 
-**Say:** "This is a custom policy — 30 lines of Python. It tracks distinct customer IDs across the session and ASKs when you've accessed more than 3. This is the 'write your own policy' pattern — factory function, session state, POLICY_REGISTRY export. Everything a developer needs to build org-specific rules."
+**Say:** "This is a custom policy — one short Python module. It tracks distinct customer IDs across the session and ASKs when you've accessed more than 3. This is the 'write your own policy' pattern — factory function, session state, POLICY_REGISTRY export. Everything a developer needs to build org-specific rules."
 
 ---
 

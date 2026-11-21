@@ -189,6 +189,8 @@ Located at `policies/bulk_access_guard.py`, this is a custom policy that demonst
 
 The policy extracts customer ID patterns from tool call arguments, maintains a deduplicated set in session state, and ASKs for approval when the count exceeds the configured limit. This prevents bulk data exfiltration by flagging when an agent accesses too many customer records in a single session.
 
+**Enforcement path** -- the guard is stateful, so it accumulates only on the server path (`omnigent run`), where the engine persists `session_state` and applies the policy's `state_updates`. The runner-local tool gate passes no `session_state` and discards `state_updates`, so there a single call naming more than `max_customers` distinct IDs still ASKs, but counts do not carry from one call to the next.
+
 ---
 
 ## How to Demo

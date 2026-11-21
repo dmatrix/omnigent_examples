@@ -144,13 +144,14 @@ bulk_access_guard:
       max_customers: 3
 ```
 
-Custom Python policy in `policies/bulk_access_guard.py` (~30 lines). Demonstrates the authoring pattern:
+Custom Python policy in `policies/bulk_access_guard.py` (~85 lines). Demonstrates the authoring pattern:
 1. **Factory function** — takes `max_customers`, returns a policy callable
 2. **Session state** — reads/writes `session_state` to track customer IDs across turns
 3. **Pattern extraction** — regex finds `CUST-XXXX` in tool call arguments
 4. **`POLICY_REGISTRY`** — module exports metadata for framework discovery
 
 ASKs when distinct customer count exceeds the limit. Prevents bulk data exfiltration.
+Tool identity comes from `event["target"]` and arguments from `event["data"]["arguments"]` — the field names `PolicyEvent` actually defines.
 
 ---
 
@@ -252,4 +253,4 @@ Phase: tool_call
 All policies passed? --> tool executes
 ```
 
-Taint policies always fire (no condition). Deny policies only activate when their condition label is `"True"`. Stateful policies (risk_score, bulk_access_guard) accumulate state and may escalate on any call. The first DENY or unresolved ASK is final — the model receives the reason string and must respond without the tool result.
+Taint policies always fire (no condition). Deny policies only activate when their condition label is `"True"`. Stateful policies (risk_score, bulk_access_guard) accumulate state and may escalate on any call — accumulation requires the server engine, which persists `session_state` and applies `state_updates`. The first DENY or unresolved ASK is final — the model receives the reason string and must respond without the tool result.
