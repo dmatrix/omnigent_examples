@@ -208,6 +208,30 @@ STALE_EXEMPT = re.compile(
     re.IGNORECASE,
 )
 
+# Clause boundaries, applied before the exemption. Exempting a whole LINE on
+# one negating phrase left a one-clause bypass:
+#
+#     "No agent declares `os_env`, but the supervisor has `os_env`."
+#
+# -- where the leading negation excused the false second half. Splitting first
+# means a negation can only excuse the clause it actually appears in. Sentence
+# punctuation plus the coordinating conjunctions that join two independent
+# claims; `and`/`or` are included because "X and Y" carries two assertions.
+CLAUSE_BOUNDARY = re.compile(
+    r"[.;,:]|\s(?:but|and|or|while|whereas|though|although|yet|however|"
+    r"nevertheless|whilst)\s",
+    re.IGNORECASE,
+)
+
+
+def _clauses(line: str) -> list[str]:
+    """Split *line* into clauses for independent exemption checks.
+
+    :param line: One line of prose.
+    :returns: Non-empty clause strings.
+    """
+    return [part for part in CLAUSE_BOUNDARY.split(line) if part and part.strip()]
+
 
 class Skipped(Exception):
     """Raised by a case that needs Omnigent installed."""
@@ -529,8 +553,14 @@ def test_no_file_in_the_bundle_still_says_an_agent_declares_os_env() -> None:
     offenders = []
     for path in PROSE_FILES:
         for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
-            if STALE_OS_ENV_CLAIM.search(line) and not STALE_EXEMPT.search(line):
-                offenders.append(f"{path.name}:{number}: {line.strip()[:70]}")
+            if not STALE_OS_ENV_CLAIM.search(line):
+                continue
+            # Clause by clause, so a negation in one cannot excuse a false
+            # assertion in another. The claim regex is re-applied per clause:
+            # a match that only spanned a boundary was never one assertion.
+            for clause in _clauses(line):
+                if STALE_OS_ENV_CLAIM.search(clause) and not STALE_EXEMPT.search(clause):
+                    offenders.append(f"{path.name}:{number}: {clause.strip()[:70]}")
     assert not offenders, f"stale 'declares os_env' claims: {offenders}"
 
 

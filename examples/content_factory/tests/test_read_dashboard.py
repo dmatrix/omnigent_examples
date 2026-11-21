@@ -450,6 +450,58 @@ def test_ceiling_is_omitted_when_the_key_path_is_broken_at_any_level():
         assert "article_ceiling" not in snapshot, label
 
 
+def test_ceiling_is_omitted_for_a_tab_indented_config():
+    """Tabs are not legal YAML indentation, so there is no ceiling to report.
+
+    The indent walk measures leading whitespace by character count, so a
+    tab-indented file read cleanly and returned a ceiling out of a config no
+    real parser would load. Omit-rather-than-guess has to cover that too.
+
+    A tab inside a *value* is unaffected -- only leading whitespace is
+    rejected.
+    """
+    with sandbox() as root:
+        _backlog(root)
+        root.joinpath("config.yaml").write_text(
+            "guardrails:\n"
+            "\tpolicies:\n"
+            "\t\tpublish_gate:\n"
+            "\t\t\tfunction:\n"
+            "\t\t\t\targuments:\n"
+            "\t\t\t\t\tmax_articles_per_cycle: 3\n",
+            encoding="utf-8",
+        )
+        all_tabs = _snapshot()
+
+        # One tab deep in an otherwise space-indented file is still invalid.
+        root.joinpath("config.yaml").write_text(
+            "guardrails:\n"
+            "  policies:\n"
+            "    publish_gate:\n"
+            "      function:\n"
+            "        arguments:\n"
+            "\t      max_articles_per_cycle: 3\n",
+            encoding="utf-8",
+        )
+        one_tab = _snapshot()
+
+        # A tab in the VALUE, with space indentation, stays readable.
+        root.joinpath("config.yaml").write_text(
+            "guardrails:\n"
+            "  policies:\n"
+            "    publish_gate:\n"
+            "      function:\n"
+            "        arguments:\n"
+            "          max_articles_per_cycle:\t3\n",
+            encoding="utf-8",
+        )
+        tab_in_value = _snapshot()
+
+    assert "article_ceiling" not in all_tabs
+    assert "article_ceiling" not in one_tab
+    assert tab_in_value["article_ceiling"] == 3
+
+
 def test_ceiling_is_read_from_the_real_shipped_config():
     """The parser and the config this example actually ships must agree."""
     from_disk = _article_ceiling_of_shipped_config()

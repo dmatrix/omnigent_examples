@@ -47,6 +47,25 @@ def _parse_backlog(content: str) -> list[dict]:
 _CEILING_PATH = ("guardrails", "policies", "publish_gate", "function", "arguments")
 
 
+def _tab_indented(lines: list[str]) -> bool:
+    """Whether any content line is indented with a tab.
+
+    Tabs are not legal YAML indentation, so a file using them is one a real
+    parser rejects. The indent walk measures leading whitespace by character
+    count and would otherwise read such a file happily -- reporting a ceiling
+    out of a config that could never load. Checked once before descending.
+
+    Only leading whitespace counts: a tab inside a value or a comment is fine.
+    Whitespace-only lines are blank lines in YAML and carry no indentation.
+    """
+    for line in lines:
+        if not line.strip():
+            continue
+        if "\t" in line[: len(line) - len(line.lstrip())]:
+            return True
+    return False
+
+
 def _block_level(block: list[str]) -> int | None:
     """The indent of *block*'s own mapping level: its first content line.
 
@@ -111,8 +130,9 @@ def _article_ceiling() -> int | None:
     identically named argument, and not one nested deeper inside it.
 
     Omits rather than guesses on every failure mode, as before: an unreadable
-    config, a missing or renamed `publish_gate`, a non-integer value, and a
-    value with a trailing comment all return ``None``.
+    config, a missing or renamed `publish_gate`, a non-integer value, a value
+    with a trailing comment, and a tab-indented file -- which is not legal YAML
+    -- all return ``None``.
 
     :returns: The configured ceiling, or ``None`` when it cannot be read
         unambiguously.
@@ -121,6 +141,11 @@ def _article_ceiling() -> int | None:
         with open(os.path.join(_content_factory_path(), "config.yaml"), encoding="utf-8") as config_file:
             block: list[str] | None = config_file.read().splitlines()
     except OSError:
+        return None
+
+    # Omit rather than guess: a tab-indented file is not loadable YAML, so
+    # there is no ceiling to report from it.
+    if _tab_indented(block):
         return None
 
     for key in _CEILING_PATH:
