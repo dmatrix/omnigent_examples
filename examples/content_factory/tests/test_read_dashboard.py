@@ -44,6 +44,25 @@ def _load_tool():
 read_backlog = _load_tool()
 
 
+def _article_ceiling_of_shipped_config() -> int | None:
+    """Run the tool's own ceiling parser against the repo's real config.yaml.
+
+    Every other ceiling case uses a fixture. This one closes the loop: if a
+    future config edit breaks the key path the parser walks, the dashboard
+    loses its ceiling silently, and only reading the shipped file catches it.
+    """
+    module_spec = importlib.util.spec_from_file_location("read_backlog_shipped", TOOL_PATH)
+    assert module_spec and module_spec.loader
+    module = importlib.util.module_from_spec(module_spec)
+    module_spec.loader.exec_module(module)
+    previous = os.getcwd()
+    os.chdir(EXAMPLE_ROOT.parent.parent)
+    try:
+        return module._article_ceiling()
+    finally:
+        os.chdir(previous)
+
+
 class sandbox:
     """Run one case in a throwaway CWD with an independent factory tree."""
 
@@ -254,6 +273,130 @@ guardrails:
         snapshot = _snapshot()
 
     assert snapshot["article_ceiling"] == 3
+
+
+def test_ceiling_survives_policies_declared_before_and_after_publish_gate():
+    """The parser must not depend on publish_gate coming first.
+
+    `_article_ceiling` used to scan config.yaml as an ordered line sequence, so
+    any policy inserted before `publish_gate` silently removed the ceiling from
+    the dashboard. It now descends the key path by indentation instead.
+    """
+    with sandbox() as root:
+        _backlog(root)
+        root.joinpath("config.yaml").write_text(
+            """guardrails:
+  policies:
+    no_self_modification:
+      type: function
+      function:
+        path: omnigent.policies.builtins.orchestration.read_only_os
+        arguments:
+          deny_reason: |
+            Not a ceiling: max_articles_per_cycle: 99
+    publish_gate:
+      type: function
+      function:
+        path: examples.content_factory.policies.publish_gate.publish_gate
+        arguments:
+          max_articles_per_cycle: 3
+    user_daily_cost_budget:
+      type: function
+      function:
+        arguments:
+          max_cost_usd: 5.0
+""",
+            encoding="utf-8",
+        )
+        before_and_after = _snapshot()
+
+        root.joinpath("config.yaml").write_text(
+            """guardrails:
+  policies:
+    publish_gate:
+      type: function
+      function:
+        arguments:
+          max_articles_per_cycle: 3
+    guarded_tools:
+      type: function
+      function:
+        arguments:
+          threshold: 0
+""",
+            encoding="utf-8",
+        )
+        gate_first = _snapshot()
+
+    assert before_and_after["article_ceiling"] == 3
+    assert gate_first["article_ceiling"] == 3
+
+
+def test_ceiling_reads_only_publish_gates_own_argument():
+    """A sibling policy's identically named argument must not be picked up."""
+    with sandbox() as root:
+        _backlog(root)
+        root.joinpath("config.yaml").write_text(
+            """guardrails:
+  policies:
+    decoy_gate:
+      function:
+        arguments:
+          max_articles_per_cycle: 99
+    publish_gate:
+      function:
+        arguments:
+          max_articles_per_cycle: 2
+""",
+            encoding="utf-8",
+        )
+        sibling_decoy = _snapshot()
+
+        # publish_gate present but carrying no ceiling, while a sibling does.
+        root.joinpath("config.yaml").write_text(
+            """guardrails:
+  policies:
+    decoy_gate:
+      function:
+        arguments:
+          max_articles_per_cycle: 99
+    publish_gate:
+      function:
+        arguments:
+          something_else: 1
+""",
+            encoding="utf-8",
+        )
+        gate_without_ceiling = _snapshot()
+
+    assert sibling_decoy["article_ceiling"] == 2
+    assert "article_ceiling" not in gate_without_ceiling
+
+
+def test_ceiling_is_omitted_when_the_key_path_is_broken_at_any_level():
+    """Each missing level omits rather than guesses, as before."""
+    broken = {
+        "no guardrails": "policies:\n  publish_gate:\n    function:\n      arguments:\n        max_articles_per_cycle: 3\n",
+        "no policies": "guardrails:\n  publish_gate:\n    function:\n      arguments:\n        max_articles_per_cycle: 3\n",
+        "no function": "guardrails:\n  policies:\n    publish_gate:\n      arguments:\n        max_articles_per_cycle: 3\n",
+        "no arguments": "guardrails:\n  policies:\n    publish_gate:\n      function:\n        max_articles_per_cycle: 3\n",
+        "guardrails nested, not top level": "wrapper:\n  guardrails:\n    policies:\n      publish_gate:\n        function:\n          arguments:\n            max_articles_per_cycle: 3\n",
+    }
+    results = {}
+    for label, text in broken.items():
+        with sandbox() as root:
+            _backlog(root)
+            root.joinpath("config.yaml").write_text(text, encoding="utf-8")
+            results[label] = _snapshot()
+
+    for label, snapshot in results.items():
+        assert "article_ceiling" not in snapshot, label
+
+
+def test_ceiling_is_read_from_the_real_shipped_config():
+    """The parser and the config this example actually ships must agree."""
+    from_disk = _article_ceiling_of_shipped_config()
+    assert from_disk == 3, f"shipped config.yaml yields {from_disk!r}, expected 3"
 
 
 def test_dashboard_backlog_read_error_is_returned():

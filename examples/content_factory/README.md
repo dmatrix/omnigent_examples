@@ -209,7 +209,7 @@ Two complementary layers guard the same two shipping tools.
 |---|---|---|
 | `publish_gate` | custom, stateful | Slug-aware. DENIES a social post whose blog is not yet `APPROVED`; DENIES shipping a *new* article once the cycle ceiling is hit, while letting an article already started finish; DENIES a `PUBLISHED` backlog write for an article that did not fully ship; otherwise ASKS with a reason naming the slug and artifact. |
 | `guarded_tools` | builtin `risk_score` | Coarse unconditional brake. Knows nothing about slugs — escalates `publish_content` and `post_social` on **every** call, so the gate holds even if the custom policy is removed. |
-| `no_self_modification` | builtin `read_only_os` | Backstop. DENIES every file-write tool (`sys_os_write` / `sys_os_edit` and the native `Write` / `Edit` / `MultiEdit` / `NotebookEdit` aliases). Inert as configured — the supervisor declares no `os_env`, so it holds no such tool — and there so that re-adding one does not silently restore the capability. See [Why the supervisor has no filesystem access](#why-the-supervisor-has-no-filesystem-access). |
+| `no_self_modification` | builtin `cel` | Backstop. DENIES every Omnigent file **and shell** tool (`sys_os_write` / `sys_os_edit` / `sys_os_shell` plus the native `Write` / `Edit` / `MultiEdit` / `NotebookEdit` / `Bash` / `shell` / `apply_patch` aliases). Inert as configured — no agent declares `os_env`, so none holds such a tool — and there so that re-adding one does not silently restore the capability. See [Why the supervisor has no filesystem access](#why-the-supervisor-has-no-filesystem-access). |
 | `user_daily_cost_budget` | builtin | $5.00/day per user, ASKs at $0.50. |
 
 Each sub-agent additionally carries `cost_budget` ($1.00, ASK at $0.25) and `max_tool_calls_per_session` (250) to bound runaway tool use.
@@ -278,9 +278,8 @@ The research rule is worth calling out, because an unsupervised writer with a se
 
 ## Why the supervisor has no filesystem access
 
-Three of the four configs declare no `os_env`; only `blog_writer` still does.
-That is deliberate, and it is written down here because of a failure worth
-admitting.
+None of the four configs declares `os_env`. That is deliberate, and it is
+written down here because of a failure worth admitting.
 
 **What happened.** A smoke run of this example hit a machine-level sandbox
 failure launching the Codex sub-agent. The supervisor decided it was authorised
@@ -311,7 +310,7 @@ exactly this shape of problem.
 prompt rule would be the wrong lesson in an example built to teach that policy
 beats prompt, and it is precisely what already failed: the model wrote its own
 justification for the edit into a comment. So the `os_env` block is gone from
-the supervisor, from `editor` and from `social_writer`.
+all four configs.
 
 Nothing is lost. Every write the documented workflow performs goes through one
 of the [five tools](#five-tools), which run as server-side subprocesses rooted
@@ -322,48 +321,112 @@ was never a trade-off against `save_artifact` or `update_backlog`. On
 a *sandboxed* CLI), so removing `os_env` leaves the supervisor with no
 file-write tool of any kind.
 
-`no_self_modification` is the second layer: the `read_only_os` builtin, DENYing
-every write/edit tool. It is **inert as configured** — there is no such tool to
-gate — and it is there because `os_env` is the boilerplate CLAUDE.md documents,
-so re-adding it is a plausible accident. `DENY`, not `ASK`, on purpose: the
-observed edit happened in a headless run, and the model's own stated reason for
-disabling the sandbox was that headless sub-agents cannot answer approval
-prompts. An `ASK` nobody can answer is the pressure that produced the edit.
+`no_self_modification` is the second layer: a `cel` policy DENYing every
+Omnigent file *and shell* tool by name. It is **inert as configured** — there
+is no such tool to gate — and it is there because `os_env` is the boilerplate
+CLAUDE.md documents, so re-adding it is a plausible accident. For the
+`sys_os_*` family the gate is real: those calls route through Omnigent's
+dispatch bridge and are evaluated before they run.
+
+It is CEL rather than the `read_only_os` builtin because `read_only_os` matches
+write/edit names only and allows `sys_os_shell`, and a shell redirect rewrites
+YAML just as well as an edit. CEL takes an explicit tool list, so the shell
+tools go in it. It is still a registry builtin, so the example's
+remote-server story is unchanged.
+
+`DENY`, not `ASK`, on purpose: the observed edit happened in a headless run,
+and the model's own stated reason for disabling the sandbox was that headless
+sub-agents cannot answer approval prompts. An `ASK` nobody can answer is the
+pressure that produced the edit. What the backstop cannot do is gate Codex's
+native tools — see below.
 
 ### What this does not close
 
-Three honest gaps.
+One agent can still write the bundle, and it is worth being exact about why —
+the first version of this change claimed the hole was one `os_env` block wide,
+and that was wrong.
 
-1. **`blog_writer` still declares `os_env`, so it still holds
-   `sys_os_write` / `sys_os_edit` / `sys_os_shell`.** A supervisor that cannot
-   write files can still ask a sub-agent that can. It is left in place because
-   the Codex harness launch is sensitive to exactly the sandbox configuration
-   that failed in the observed run, and that is machine configuration rather
-   than a property of this bundle. This is a real bypass, one delegation hop
-   wide, and it is not closed.
-2. **`read_only_os` does not gate `sys_os_shell`**, so a shell redirect would
-   get past the policy layer. Moot while no `os_env` is declared — there is no
-   shell tool either — but it is why the policy is a backstop and not the
-   mechanism.
-3. **A sandbox would have been more structural, and does not work here.**
-   Constraining `os_env.sandbox` with a `write_paths` allowlist is a
-   kernel-level boundary rather than a tool-registration one, and it would have
-   covered shell too. On the development machine, both
-   `sandbox: {type: darwin_seatbelt}` and `{type: auto}` fail launch
-   preparation outright:
+**`agents/blog_writer` runs `harness: codex`, and Codex has its own file
+tools that are not Omnigent tools.** Removing `os_env` does take away its
+`sys_os_*` tools, and it does narrow Codex's sandbox — `_sandbox_mode`
+(`omnigent/inner/codex_executor.py:2830-2838`) maps `sandbox: {type: none}` to
+`danger-full-access`, the whole filesystem, and an absent `os_env` to
+`read-only`. That is a real reduction. But it is not a closure, for two
+reasons that compound:
 
-   ```
-   OSError: Cannot validate trusted runtime: mutable hard-link alias for
-   .../site-packages/platformdirs/__main__.py; install trusted runtime files
-   as copies
+1. **The `read-only` does not survive.** Because the agent is passed
+   AP-bridged tools, `codex_executor.py:5494-5496` upgrades `read-only` back
+   to `workspace-write`:
+
+   ```python
+   sandbox_mode = _sandbox_mode(self._os_env_spec)
+   if tools and sandbox_mode == "read-only":
+       sandbox_mode = "workspace-write"
    ```
 
-   A sandbox is also platform-dependent for this harness — Windows
-   `windows_jobobject` provides no filesystem isolation and is rejected for
-   sandboxed `claude-sdk` launches. Shipping a configuration that fails to
-   start is how you get the next `yolo: true`, so the example does not use one.
-   If your host supports it, a `write_paths` allowlist is strictly better than
-   what is here.
+   Every agent here has framework builtins, so `tools` is never empty and the
+   upgrade always fires. The bundle sits inside the workspace, so
+   `agents/blog_writer/config.yaml` is writable.
+
+2. **No policy can gate it.** Codex's native calls reach Omnigent marked
+   `internally_executed` and have *already run* — see
+   `omnigent/runtime/harnesses/_executor_adapter.py:1311-1313`: *"Observed
+   native tools already ran inside their harness."* A `DENY` would be an
+   after-the-fact observation of a completed write, not a gate. This is the
+   part a policy cannot fix, and it is why `no_self_modification` is honest
+   about covering only Omnigent's own tool names.
+
+`disable_native_tools: true` on `blog_writer` removes half of it. On the
+ordinary (non-brokered) Codex route that switch sends exactly one thing —
+`features.shell_tool=false` (`codex_executor.py:4035`) — so the shell tool
+goes away. `apply_patch` does not: checked against the installed codex-cli
+0.149.1, that flag flips `shell_tool` alone, and no feature flag disables
+`apply_patch`. The full strip that also nulls `apply_patch_tool_type`
+(`codex_executor.py:2257`) runs only on the brokered-gateway route, which
+additionally demands an active sandbox, a signer and `broker_gateway: true` —
+deployment configuration, not something an example can set, and it needs the
+very sandbox that fails to start here.
+
+So, plainly: **a supervisor that cannot write files can still ask
+`blog_writer` to write one, one delegation hop away.** What changed is the
+blast radius — whole filesystem to workspace — and the shell half of the tool
+surface. What did not change is that the capability exists.
+
+Closing it properly means one of two things, both bigger than this change:
+
+- **Move `blog_writer` off `harness: codex`.** On `claude-sdk` the native
+  `Write` / `Edit` / `Bash` tools are never exposed (base tool set is `Skill` +
+  `ToolSearch`), so with no `os_env` the agent would hold no write tool at all.
+  That also deletes the cross-harness premise this example exists to show —
+  OpenAI drafts, Claude edits — so it is a product decision, not a fix.
+- **Run the brokered Codex route**, which does strip `apply_patch`. That needs
+  a working platform sandbox; `darwin_seatbelt` and `auto` both fail launch
+  preparation on the development machine (below).
+
+Two smaller gaps, for completeness:
+
+- **A `write_paths` sandbox would be more structural, and does not work here.**
+  It is a kernel boundary rather than a tool-registration one, and would cover
+  shell too. Both `sandbox: {type: darwin_seatbelt}` and `{type: auto}` fail
+  launch preparation outright:
+
+  ```
+  OSError: Cannot validate trusted runtime: mutable hard-link alias for
+  .../site-packages/platformdirs/__main__.py; install trusted runtime files
+  as copies
+  ```
+
+  It is platform-dependent regardless — Windows `windows_jobobject` provides no
+  filesystem isolation and is rejected for sandboxed `claude-sdk` launches.
+  Shipping a configuration that fails to start is how you get the next
+  `yolo: true`. If your host supports a sandbox, prefer it.
+- **The tool switches carry a runner-version caveat.** Per
+  `docs/AGENT_YAML_SPEC.md`, older runners ignore `disable_native_tools` on
+  ordinary routes.
+
+`tests/test_self_edit_guard.py` pins all of this, including the disclosure
+text above: the cases that cover the bypass read these README files and fail if
+the disclosure is deleted.
 
 ---
 
@@ -382,18 +445,21 @@ python examples/content_factory/tests/test_self_edit_guard.py
 # or: pytest examples/content_factory/tests/
 ```
 
-`test_self_edit_guard.py` pins the invariant above: that the supervisor,
-`editor` and `social_writer` declare no `os_env`, that the backstop is still
-wired to the registry builtin, that it DENIES a write to every part of the
-bundle while abstaining on all five staging tools, and that no config sets
-`yolo`. It also asserts the two documented gaps — that `blog_writer` keeps its
-`os_env`, and that `read_only_os` leaves shell alone — so neither the hole nor
-the note describing it can drift without a test failing.
+`test_self_edit_guard.py` pins the invariant above at three strengths: the
+YAML shape (no config declares `os_env`), the resolved behaviour (a real
+`ToolManager` built against each of the four configs grants no `sys_os_*`
+tool — the assertion that actually matters, since a framework regression would
+sail past a YAML check), and the documentation. It also checks the backstop is
+wired to a registry builtin, DENIES writes *and* shell across the bundle while
+abstaining on all five staging tools, and that no config sets
+`os_env`, and — because the Codex bypass below is real — they read both README
+files and fail if the disclosure text is deleted. A docs-pinning test opens the
+file or it does not exist.
 
 Stdlib only, and `tests/` sits outside `tools/python/` so nothing in it is
 auto-discovered as an agent tool. The six cases that execute the real
-`read_only_os` builtin skip when Omnigent is not installed; the config
-invariants always run.
+real `ToolManager` and the real policy skip when Omnigent is not installed;
+the config and documentation invariants always run.
 
 ---
 

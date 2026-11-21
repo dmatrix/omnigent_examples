@@ -6,32 +6,39 @@ the Codex sub-agent and responded by rewriting
 ``yolo: true`` -- turning a sandbox off, unprompted, in an example whose whole
 subject is that irreversible actions need a human. It could do that because the
 supervisor declared ``os_env: {type: caller_process, sandbox: {type: none}}``,
-which is what makes the loader hand it ``sys_os_write`` / ``sys_os_edit`` /
-``sys_os_shell``.
+which is what makes the loader hand an agent ``sys_os_write`` /
+``sys_os_edit`` / ``sys_os_shell``.
 
 The fix is the absence of a capability, and absences are easy to re-add by
 accident -- ``os_env`` is the boilerplate CLAUDE.md documents. So the invariant
-is pinned here:
+is pinned here, at three strengths:
 
-1. The supervisor, ``editor`` and ``social_writer`` declare no ``os_env``, so
-   none of them is given a file-write tool at all.
-2. The supervisor still carries the ``no_self_modification`` backstop, wired to
-   the registry builtin, so re-adding ``os_env`` does not silently restore the
-   capability.
-3. That backstop, built from the arguments the config actually passes, DENIES
-   writes to every part of the bundle and abstains on the five staging tools.
-4. ``blog_writer`` keeps its ``os_env`` -- a known, documented bypass. Asserted
-   so the bypass cannot close by accident and leave the docs lying.
+1. **YAML shape** -- no agent declares ``os_env``. A fast first signal, and all
+   it is: a framework registration change would sail straight past it.
+2. **Resolved behaviour** -- a real :class:`ToolManager` is built against each
+   of the four configs and asked for its tool names. This is the assertion that
+   matters; the YAML one is a convenience.
+3. **Documentation** -- the residual Codex bypass (below) is real, so the cases
+   that pin it OPEN the README files and fail if the disclosure is deleted.
+
+The residual bypass, stated here because the tests below encode it:
+``agents/blog_writer`` runs ``harness: codex``, and Codex's own ``apply_patch``
+is not an Omnigent tool. Removing ``os_env`` narrows its sandbox from
+``danger-full-access`` to ``workspace-write``, but the bundle is in the
+workspace, so Codex can still edit it. ``disable_native_tools: true`` removes
+the shell half; no feature flag removes ``apply_patch``. No policy can gate it
+either -- native Codex calls arrive already executed. That is a harness-level
+limit, not something this bundle can configure away.
 
 Run it either way::
 
     python examples/content_factory/tests/test_self_edit_guard.py
     pytest examples/content_factory/tests/
 
-Stdlib only for the config invariants, which is the part that must hold on a
-bare checkout. The cases that execute the real ``read_only_os`` builtin are
-skipped when Omnigent is not installed -- they verify framework code, not this
-bundle, and cannot be stubbed without testing the stub.
+Stdlib only for the YAML-shape and documentation cases, which is the part that
+must hold on a bare checkout. The resolved-toolset cases need Omnigent and skip
+without it -- they assert framework behaviour, and stubbing the framework would
+only test the stub.
 
 This directory is NOT ``tools/python/``, so nothing here is auto-discovered as
 an agent tool -- keep it that way.
@@ -40,22 +47,43 @@ an agent tool -- keep it that way.
 from __future__ import annotations
 
 import re
-import sys
 from pathlib import Path
 
 EXAMPLE_ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT = EXAMPLE_ROOT.parent.parent
 
 SUPERVISOR = EXAMPLE_ROOT / "config.yaml"
 AGENTS = EXAMPLE_ROOT / "agents"
+README = EXAMPLE_ROOT / "README.md"
+README_YAML = EXAMPLE_ROOT / "README_YAML_CONFIG.md"
 
-# The handler the backstop must point at. A registry builtin on purpose: a
-# custom handler would make the supervisor unloadable against a remote server
-# (see CLAUDE.md "Custom policies do not run against a remote server").
-BACKSTOP_HANDLER = "omnigent.policies.builtins.orchestration.read_only_os"
+# Every agent in the bundle. "<supervisor>" is the root config.yaml.
+ALL_AGENTS = ("<supervisor>", "blog_writer", "editor", "social_writer")
 
-# Agents that must hold no OS environment. Their prompts all say they do not
-# write files; with no `os_env` they also cannot.
-NO_OS_ENV = ("<supervisor>", "editor", "social_writer")
+# The OS tools an `os_env` block would grant. None may appear in any resolved
+# toolset.
+SYS_OS_TOOLS = frozenset({"sys_os_read", "sys_os_write", "sys_os_edit", "sys_os_shell"})
+
+# The five staging tools. The supervisor must keep all of them: the guard is
+# supposed to cost the example nothing.
+FACTORY_TOOLS = frozenset(
+    {"read_backlog", "update_backlog", "save_artifact", "publish_content", "post_social"}
+)
+
+# The backstop handler. A registry builtin on purpose -- a custom handler would
+# make the supervisor unloadable against a remote server, which this bundle
+# already struggles with (see CLAUDE.md "Custom policies do not run against a
+# remote server"); no reason to deepen that.
+BACKSTOP_HANDLER = "omnigent.policies.builtins.cel.cel_policy"
+
+# Tool names the backstop must DENY. The shell entries are the point: the
+# `read_only_os` builtin this replaced allows them, and a shell redirect
+# rewrites YAML just as well as an edit does.
+BACKSTOP_DENIES = (
+    "sys_os_write", "sys_os_edit", "sys_os_shell",
+    "Write", "Edit", "MultiEdit", "NotebookEdit", "Bash",
+    "write", "edit", "bash", "shell", "apply_patch",
+)
 
 # Bundle paths a write must never reach. The first is the file the real run
 # actually rewrote.
@@ -69,8 +97,7 @@ PROTECTED = (
     "examples/content_factory/skills/blog-style/SKILL.md",
 )
 
-# Every argument key a write tool names its target with, across the harnesses
-# `read_only_os` covers.
+# Every argument key a write tool names its target with.
 WRITE_CALLS = (
     ("sys_os_write", "path"),
     ("sys_os_edit", "path"),
@@ -82,8 +109,8 @@ WRITE_CALLS = (
     ("edit", "path"),
 )
 
-# The supervisor's own tools. None of them is a file-write tool, so the
-# backstop must abstain on all of them -- that is what keeps staging free.
+# The supervisor's own calls. None is a file tool, so the backstop must abstain
+# on all of them -- that is what keeps staging free.
 STAGING_CALLS = (
     ("read_backlog", {}),
     ("read_backlog", {"include_artifacts": True}),
@@ -98,7 +125,32 @@ STAGING_CALLS = (
     ("publish_content", {"slug": "demo"}),
     ("post_social", {"slug": "demo", "channel": "x"}),
     ("post_social", {"slug": "demo", "channel": "linkedin"}),
+    ("blog_writer", {"prompt": "draft"}),
+    ("editor", {"prompt": "review"}),
+    ("social_writer", {"prompt": "derive"}),
+    ("sys_os_read", {"path": "backlog.md"}),
+    ("web_search", {"query": "omnigent"}),
+    ("ui_open_file", {"path": "artifacts/dashboard.md"}),
+    ("sys_scheduled_task_create", {"agent_id": "x"}),
 )
+
+# Documentation that must survive, phrase by phrase, because the thing it
+# describes is still true. A previous round of this PR claimed a test pinned
+# the docs when none opened a file; both READMEs were then falsified without a
+# single failure. These cases open the files.
+REQUIRED_DISCLOSURES = {
+    README: (
+        "What this does not close",
+        "apply_patch",
+        "workspace-write",
+        "internally_executed",
+        "disable_native_tools",
+    ),
+    README_YAML: (
+        "apply_patch",
+        "workspace-write",
+    ),
+}
 
 
 class Skipped(Exception):
@@ -128,24 +180,67 @@ def _config(agent: str) -> Path:
     return SUPERVISOR if agent == "<supervisor>" else AGENTS / agent / "config.yaml"
 
 
-def _declares_os_env(path: Path) -> bool:
-    """Whether a config declares a top-level ``os_env`` block.
-
-    Anchored at column 0 and in multiline mode: ``os_env`` is a top-level key,
-    and the word also appears in prose comments, which must not count.
-    """
-    return re.search(r"(?m)^os_env:", _settings(path)) is not None
-
-
 def _settings(path: Path) -> str:
     """A config's actual settings, with comment lines dropped.
 
     The configs explain the self-edit incident in prose, quoting the very
-    strings these cases search for (`yolo`, `codex-native`), so a raw text
-    search would match the explanation instead of a setting.
+    strings these cases search for (`yolo`, `codex-native`, `os_env`), so a raw
+    text search would match the explanation instead of a setting.
     """
     lines = path.read_text(encoding="utf-8").splitlines()
     return "\n".join(line for line in lines if not line.lstrip().startswith("#"))
+
+
+def _declares_os_env(path: Path) -> bool:
+    """Whether a config declares a top-level ``os_env`` block."""
+    return re.search(r"(?m)^os_env:", _settings(path)) is not None
+
+
+def _resolved_tool_names(agent: str) -> list[str]:
+    """Build a real ToolManager for *agent* and return its resolved tool names.
+
+    This is the behavioural assertion the YAML-shape cases only approximate: it
+    goes through the same parser and the same registration path a live run uses,
+    so a framework change that started granting OS tools without an ``os_env``
+    block would fail here.
+
+    Skips the calling case when Omnigent is not installed.
+    """
+    try:
+        from omnigent.spec.parser import parse
+        from omnigent.tools.manager import ToolManager
+    except ImportError:  # pragma: no cover - environment, not bundle
+        _skip("Omnigent is not installed")
+
+    root = _config(agent).parent
+    # ``os_env_schema_only`` registers the OS tool *schemas* without building a
+    # real OS environment -- and, crucially, preserves the ``os_env`` gate
+    # (manager.py: "Preserves the ``os_env`` gate"). So if the gate ever
+    # regressed, these names would appear here. It is the strictest cheap check:
+    # a pass means the tools are absent even in the mode that would surface them.
+    manager = ToolManager(parse(root), workdir=root, os_env_schema_only=True)
+    return sorted(manager.get_tool_names())
+
+
+def _backstop():
+    """The backstop policy, built from the arguments the config really passes.
+
+    Reads the handler and arguments out of the parsed spec rather than
+    hardcoding them, so the test exercises the configuration under review and
+    not a hand-made copy of it.
+
+    Skips the calling case when Omnigent is not installed.
+    """
+    try:
+        from omnigent.policies.builtins.cel import cel_policy
+        from omnigent.spec.parser import parse
+    except ImportError:  # pragma: no cover - environment, not bundle
+        _skip("Omnigent is not installed")
+
+    spec = parse(EXAMPLE_ROOT)
+    policy = next(p for p in spec.guardrails.policies if p.name == "no_self_modification")
+    assert policy.function.path == BACKSTOP_HANDLER, policy.function.path
+    return cel_policy(**(policy.function.arguments or {}))
 
 
 def _call(name: str, **arguments: object) -> dict:
@@ -153,82 +248,119 @@ def _call(name: str, **arguments: object) -> dict:
     return {"type": "tool_call", "data": {"name": name, "arguments": arguments}}
 
 
-def _backstop():
-    """The backstop policy, built from the arguments the config really passes.
-
-    Reads the handler and its ``deny_reason`` out of the YAML rather than
-    hardcoding them, so the test exercises the configuration under review and
-    not a hand-made copy of it.
-
-    Skips the calling case when Omnigent is not installed.
-    """
-    try:
-        from omnigent.policies.builtins.orchestration import read_only_os
-    except ImportError:  # pragma: no cover - environment, not bundle
-        _skip("Omnigent is not installed")
-
-    text = SUPERVISOR.read_text(encoding="utf-8")
-    block = text[text.index("    no_self_modification:") :]
-    assert BACKSTOP_HANDLER in block, "backstop is not wired to the registry builtin"
-    reason = re.search(r"(?s)deny_reason: \|\n(.*?)(?=\n    \w|\n\n    #)", block)
-    assert reason, "backstop declares no deny_reason"
-    return read_only_os(deny_reason=reason.group(1).strip())
+# ── 1. the capability is absent (YAML shape -- fast first signal) ───────────
 
 
-# ── the capability is absent ────────────────────────────────────────────────
-
-
-def test_the_supervisor_declares_no_os_env() -> None:
-    """The root cause: `os_env` is what granted `sys_os_edit`."""
-    assert not _declares_os_env(SUPERVISOR), (
-        "The supervisor must declare no os_env. With one it is handed "
-        "sys_os_write / sys_os_edit / sys_os_shell and can rewrite its own "
-        "bundle -- which is exactly what a real run did."
+def test_no_agent_in_the_bundle_declares_os_env() -> None:
+    """The root cause, across every agent: `os_env` is what granted the tools."""
+    offenders = [agent for agent in ALL_AGENTS if _declares_os_env(_config(agent))]
+    assert not offenders, (
+        f"These agents declare os_env: {offenders}. An agent with one is handed "
+        f"sys_os_write / sys_os_edit / sys_os_shell and can rewrite the bundle "
+        f"-- which is exactly what a real run did."
     )
-
-
-def test_the_claude_sub_agents_declare_no_os_env() -> None:
-    """Delegation must not route around the supervisor's own lack of access."""
-    for agent in ("editor", "social_writer"):
-        assert not _declares_os_env(_config(agent)), (
-            f"{agent} must declare no os_env: a supervisor that cannot write "
-            f"files but can ask a sub-agent to is not confined."
-        )
 
 
 def test_no_agent_in_the_bundle_enables_yolo() -> None:
     """The exact escape the observed run reached for."""
-    for config in [SUPERVISOR, *sorted(AGENTS.glob("*/config.yaml"))]:
-        text = _settings(config)
-        assert not re.search(r"(?m)^\s*yolo:", text), f"{config} sets yolo"
-        assert "codex-native" not in text, f"{config} switches to codex-native"
+    for agent in ALL_AGENTS:
+        text = _settings(_config(agent))
+        assert not re.search(r"(?m)^\s*yolo:", text), f"{agent} sets yolo"
+        assert "codex-native" not in text, f"{agent} switches to codex-native"
 
 
-def test_the_sandbox_type_is_never_widened_where_os_env_remains() -> None:
-    """A remaining `os_env` may not grant more than the default."""
-    for config in [SUPERVISOR, *sorted(AGENTS.glob("*/config.yaml"))]:
-        text = _settings(config)
-        assert "allow_network: true" not in text, f"{config} widens egress"
-        assert "write_paths" not in text, f"{config} grants host write paths"
+def test_no_agent_widens_a_sandbox_or_grants_write_paths() -> None:
+    """No config may grant more filesystem or network reach than the default."""
+    for agent in ALL_AGENTS:
+        text = _settings(_config(agent))
+        assert "allow_network: true" not in text, f"{agent} widens egress"
+        assert "write_paths" not in text, f"{agent} grants host write paths"
 
 
-# ── the backstop is wired ───────────────────────────────────────────────────
+def test_blog_writer_disables_codex_native_tools() -> None:
+    """The partial narrowing of the residual bypass must stay in place.
+
+    Removes Codex's shell tool. It does not remove `apply_patch`, which is why
+    the disclosure cases below exist.
+    """
+    text = _settings(_config("blog_writer"))
+    assert re.search(r"(?m)^\s*disable_native_tools:\s*true\s*$", text), (
+        "blog_writer no longer sets disable_native_tools: true, so Codex's "
+        "native shell is back alongside apply_patch."
+    )
+
+
+# ── 2. the capability is absent (resolved behaviour -- the real assertion) ──
+
+
+def test_no_agent_resolves_any_sys_os_tool() -> None:
+    """The behavioural invariant: a real ToolManager grants no OS tool.
+
+    The YAML cases above check the input; this checks the output, through the
+    same parser and registration path a live run uses.
+    """
+    granted = {
+        agent: sorted(set(_resolved_tool_names(agent)) & SYS_OS_TOOLS)
+        for agent in ALL_AGENTS
+    }
+    offenders = {agent: tools for agent, tools in granted.items() if tools}
+    assert not offenders, f"OS tools resolved for: {offenders}"
+
+
+def test_the_supervisor_still_resolves_all_five_staging_tools() -> None:
+    """The guard must cost the example nothing."""
+    resolved = set(_resolved_tool_names("<supervisor>"))
+    missing = sorted(FACTORY_TOOLS - resolved)
+    assert not missing, f"staging tools lost: {missing}"
+
+
+def test_tool_discovery_still_excludes_the_tests_directory() -> None:
+    """`tests/` is a sibling of `tools/`, and nothing in it is a tool."""
+    for agent in ALL_AGENTS:
+        leaked = [name for name in _resolved_tool_names(agent) if "test" in name.lower()]
+        assert not leaked, f"{agent} resolved test-named tools: {leaked}"
+
+
+# ── 3. the backstop is wired, and behaves ──────────────────────────────────
 
 
 def test_the_supervisor_carries_the_self_modification_backstop() -> None:
     """Re-adding `os_env` must not silently restore the capability."""
     text = SUPERVISOR.read_text(encoding="utf-8")
     assert "    no_self_modification:" in text, "backstop policy is missing"
-    assert BACKSTOP_HANDLER in text, "backstop is not the registry builtin"
+    assert BACKSTOP_HANDLER in text, "backstop is not the expected registry builtin"
+
+
+def test_the_backstop_covers_shell_as_well_as_write() -> None:
+    """The gap the cross-review flagged in the previous `read_only_os` wiring."""
+    arguments = _backstop_arguments()
+    expression = str(arguments.get("expression", ""))
+    missing = [name for name in BACKSTOP_DENIES if f'"{name}"' not in expression]
+    assert not missing, f"backstop does not name these tools: {missing}"
+
+
+def _backstop_arguments() -> dict:
+    """The backstop's parsed `arguments` mapping.
+
+    Skips the calling case when Omnigent is not installed.
+    """
+    try:
+        from omnigent.spec.parser import parse
+    except ImportError:  # pragma: no cover - environment, not bundle
+        _skip("Omnigent is not installed")
+    spec = parse(EXAMPLE_ROOT)
+    policy = next(p for p in spec.guardrails.policies if p.name == "no_self_modification")
+    return dict(policy.function.arguments or {})
 
 
 def test_the_backstop_sits_after_publish_gate_in_the_config() -> None:
-    """`read_backlog` scans config.yaml by line sequence for the ceiling.
+    """`read_backlog` descends a key path; keep publish_gate's block intact.
 
-    It walks `guardrails:` -> `  policies:` -> `    publish_gate:` ->
-    `      function:` -> `        arguments:` in order, so a policy inserted
-    between those lines would silently break the dashboard's
-    `article_ceiling`.
+    `_article_ceiling` no longer depends on policy ORDER -- it walks the key
+    path by indentation -- but the two still have to agree, and the shipped
+    config is the only place that is observable. Asserted via the parser in
+    `test_read_dashboard.py`; this case just keeps the declaration order tidy
+    and documents why anyone cared.
     """
     text = SUPERVISOR.read_text(encoding="utf-8")
     assert text.index("    publish_gate:") < text.index("    no_self_modification:")
@@ -242,16 +374,22 @@ def test_the_four_policies_are_all_still_declared() -> None:
         assert f"    {name}:" in text, f"policy {name} is missing"
 
 
-# ── the backstop behaves ────────────────────────────────────────────────────
-
-
 def test_the_backstop_denies_a_write_to_every_part_of_the_bundle() -> None:
     """Config, sub-agent configs, policies, tools and skills are all refused."""
     evaluate = _backstop()
     for target in PROTECTED:
         for tool, key in WRITE_CALLS:
-            decision = evaluate(_call(tool, **{key: target}), {})
-            assert decision["result"] == "DENY", f"{tool} -> {target} was {decision}"
+            decision = evaluate(_call(tool, **{key: target})) or {}
+            assert decision.get("result") == "DENY", f"{tool} -> {target} was {decision}"
+
+
+def test_the_backstop_denies_every_shell_tool() -> None:
+    """A shell redirect rewrites YAML as well as an edit does."""
+    evaluate = _backstop()
+    redirect = "echo 'yolo: true' >> agents/blog_writer/config.yaml"
+    for tool in ("sys_os_shell", "Bash", "bash", "shell"):
+        decision = evaluate(_call(tool, command=redirect)) or {}
+        assert decision.get("result") == "DENY", f"{tool} was {decision}"
 
 
 def test_the_backstop_denies_the_self_edit_the_real_run_performed() -> None:
@@ -263,77 +401,72 @@ def test_the_backstop_denies_the_self_edit_the_real_run_performed() -> None:
             path="examples/content_factory/agents/blog_writer/config.yaml",
             old_str="    harness: codex",
             new_str="    harness: codex-native\n    yolo: true",
-        ),
-        {},
-    )
-    assert decision["result"] == "DENY"
-    assert "may not write files" in decision["reason"]
+        )
+    ) or {}
+    assert decision.get("result") == "DENY"
+    assert "may not write files" in decision.get("reason", "")
 
 
-def test_the_backstop_denies_a_write_dressed_up_as_an_artifact_path() -> None:
-    """It is the tool that is refused, not a path pattern.
-
-    A write that claims to target `artifacts/` is still denied, because the
-    supervisor stages through `save_artifact`, never through a file-write tool.
-    """
-    evaluate = _backstop()
-    decision = evaluate(
-        _call("sys_os_write", path="examples/content_factory/artifacts/drafts/demo.md"),
-        {},
-    )
-    assert decision["result"] == "DENY"
-
-
-def test_the_backstop_abstains_on_all_five_staging_tools() -> None:
-    """Drafting, staging and shipping stay exactly as free as before."""
+def test_the_backstop_abstains_on_staging_dispatch_and_reads() -> None:
+    """Drafting, staging, shipping and delegation stay exactly as free as before."""
     evaluate = _backstop()
     for name, arguments in STAGING_CALLS:
-        decision = evaluate(_call(name, **arguments), {})
-        assert decision["result"] == "ALLOW", f"{name}({arguments}) was {decision}"
+        decision = evaluate(_call(name, **arguments)) or {}
+        result = decision.get("result", "ABSTAIN")
+        assert result in ("ALLOW", "ABSTAIN"), f"{name}({arguments}) was {decision}"
 
 
-def test_the_backstop_abstains_on_sub_agent_dispatch_and_reads() -> None:
-    """It gates writes only -- coordination and reading are untouched."""
+def test_the_backstop_abstains_on_non_tool_call_events() -> None:
+    """It must compose with the other three policies, not short-circuit them."""
     evaluate = _backstop()
-    for name in ("blog_writer", "editor", "social_writer", "ui_open_file",
-                 "sys_scheduled_task_create", "Read", "Glob", "Grep"):
-        assert evaluate(_call(name, prompt="x"), {})["result"] == "ALLOW"
+    for event_type in ("llm_request", "tool_result", "turn_start"):
+        decision = evaluate({"type": event_type, "data": {}})
+        assert decision is None or decision.get("result") != "DENY"
 
 
-def test_the_backstop_does_not_gate_shell_a_documented_gap() -> None:
-    """Pins the hole the README admits, so the docs cannot drift.
+# ── 4. the residual bypass is disclosed (these cases OPEN the files) ───────
 
-    `read_only_os` covers write/edit tools, not `sys_os_shell`. That is moot
-    while no agent here declares `os_env` -- there is no shell tool either --
-    but it is why the policy is a backstop and not the mechanism.
+
+def test_both_readmes_disclose_the_residual_codex_bypass() -> None:
+    """The bypass is real, so the disclosure describing it must survive.
+
+    Deliberately reads the documentation. The previous round of this change
+    reported that a test pinned the docs; none opened a file, and both READMEs
+    were subsequently falsified to claim no bypass existed without a single
+    test failing. A docs-pinning test opens the file or it does not exist.
     """
-    evaluate = _backstop()
-    decision = evaluate(
-        _call("sys_os_shell", command="echo 'yolo: true' >> agents/blog_writer/config.yaml"),
-        {},
+    for path, phrases in REQUIRED_DISCLOSURES.items():
+        text = path.read_text(encoding="utf-8")
+        missing = [phrase for phrase in phrases if phrase not in text]
+        assert not missing, (
+            f"{path.name} no longer discloses the residual bypass "
+            f"(missing: {missing}). blog_writer runs harness: codex, and "
+            f"Codex's apply_patch can still write the bundle. Either the "
+            f"bypass was genuinely closed -- in which case update this test -- "
+            f"or the documentation is now false."
+        )
+
+
+def test_neither_readme_claims_the_bundle_is_fully_protected() -> None:
+    """Guards against the specific false claim a reviewer introduced."""
+    forbidden = (
+        "no bypass remains",
+        "no bypass exists",
+        "the bypass is closed",
+        "all four agents are fully",
+        "structurally impossible for every agent",
     )
-    assert decision["result"] == "ALLOW", (
-        "read_only_os now gates shell -- good, but the README says it does "
-        "not. Update the docs."
-    )
+    for path in (README, README_YAML):
+        lowered = path.read_text(encoding="utf-8").lower()
+        for claim in forbidden:
+            assert claim not in lowered, f"{path.name} falsely claims: {claim!r}"
 
 
-# ── the documented bypass stays documented ──────────────────────────────────
-
-
-def test_blog_writer_still_holds_the_documented_bypass() -> None:
-    """The Codex writer keeps `os_env`; the docs say so, so assert it.
-
-    Left in place deliberately: the Codex harness launch is sensitive to the
-    sandbox configuration that failed in the observed run, and that is machine
-    configuration, out of scope here. If this case fails because the bypass
-    closed, that is good news -- remove the bypass section from README.md and
-    README_YAML_CONFIG.md in the same change.
-    """
-    assert _declares_os_env(_config("blog_writer")), (
-        "blog_writer no longer declares os_env. The remaining-bypass note in "
-        "README.md and README_YAML_CONFIG.md is now wrong -- update it."
-    )
+def test_blog_writer_config_documents_why_it_keeps_the_codex_harness() -> None:
+    """The residual risk must be visible where the harness is chosen."""
+    text = _config("blog_writer").read_text(encoding="utf-8")
+    for phrase in ("apply_patch", "workspace-write", "internally_executed"):
+        assert phrase in text, f"blog_writer config omits {phrase!r}"
 
 
 # ── plain-python runner ────────────────────────────────────────────────────

@@ -216,33 +216,50 @@ guardrails:
 
     # --- Self-modification brake ---
     #
-    # A backstop, not the primary mechanism. The supervisor declares no
-    # `os_env`, so it holds no file-write tool for this policy to gate and
-    # the policy is inert as configured today. It exists so that re-adding an
-    # `os_env` block -- the boilerplate CLAUDE.md documents, and the thing
-    # that let a real run rewrite `agents/blog_writer/config.yaml` -- does
-    # not silently restore the capability: `sys_os_write` / `sys_os_edit`
-    # (and the Claude/Codex/Pi native write tools) are DENIED outright.
+    # A BACKSTOP. The real mechanism is the absence of `os_env`, which is why
+    # the supervisor holds no file tool for this policy to gate; as configured
+    # today it is inert. It exists so that re-adding an `os_env` block -- the
+    # boilerplate CLAUDE.md documents, and the thing that let a real run
+    # rewrite `agents/blog_writer/config.yaml` -- does not silently restore
+    # the capability.
     #
-    # DENY, not ASK, on purpose. The observed self-edit happened in a
-    # headless run, and the model's own justification for disabling the
-    # sandbox was that "headless sub-agents cannot answer approval prompts".
-    # An ASK that nobody can answer is the pressure that produced the edit.
+    # CEL rather than the `read_only_os` builtin, deliberately. `read_only_os`
+    # matches write/edit names only and ALLOWS `sys_os_shell`
+    # (omnigent/policies/builtins/orchestration.py:671), and a shell redirect
+    # rewrites YAML just as well as an edit. CEL takes an explicit tool list,
+    # so the shell tools go in it. Still a registry builtin, so this does not
+    # change the example's remote-server story.
     #
-    # Known gap: `read_only_os` does not gate `sys_os_shell`, so a shell
-    # redirect would still get through. That is moot while `os_env` is
-    # absent (there is no shell tool either), but it means this policy alone
-    # is NOT a substitute for not having the capability.
+    # The gate is real for these names: `sys_os_*` calls route through
+    # Omnigent's dispatch bridge and are evaluated BEFORE they run.
+    #
+    # It does NOT cover Codex's native `shell` / `apply_patch` on
+    # `agents/blog_writer`. Those are not gateable by any policy: they arrive
+    # already executed, marked `internally_executed`
+    # (omnigent/runtime/harnesses/_executor_adapter.py:1311-1313). Capability
+    # removal is the only lever there, and it is only partial. See README.md
+    # "What this does not close".
+    #
+    # DENY, not ASK. The observed self-edit happened in a headless run, and
+    # the model's own justification for disabling the sandbox was that
+    # "headless sub-agents cannot answer approval prompts". An ASK that nobody
+    # can answer is the pressure that produced the edit.
 
     no_self_modification:
       type: function
       function:
-        path: omnigent.policies.builtins.orchestration.read_only_os
+        path: omnigent.policies.builtins.cel.cel_policy
         arguments:
-          deny_reason: |
-            The supervisor may not write files. It coordinates and stages
-            through its own tools; it never edits the agent bundle, its
-            sub-agent configs, its policies or its tools. If a sub-agent
+          expression: >-
+            event.type == "tool_call" && event.data.name in [
+            "sys_os_write", "sys_os_edit", "sys_os_shell",
+            "Write", "Edit", "MultiEdit", "NotebookEdit", "Bash",
+            "write", "edit", "bash", "shell", "apply_patch"]
+            ? {"result": "DENY"} : null
+          reason: >-
+            The supervisor may not write files or run shell. It coordinates
+            and stages through its own tools; it never edits the agent bundle,
+            its sub-agent configs, its policies or its tools. If a sub-agent
             cannot launch, report the failure -- do not reconfigure it.
 
     # --- Cost governance ---

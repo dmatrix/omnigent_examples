@@ -41,31 +41,85 @@ def _parse_backlog(content: str) -> list[dict]:
     return items
 
 
+# Key path from the top of config.yaml down to publish_gate's arguments. Walked
+# one level at a time so the ceiling is read from publish_gate's own argument
+# and nowhere else.
+_CEILING_PATH = ("guardrails", "policies", "publish_gate", "function", "arguments")
+
+
+def _child_lines(block: list[str], key: str) -> list[str] | None:
+    """Return the lines nested under mapping entry *key* within *block*.
+
+    Reads the key structure by indentation only -- no values are interpreted.
+    The block's own level is the indent of its first content line; siblings sit
+    at that indent, children are the more-indented lines that follow a matched
+    key. Blank and comment lines are carried through rather than ending a block,
+    so a commented argument is still found.
+
+    Scoping, not searching, is the point: a key is matched only at this level,
+    so `max_articles_per_cycle` inside a `prompt:` block scalar, or under a
+    policy that merely resembles `publish_gate`, is never reached.
+
+    :param block: Lines of one YAML mapping block.
+    :param key: The mapping key to descend into.
+    :returns: The child lines, or ``None`` when *key* is absent at this level.
+    """
+    level = None
+    for index, line in enumerate(block):
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        indent = len(line) - len(line.lstrip())
+        if level is None:
+            level = indent
+        if indent > level:
+            continue
+        if indent < level:
+            break
+        if line.strip().split(":", 1)[0].strip() != key:
+            continue
+        children = []
+        for child in block[index + 1 :]:
+            if not child.strip() or child.lstrip().startswith("#"):
+                children.append(child)
+                continue
+            if len(child) - len(child.lstrip()) <= indent:
+                break
+            children.append(child)
+        return children
+    return None
+
+
 def _article_ceiling() -> int | None:
-    """Read the configured ceiling only from publish_gate's YAML argument."""
+    """Read the ceiling from publish_gate's own ``max_articles_per_cycle``.
+
+    Descends `_CEILING_PATH` by indentation rather than scanning config.yaml as
+    an ordered line sequence, so adding or reordering sibling policies cannot
+    silently drop the dashboard's ceiling.
+
+    Omits rather than guesses on every failure mode, as before: an unreadable
+    config, a missing or renamed `publish_gate`, a non-integer value, and a
+    value with a trailing comment all return ``None``.
+
+    :returns: The configured ceiling, or ``None`` when it cannot be read
+        unambiguously.
+    """
     try:
         with open(os.path.join(_content_factory_path(), "config.yaml"), encoding="utf-8") as config_file:
-            lines = config_file.read().splitlines()
+            block: list[str] | None = config_file.read().splitlines()
     except OSError:
         return None
 
-    sections = (
-        r"guardrails:\s*",
-        r"  policies:\s*",
-        r"    publish_gate:\s*",
-        r"      function:\s*",
-        r"        arguments:\s*",
-    )
-    section_index = 0
-    for line in lines:
-        if section_index < len(sections):
-            if re.fullmatch(sections[section_index], line):
-                section_index += 1
-            continue
-        if not line.strip() or line.lstrip().startswith("#"):
-            continue
-        match = re.fullmatch(r"          max_articles_per_cycle:\s*(\d+)\s*", line)
-        return int(match.group(1)) if match else None
+    for key in _CEILING_PATH:
+        if block is None:
+            return None
+        block = _child_lines(block, key)
+    if block is None:
+        return None
+
+    for line in block:
+        match = re.fullmatch(r"\s*max_articles_per_cycle:\s*(\d+)\s*", line)
+        if match:
+            return int(match.group(1))
     return None
 
 

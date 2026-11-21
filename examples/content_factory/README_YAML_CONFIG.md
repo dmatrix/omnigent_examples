@@ -34,11 +34,11 @@ Harness and model live **here**, not at the top level. There is no top-level
 
 ### OS Environment
 
-**Absent, on purpose.** The supervisor, `editor` and `social_writer` declare no
-`os_env` at all. Only `blog_writer` still has one:
+**Absent from all four configs, on purpose.** There is no `os_env:` key
+anywhere in this bundle. Every config used to carry this block:
 
 ```yaml
-# agents/blog_writer/config.yaml — the only config with this block
+# what all four configs used to declare -- now none of them do
 os_env:
   type: caller_process
   cwd: .
@@ -46,36 +46,70 @@ os_env:
     type: none
 ```
 
-All four configs used to carry it. It was removed from three because a real run
-of this example used `sys_os_edit` to rewrite
+It was removed because a real run of this example used `sys_os_edit` to rewrite
 `agents/blog_writer/config.yaml` — switching it to `harness: codex-native` with
 `yolo: true` — after a machine-level sandbox failure launching Codex. It turned
 a sandbox off to clear an obstacle, in an example about human approval for
 irreversible actions.
 
-`os_env` *is* the capability: the loader registers `sys_os_read` /
+`os_env` *is* the capability. The loader registers `sys_os_read` /
 `sys_os_write` / `sys_os_edit` / `sys_os_shell` for an agent only when the spec
-declares the block, and skips registration entirely when it does not. On
-`claude-sdk` the native `Write` / `Edit` / `Bash` tools are never exposed
-either (the harness's base set is `Skill` + `ToolSearch`, with `Bash` added
-only for a *sandboxed* CLI). So with no `os_env`, those three agents hold no
-file-write tool of any kind.
+declares the block, and skips registration entirely when it does not
+(`ToolManager._register_os_env_tools`). On `claude-sdk` the native `Write` /
+`Edit` / `Bash` tools are never exposed either — the harness's base set is
+`Skill` + `ToolSearch`, with `Bash` added only for a *sandboxed* CLI. So the
+supervisor, `editor` and `social_writer` now hold no file tool of any kind.
+`tests/test_self_edit_guard.py` asserts that against a real `ToolManager`, not
+just against the YAML.
 
 It was not needed. `cwd: .` is not what lets the five tools resolve
-`backlog.md` and `artifacts/` — the tools run as server-side subprocesses and
-resolve paths from `os.getcwd()`, which is the workspace root, independent of
-any agent's `os_env`. Removing the block costs the example nothing; verified by
-running all five tools.
+`backlog.md` and `artifacts/` — they run as server-side subprocesses and
+resolve paths from `os.getcwd()`, the workspace root, independent of any
+agent's `os_env`. Removing the block costs the example nothing; verified by
+running all five.
 
-`blog_writer` keeps its block because the Codex harness launch is sensitive to
-exactly the sandbox configuration that failed in that run. That leaves a real
-one-hop bypass — the supervisor can ask a sub-agent that *can* write files to
-write one. Documented, not closed. See
-[README.md](README.md#what-this-does-not-close).
+#### `blog_writer` is a partial exception, and the honest version matters
 
-Why not a constrained sandbox instead? `os_env.sandbox` accepts a `write_paths`
-allowlist, which would be a kernel-level boundary and would cover shell too.
-Both `type: darwin_seatbelt` and `type: auto` fail launch preparation on the
+Removing `os_env` from `blog_writer` takes away its `sys_os_*` tools like
+everywhere else, but it does **not** leave it unable to write. It runs
+`harness: codex`, and Codex's own `apply_patch` is not an Omnigent tool:
+
+| | Codex sandbox it gets |
+|---|---|
+| `os_env` with `sandbox: {type: none}` (the old config) | `danger-full-access` — the entire filesystem |
+| no `os_env` (now) | `read-only`, **upgraded to `workspace-write`** |
+
+The upgrade is unconditional in practice: `codex_executor.py:5494-5496` turns
+`read-only` into `workspace-write` whenever the agent is passed any AP-bridged
+tool, and framework builtins guarantee that. The bundle lives in the workspace,
+so `agents/blog_writer/config.yaml` stays writable. And no policy can intervene
+— native Codex calls arrive marked `internally_executed`, already executed
+(`_executor_adapter.py:1311-1313`).
+
+```yaml
+# agents/blog_writer/config.yaml — narrows it, does not close it
+executor:
+  config:
+    harness: codex
+    disable_native_tools: true
+```
+
+`disable_native_tools: true` sends exactly `features.shell_tool=false` on the
+ordinary Codex route (`codex_executor.py:4035`), which removes the shell tool.
+It does not remove `apply_patch`: against codex-cli 0.149.1 that flag flips
+`shell_tool` alone, and no feature flag disables `apply_patch`. The full strip
+that nulls `apply_patch_tool_type` runs only on the brokered-gateway route,
+which needs a signer, `broker_gateway: true` and an active sandbox.
+
+So the supervisor still has a one-hop route to a bundle write, via a sub-agent.
+What this change bought is a smaller blast radius and one less tool, not a
+closure. Closing it means moving `blog_writer` off `harness: codex` — which
+deletes the cross-harness premise of the example — or running the brokered
+route. See [README.md](README.md#what-this-does-not-close).
+
+Why not a constrained sandbox? `os_env.sandbox` accepts a `write_paths`
+allowlist, a kernel-level boundary that would cover shell too. Both
+`type: darwin_seatbelt` and `type: auto` fail launch preparation on the
 development machine (`Cannot validate trusted runtime: mutable hard-link
 alias…`), and `windows_jobobject` provides no filesystem isolation and is
 rejected for sandboxed `claude-sdk` launches. A config that will not start is
@@ -234,42 +268,55 @@ misconfigured, or evaluating on a path where its state is unavailable.
 no_self_modification:
   type: function
   function:
-    path: omnigent.policies.builtins.orchestration.read_only_os
+    path: omnigent.policies.builtins.cel.cel_policy
     arguments:
-      deny_reason: |
-        The supervisor may not write files. ...
+      expression: >-
+        event.type == "tool_call" && event.data.name in [
+        "sys_os_write", "sys_os_edit", "sys_os_shell",
+        "Write", "Edit", "MultiEdit", "NotebookEdit", "Bash",
+        "write", "edit", "bash", "shell", "apply_patch"]
+        ? {"result": "DENY"} : null
+      reason: >-
+        The supervisor may not write files or run shell. ...
 ```
 
-A backstop for the missing [`os_env`](#os-environment), not the mechanism.
-`read_only_os` DENIES `sys_os_write` / `sys_os_edit` and the native `Write` /
-`Edit` / `MultiEdit` / `NotebookEdit` aliases, and abstains on everything else
-— so all five staging tools, sub-agent dispatch and every read stay untouched.
+A backstop for the absent [`os_env`](#os-environment), not the mechanism. It
+DENIES the listed tools and abstains on everything else — so all five staging
+tools, sub-agent dispatch and every read stay untouched.
 
-**It is inert as configured.** The supervisor declares no `os_env`, so it holds
-none of the tools this policy gates. It is here because `os_env` is the
-boilerplate CLAUDE.md documents for filesystem access: re-adding the block is a
-plausible accident, and this makes that accident non-silent rather than a
-restored capability.
+**It is inert as configured.** No agent declares `os_env`, so none holds the
+tools this gates. It is here because `os_env` is the boilerplate CLAUDE.md
+documents for filesystem access: re-adding the block is a plausible accident,
+and this makes that accident non-silent rather than a restored capability.
 
-Two things worth noting about the shape:
+**Why CEL and not `read_only_os`.** The first version of this used
+`omnigent.policies.builtins.orchestration.read_only_os`, which matches
+write/edit names only and ALLOWS `sys_os_shell` (`orchestration.py:671`). A
+shell redirect rewrites YAML just as well as an edit, and `read_only_os` takes
+no parameter to extend its tool set. CEL takes an explicit list, so the shell
+tools are in it. CEL is also a registry builtin, so this does not change the
+example's remote-server story.
 
-- **`DENY`, not `ASK`.** The self-edit it exists to prevent happened in a
-  headless run, and the model's own written justification for disabling the
-  sandbox was that headless sub-agents cannot answer approval prompts. An `ASK`
-  nobody can answer is the pressure that produced the edit.
-- **It is a registry builtin.** A custom handler here would make the supervisor
-  unloadable against a remote Omnigent server. This bundle already needs
-  `--server local` for `publish_gate`, but there is no reason to deepen that.
+**Where the gate is real, and where it is not.** `sys_os_*` calls route
+through Omnigent's dispatch bridge and are evaluated BEFORE they run, so a
+`DENY` there prevents the write. Codex's native `shell` / `apply_patch` on
+`agents/blog_writer` are a different matter: they arrive marked
+`internally_executed` and have already executed
+(`_executor_adapter.py:1311-1313`), so naming them in the expression documents
+intent but cannot stop them. Capability removal is the only lever there, and it
+is partial. See [OS Environment](#os-environment).
 
-It does not gate `sys_os_shell`. Moot while `os_env` is absent — there is no
-shell tool either — but it is why this is the second layer and not the first.
+**`DENY`, not `ASK`.** The self-edit it exists to prevent happened in a
+headless run, and the model's own written justification for disabling the
+sandbox was that headless sub-agents cannot answer approval prompts. An `ASK`
+nobody can answer is the pressure that produced the edit.
 
-Placement matters, for an unrelated reason: `read_backlog` finds
-`article_ceiling` by scanning `config.yaml` for `guardrails:` → `  policies:` →
-`    publish_gate:` → `      function:` → `        arguments:` as an ordered
-line sequence. A policy inserted *between* those lines would silently break the
-dashboard's ceiling. This one sits after `publish_gate`, and
-`test_self_edit_guard.py` asserts it stays there.
+Placement: `read_backlog` finds `article_ceiling` by descending
+`guardrails` → `policies` → `publish_gate` → `function` → `arguments` by
+indentation, so a sibling policy added before or after `publish_gate` no longer
+affects it. That was not true when this policy was added — the parser scanned
+the file as an ordered line sequence — and `test_read_dashboard.py` now pins
+the order-insensitivity directly.
 
 ### Cost governance
 
@@ -330,8 +377,8 @@ failed publish leaves the entry at `APPROVED`.
 
 ## Sub-agents
 
-One file per `agents/<name>/` directory, nothing else in it. Only
-`blog_writer` declares [`os_env`](#os-environment).
+One file per `agents/<name>/` directory, nothing else in it. None declares
+[`os_env`](#os-environment).
 
 ### `agents/blog_writer/config.yaml`
 
@@ -393,9 +440,8 @@ runaway tool use. The supervisor has no tool-call limit.
 - **No `tools:` block on the supervisor beyond `agents:`** — the five factory
   tools are auto-discovered.
 - **No `skills:` key** — `skills/blog-style/` is found by convention.
-- **No `os_env` on the supervisor, `editor` or `social_writer`** — and
-  that is the point, not an omission. See
-  [OS Environment](#os-environment).
+- **No `os_env` on any of the four agents** — and that is the point, not an
+  omission. See [OS Environment](#os-environment).
 
 ---
 
@@ -410,10 +456,7 @@ executor
   model
   config.harness
 prompt
-os_env                           blog_writer only — see OS Environment
-  type
-  cwd
-  sandbox.type
+(no os_env anywhere              — see OS Environment)
 tools
   agents[]                       supervisor only
   builtins[]                     blog_writer only
