@@ -23,7 +23,10 @@ _ALLOW: PolicyResponse = {"result": "ALLOW"}
 # ``session_state`` keys. Deliberately NOT prefixed ``_policy_`` — the engine
 # reserves that prefix for approval checkpoints it writes itself.
 _APPROVED_SLUGS_KEY = "_publish_gate_approved_slugs"
-_CYCLE_PUBLISHES_KEY = "_publish_gate_cycle_publishes"
+# Holds {"cycle": <UTC date>, "slugs": [...]} — the DISTINCT articles shipped
+# in the current cycle. Renamed from ``_publish_gate_cycle_publishes``, which
+# held a call count, so a stale value from that shape is never half-parsed.
+_CYCLE_SLUGS_KEY = "_publish_gate_cycle_slugs"
 
 _PUBLISH_CONTENT = "publish_content"
 _POST_SOCIAL = "post_social"
@@ -116,15 +119,19 @@ def _cycle_id() -> str:
     return datetime.now(UTC).strftime("%Y-%m-%d")
 
 
-def _cycle_publishes(state: dict[str, object]) -> int:
-    """Successful publishes recorded for the current cycle; 0 if stale."""
-    value = _read_state(state, _CYCLE_PUBLISHES_KEY)
+def _cycle_shipped_slugs(state: dict[str, object]) -> list[str]:
+    """Distinct article slugs shipped in the current cycle; empty if stale.
+
+    A stored cycle that is not today's is ignored rather than migrated, which
+    is what makes the ceiling reset on its own at the UTC day boundary.
+    """
+    value = _read_state(state, _CYCLE_SLUGS_KEY)
     if not isinstance(value, dict) or str(value.get("cycle", "")) != _cycle_id():
-        return 0
-    try:
-        return int(value.get("count", 0) or 0)
-    except (ValueError, TypeError):
-        return 0
+        return []
+    slugs = value.get("slugs")
+    if not isinstance(slugs, list):
+        return []
+    return [str(item) for item in slugs]
 
 
 def _artifact_kind(tool: str, channel: str) -> str:
@@ -169,16 +176,26 @@ def _decide_tool_call(event: PolicyEvent, max_publishes_per_cycle: int) -> Polic
                 ),
             }
 
-        # R3 — the cycle's publish ceiling is a hard stop, not a prompt.
-        published = _cycle_publishes(state)
-        if published >= max_publishes_per_cycle:
+        # R3 — the cycle's ceiling is a hard stop, not a prompt, and it counts
+        # ARTICLES (distinct slugs) rather than guarded calls. Shipping one
+        # article fully is normally three guarded calls — publish_content plus
+        # a post_social per channel — so counting calls would hard-stop the
+        # second article partway through. The rule is therefore: you may
+        # FINISH an article you have already started, but you may not START a
+        # new one past the ceiling. A slug already in this cycle's shipped set
+        # is never refused here, so no article is left published with its
+        # social copy stranded.
+        shipped = _cycle_shipped_slugs(state)
+        if slug not in shipped and len(shipped) >= max_publishes_per_cycle:
             return {
                 "result": "DENY",
                 "reason": (
-                    f"Batch-publish ceiling reached: {published} successful "
-                    f"publishes already in cycle {_cycle_id()} (limit "
-                    f"{max_publishes_per_cycle}). {tool} for '{slug}' is refused "
-                    f"until the next cycle."
+                    f"Per-cycle article ceiling reached: {len(shipped)} article(s) "
+                    f"already shipped in cycle {_cycle_id()} (limit "
+                    f"{max_publishes_per_cycle} per cycle), and '{slug}' is not "
+                    f"one of them. {tool} for '{slug}' is refused until the next "
+                    f"cycle. Articles already started in this cycle may still be "
+                    f"finished."
                 ),
             }
 
@@ -219,15 +236,31 @@ def _record_approved_slug(event: PolicyEvent, payload: object) -> PolicyResponse
     }
 
 
-def _record_publish(event: PolicyEvent, payload: object) -> PolicyResponse:
-    """Count a successful publish against the current cycle's ceiling."""
+def _record_shipped_slug(event: PolicyEvent, payload: object) -> PolicyResponse:
+    """Count a successful shipping call's slug against the cycle's ceiling.
+
+    The first guarded call for a slug puts it in the cycle's shipped set; the
+    rest of that article's calls find it already there and add nothing. So the
+    set size is the number of ARTICLES shipped this cycle, however many
+    publish_content / post_social calls each one took.
+    """
     if not _succeeded(payload):
         return _ALLOW
-    count = _cycle_publishes(event.get("session_state") or {}) + 1
-    value = json.dumps({"cycle": _cycle_id(), "count": count})
+    result = payload if isinstance(payload, dict) else {}
+    slug = str(result.get("slug", "")).strip()
+    if not slug:
+        # Fall back to the originating call's arguments (server path only).
+        slug = str(_tool_args(event.get("request_data")).get("slug", "")).strip()
+    if not slug:
+        return _ALLOW
+
+    shipped = _cycle_shipped_slugs(event.get("session_state") or {})
+    if slug in shipped:
+        return _ALLOW
+    value = json.dumps({"cycle": _cycle_id(), "slugs": [*shipped, slug]})
     return {
         "result": "ALLOW",
-        "state_updates": [{"key": _CYCLE_PUBLISHES_KEY, "action": "set", "value": value}],
+        "state_updates": [{"key": _CYCLE_SLUGS_KEY, "action": "set", "value": value}],
     }
 
 
@@ -244,7 +277,7 @@ def _decide_tool_result(event: PolicyEvent) -> PolicyResponse:
     payload = _result_payload(event.get("data"))
     if tool == _UPDATE_BACKLOG:
         return _record_approved_slug(event, payload)
-    return _record_publish(event, payload)
+    return _record_shipped_slug(event, payload)
 
 
 def publish_gate(
@@ -253,8 +286,10 @@ def publish_gate(
 ) -> PolicyCallable:
     """Factory: gate publication while leaving drafting and staging free.
 
-    :param max_publishes_per_cycle: Successful publishes allowed in one daily
-        cycle before further shipping is refused until the next cycle.
+    :param max_publishes_per_cycle: Distinct articles (backlog slugs) that may
+        be shipped in one daily cycle. Once that many have shipped, the first
+        guarded call for a NEW slug is refused until the next cycle; slugs
+        already counted may still finish their remaining posts.
     :returns: A one-argument policy callable.
     """
 
@@ -276,8 +311,9 @@ POLICY_REGISTRY: list[dict[str, Any]] = [  # type: ignore[explicit-any]
         "name": "Content Factory Publish Gate",
         "description": (
             "DENIES short-form social posts for a slug whose long-form post is "
-            "not yet APPROVED, DENIES all further shipping once a cycle's "
-            "batch-publish ceiling is reached, and ASKs on every other "
+            "not yet APPROVED, DENIES shipping a NEW article once a cycle's "
+            "article ceiling is reached — articles already started in that "
+            "cycle may still be finished — and ASKs on every other "
             "publish_content / post_social call. Drafting, editing and artifact "
             "staging stay ungated."
         ),
@@ -286,7 +322,10 @@ POLICY_REGISTRY: list[dict[str, Any]] = [  # type: ignore[explicit-any]
             "properties": {
                 "max_publishes_per_cycle": {
                     "type": "integer",
-                    "description": "Successful publishes per cycle before shipping is refused",
+                    "description": (
+                        "Distinct articles (slugs) shippable per cycle before a new one "
+                        "is refused"
+                    ),
                     "default": 3,
                 },
             },

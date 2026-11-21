@@ -83,10 +83,15 @@ READY  ──▶  DRAFTED  ──▶  APPROVED  ──▶  PUBLISHED
 | status | set by | meaning |
 |---|---|---|
 | `READY` | you | available for the next cycle to pick up |
-| `DRAFTED` | the supervisor | a draft exists and is staged |
-| `APPROVED` | the supervisor | the editor returned `PASS` |
-| `PUBLISHED` | the supervisor | shipped (after your approval) |
+| `DRAFTED` | the supervisor, step 5 | a draft exists and is staged |
+| `APPROVED` | the supervisor, step 8 | the editor returned `PASS` |
+| `PUBLISHED` | the supervisor, step 13 | shipped — written only after you approved *and* the publish actually succeeded |
 | `EDITED` | nobody | a valid value the workflow never writes |
+
+`PUBLISHED` is the terminal state and the supervisor reaches it on its own, but
+only on real success: if a shipping call is denied, parked or errors, the entry
+stays at `APPROVED` and the supervisor says what failed. An entry reading
+`PUBLISHED` therefore means *shipped*, never *about to ship*.
 
 Two honest caveats:
 
@@ -158,8 +163,8 @@ On a **fresh** session the supervisor will first propose a daily schedule. Say
 no for now — Part 4 covers it — or approve it and carry on; it does not affect
 this cycle.
 
-Then watch twelve steps. The supervisor announces which agent and which harness
-is working at each one, by design.
+Then watch thirteen steps. The supervisor announces which agent and which
+harness is working at each one, by design.
 
 | # | what happens | who | you? |
 |---|---|---|---|
@@ -175,6 +180,7 @@ is working at each one, by design.
 | 10 | stage both social pieces | supervisor | — |
 | 11 | write the cycle log | supervisor | — |
 | 12 | **publish / post** | — | **yes** |
+| 13 | set status `PUBLISHED` — only if step 12 succeeded | supervisor | — |
 
 Default `limit=1` means step 1 takes the *first* `READY` entry, so your first
 cycle will draft `contextual-policies`.
@@ -199,6 +205,12 @@ find examples/content_factory/artifacts -type f | sort
 
 Five files for one topic — outline, draft, X thread, LinkedIn post, cycle log.
 All free. All cheap to throw away.
+
+The cycle log is the one that is **not** per-topic: it is named for the UTC date,
+so a second cycle on the same day adds four new files and *appends* a second
+entry to the same `artifacts/cycles/<date>-cycle.md`, separated by a rule. So a
+multi-cycle day leaves you one log that reads as a sequence of cycles — rather
+than, as it used to, one log describing only the last one.
 
 ### See the editor push back
 
@@ -237,7 +249,9 @@ one request carrying both reasons:
 The second is deliberately redundant. It knows nothing about slugs or state, so
 the gate still holds if the custom policy is removed or misconfigured.
 
-Approve it. The content moves to `artifacts/published/<slug>/`.
+Approve it. The content moves to `artifacts/published/<slug>/`, and *then* the
+supervisor calls `update_backlog(slug, "PUBLISHED")` — step 13. Check
+`backlog.md`: the entry you just shipped is the one that reads `PUBLISHED`.
 
 ### DENY #1 — social copy before the post is approved
 
@@ -261,11 +275,29 @@ pressure. It lives outside the model, and the agent cannot talk its way past it.
 
 ### DENY #2 — the per-cycle ceiling
 
-Publish until three have succeeded in one cycle, then try a fourth.
+Ship three **articles** in one cycle, then start a fourth.
 
 **DENIED**, and note it is a `DENY`, not another `ASK`. A ceiling that only nags
 is not a ceiling. It holds until the next cycle — a UTC calendar day, matching
 the daily schedule.
+
+The unit is the **article**, meaning a distinct backlog slug — not the guarded
+call. That distinction is load-bearing, because shipping one article fully takes
+three guarded calls: `publish_content`, then a `post_social` per channel. If the
+ceiling counted calls, `max_publishes_per_cycle: 3` would stop the *second*
+article on its first publish.
+
+So the semantics are **finish what you started, but do not start a new one**:
+
+| at a ceiling of 3 | verdict |
+|---|---|
+| articles A and B shipped; C's `publish_content` | `ASK` — the third article |
+| C's `post_social` for x and linkedin, now at the ceiling | `ASK` — C is already counted |
+| a fourth slug D's `publish_content` | **`DENY`** — D would be a new article |
+
+Without that exemption C would end up published with no social copy — stranded
+half-shipped by its own guardrail. Try it: at the ceiling, the article in flight
+finishes and the next one does not begin.
 
 ### What is never gated
 
@@ -347,7 +379,7 @@ A ~12 minute version:
 | 4 | one unattended cycle: Codex drafts, Claude edits, five artifacts, no human |
 | 2 | the gate — two policies, one prompt — then approve |
 | 1 | DENY: social copy before the post is approved |
-| 1 | DENY: the per-cycle ceiling |
+| 1 | DENY: the per-cycle ceiling — three articles, and the one in flight still finishes |
 | 2 | it schedules itself, and that is gated too |
 
 Never cut the unattended cycle or the gate. Those two together are the argument.
@@ -366,8 +398,11 @@ probably stopped at the editor. Check `artifacts/drafts/`.
 recorded `APPROVED` transition **in this session**. A fresh session starts with
 no memory, so re-run the cycle rather than jumping to step 12.
 
-**The publish ceiling will not lift.** It is scoped to a UTC day. Raise
-`max_publishes_per_cycle` in `config.yaml`, or wait for the next cycle.
+**The publish ceiling will not lift.** It counts distinct articles (slugs)
+shipped, and is scoped to a UTC day. Raise `max_publishes_per_cycle` in
+`config.yaml`, or wait for the next cycle. If the slug you are shipping is
+already counted this cycle, the ceiling does not apply to it — a `DENY` naming
+the ceiling means that slug is a *new* article.
 
 **Nothing posts to X or LinkedIn.** Correct — `post_social` is a local stub. It
 writes a simulated JSON record to `artifacts/published/<slug>/` and makes no

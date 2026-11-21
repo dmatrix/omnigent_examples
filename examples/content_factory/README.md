@@ -28,7 +28,7 @@ The supervisor writes nothing. It owns the backlog state machine and delegates e
 Everything the factory makes lands in `artifacts/`, and the tier decides whether a human is involved:
 
 ```
-artifacts/cycles/<date>-cycle.md        ← free     cycle log
+artifacts/cycles/<date>-cycle.md        ← free     cycle log (one file per UTC day, appended per cycle)
 artifacts/outlines/<slug>.md            ← free     the angle
 artifacts/drafts/<slug>.md              ← free     the blog post
 artifacts/social/<slug>-x.md            ← free     X thread
@@ -37,12 +37,12 @@ artifacts/published/<slug>/…            ← GATED    publish_content
 (outbound post to X / LinkedIn)         ← GATED    post_social
 ```
 
-Drafting is cheap and reversible, so it is unattended. Publishing is neither, so it asks. **Within a cycle, steps 1–11 need no human at all — only step 12 does.** (Setting up the schedule in the first place is also approval-gated; see [Continuous Operation](#continuous-operation).)
+Drafting is cheap and reversible, so it is unattended. Publishing is neither, so it asks. **Within a cycle, steps 1–11 need no human at all — step 12 is the one that does, and step 13 only records what step 12 actually shipped.** (Setting up the schedule in the first place is also approval-gated; see [Continuous Operation](#continuous-operation).)
 
 ### Five tools
 
 - **`read_backlog`** — pulls the next `READY` feature from `backlog.md`. Free.
-- **`update_backlog`** — sets one entry to any valid backlog status (`READY`, `DRAFTED`, `EDITED`, `APPROVED`, `PUBLISHED`). It validates the value, not the transition — the intended progression comes from the supervisor prompt. Free.
+- **`update_backlog`** — sets one entry to any valid backlog status (`READY`, `DRAFTED`, `EDITED`, `APPROVED`, `PUBLISHED`). It validates the value, not the transition — the intended progression comes from the supervisor prompt. The supervisor writes `DRAFTED` at step 5, `APPROVED` at step 8 and the terminal `PUBLISHED` at step 13, once publishing has actually succeeded. (`EDITED` is valid but unused.) Free.
 - **`save_artifact`** — stages an outline, draft, social post or cycle log. Free.
 - **`publish_content`** — promotes a staged draft into `artifacts/published/`. **Guarded.**
 - **`post_social`** — the outbound egress action, a stub that does not actually post. **Guarded.**
@@ -144,6 +144,9 @@ Two other mechanisms exist if a daily RRULE is the wrong shape:
 | 10 | stage the X thread and LinkedIn post | supervisor | no |
 | 11 | write the cycle log | supervisor | no |
 | 12 | **`publish_content` / `post_social`** | human | **YES** |
+| 13 | `update_backlog` → `PUBLISHED`, on success only | supervisor | no |
+
+Step 13 is what closes the state machine. It runs only after the human has approved and every shipping call for that slug has returned successfully — if a publish is denied, parked or errors, the entry stays `APPROVED` and the supervisor reports what failed. So `PUBLISHED` always means *shipped*, never *intended to ship*.
 
 Step 7 is where the editor earns its keep: the supervisor is forbidden from proceeding past a `REVISE` verdict, and forbidden from substituting its own opinion for the editor's.
 
@@ -157,7 +160,7 @@ Two complementary layers guard the same two shipping tools.
 
 | Policy | Type | What it does |
 |---|---|---|
-| `publish_gate` | custom, stateful | Slug-aware. DENIES a social post whose blog is not yet `APPROVED`; DENIES anything further once the cycle ceiling is hit; otherwise ASKS with a reason naming the slug and artifact. |
+| `publish_gate` | custom, stateful | Slug-aware. DENIES a social post whose blog is not yet `APPROVED`; DENIES shipping a *new* article once the cycle ceiling is hit, while letting an article already started finish; otherwise ASKS with a reason naming the slug and artifact. |
 | `guarded_tools` | builtin `risk_score` | Coarse unconditional brake. Knows nothing about slugs — escalates `publish_content` and `post_social` on **every** call, so the gate holds even if the custom policy is removed. |
 | `user_daily_cost_budget` | builtin | $5.00/day per user, ASKs at $0.50. |
 
@@ -170,7 +173,11 @@ The two shipping layers **do not produce two prompts.** The engine evaluates eve
 Three rules, evaluated in this order:
 
 1. **R1 — DENY** `post_social` until this session has recorded a successful `update_backlog(status="APPROVED")` for that slug. The editorial intent is *short-form content cannot precede the long-form post it cites*; what R1 actually enforces is the recorded state transition, not the existence of a blog or an editor verdict. The supervisor performs that transition only after a `PASS`, which is what links the two.
-2. **R3 — DENY** once `max_publishes_per_cycle` (default 3) publishes have succeeded in the current cycle. A real stop, not a nag: the ceiling holds until the next cycle.
+2. **R3 — DENY** once `max_publishes_per_cycle` (default 3) **articles** have shipped in the current cycle. The unit is the article — a *distinct backlog slug* — not the guarded call, because shipping one article fully takes three guarded calls (`publish_content`, plus a `post_social` per channel). Counting calls would hard-stop the second article partway through.
+
+   So the rule is **you may finish an article you have started, but you may not start a new one past the ceiling**: R3 refuses a slug only when that slug is *not already* in the cycle's shipped set *and* the set is full. At a ceiling of 3, with articles A and B shipped and C's `publish_content` just counted, C's remaining `post_social` calls still go through — nothing is left published with its social copy stranded — while a fourth slug D is refused on its first call.
+
+   A real stop, not a nag: the ceiling holds until the next cycle (a UTC calendar day).
 3. **R2 — ASK** any other `publish_content` or `post_social`, naming the slug and what is being shipped.
 
 `save_artifact`, `read_backlog` and `update_backlog` are **never** gated on any path. The ungated tier is the whole contrast the example teaches.
@@ -202,7 +209,7 @@ See [demo.md](demo.md) for a ~12 minute script. The short version:
 2. Run a cycle. Watch Codex draft and Claude edit, and watch steps 1–11 complete with no human input.
 3. Watch it stop at step 12 and ask.
 4. Try to post social copy for a slug that was never approved. **DENIED** — and read the reason.
-5. Approve a publish, then hit the ceiling. **DENIED** until the next cycle.
+5. Ship three articles, then try a fourth. **DENIED** until the next cycle — but the third article's remaining social posts still go out.
 
 ---
 

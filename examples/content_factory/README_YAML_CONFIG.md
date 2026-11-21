@@ -90,8 +90,20 @@ Three rules, in evaluation order:
 | Rule | Verdict | Condition |
 |---|---|---|
 | R1 | **DENY** | `post_social` for a slug with no prior successful `update_backlog(status="APPROVED")` |
-| R3 | **DENY** | the cycle's publish ceiling (`max_publishes_per_cycle`) is already reached |
+| R3 | **DENY** | this slug is **not already** among the articles shipped this cycle **and** the cycle's article ceiling (`max_publishes_per_cycle`) is already reached |
 | R2 | **ASK** | any other `publish_content` or `post_social`, reason naming the slug and artifact |
+
+R3 counts **articles** — distinct backlog slugs — not guarded calls. One article
+ships in three guarded calls (`publish_content` plus a `post_social` per
+channel), so a call-based count would stop the second article mid-flight at
+`max_publishes_per_cycle: 3`. The two-part condition is what gives the rule its
+semantics: **finish what you started, but do not start a new one.** A slug the
+cycle has already counted is never refused by R3, so no article is left
+published with its social copy stranded; a new slug is refused on its first
+call.
+
+The argument keeps the name `max_publishes_per_cycle`, since that is the key in
+`config.yaml`; read it as *articles per cycle*.
 
 Order matters. R1 before R3 means an unapproved post at the ceiling reports the
 *sequencing* violation, which is the more useful message. R3 before R2 is what
@@ -160,15 +172,18 @@ copying into your own supervisor:
    social post yourself."
 2. **A named roster with the harness in parentheses** so cross-harness
    delegation is visible in the transcript.
-3. **A numbered 12-step workflow**, with step 7 forbidding progress past a
-   `REVISE` verdict.
+3. **A numbered 13-step workflow**, with step 7 forbidding progress past a
+   `REVISE` verdict and step 13 writing the terminal `PUBLISHED` status only
+   after a human approval *and* a successful publish.
 4. **A visibility rule** — name the agent and the harness, "do not state the
    model name."
 5. **A coordinator constraint** — report what sub-agents produced; do not add
    your own critique. The editor's verdict is the verdict.
 
 Step 12 is the gate, and the prompt says the quiet part out loud: *never treat
-your own reasoning as the approval.*
+your own reasoning as the approval.* Step 13 is the honesty clause on the other
+side of it: `PUBLISHED` is a record of what shipped, so a denied, parked or
+failed publish leaves the entry at `APPROVED`.
 
 ---
 
@@ -283,14 +298,27 @@ guardrails
    with a slug-specific reason.
 3. `guarded_tools` → **ASK** with the blanket reason.
 4. Engine joins both into **one** pending approval.
-5. On approval, the tool runs; `publish_gate` records the publish on
-   `tool_result`, incrementing the cycle count.
+5. On approval, the tool runs; `publish_gate` records the slug against the
+   current cycle on `tool_result`. The first guarded call for a slug adds it to
+   the cycle's shipped set; that article's later calls find it already there and
+   add nothing, which is what makes the set size an article count.
+6. Once `publish_content` and every `post_social` for the slug have succeeded,
+   the supervisor's step 13 sets the entry to `PUBLISHED`. That write is
+   ungated, and it does **not** disturb R1's approved-slug record — `PUBLISHED`
+   neither removes an `APPROVED` entry nor creates one.
 
-### Flow 3: the fourth publish in one cycle
+### Flow 3: the fourth article in one cycle
 
-1. Three publishes have already succeeded today.
-2. `publish_gate` R3 fires before R2. **DENY** — the ceiling holds until the
-   next cycle.
+1. Three distinct slugs have already shipped today.
+2. The supervisor calls `publish_content(slug="d")` for a fourth slug.
+3. `publish_gate` R3 sees that `d` is not in the cycle's shipped set and the set
+   is full, and fires before R2. **DENY** — the ceiling holds until the next
+   cycle.
+
+Compare the call that is *not* refused: a `post_social` for one of those three
+slugs is at the same ceiling, but its slug is already in the set, so R3 skips it
+and R2 **ASK**s as usual. The in-flight article finishes; the fourth never
+starts.
 
 ### Why state is read on `tool_result`, not `tool_call`
 
