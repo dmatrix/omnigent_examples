@@ -55,10 +55,13 @@ The CLI opens an interactive REPL. A Web UI is also available at the Databricks 
 > **This example uses a custom policy, so it needs a local server.** If you have
 > run `omnigent login`, a plain `omnigent run` targets your configured remote
 > server, which rejects unregistered policy handlers before the session starts.
-> Use `--server local` and set `PYTHONPATH` so the policy module is importable:
+> Use `--server local --no-session` and set `PYTHONPATH` so the policy module is
+> importable. `--no-session` is required: persistent local mode goes through the
+> host daemon, which enforces the same handler allowlist as a remote server.
+> Ephemeral state is per-run and does not persist across invocations:
 >
 > ```bash
-> PYTHONPATH=$(pwd) omnigent run examples/secure_code_assistant/ --server local
+> PYTHONPATH=$(pwd) omnigent run examples/secure_code_assistant/ --server local --no-session
 > ```
 >
 > See "Custom policies do not run against a remote server" in the repo-root

@@ -100,10 +100,13 @@ Four entries are `READY` — one of them deliberately thin, so a cycle will pick
 > **This example uses a custom policy, so it needs a local server.** If you have
 > run `omnigent login`, a plain `omnigent run` targets your configured remote
 > server, which rejects unregistered policy handlers before the session starts.
-> Use `--server local` and set `PYTHONPATH` so the policy module is importable:
+> Use `--server local --no-session` and set `PYTHONPATH` so the policy module is
+> importable. `--no-session` is required: persistent local mode goes through the
+> host daemon, which enforces the same handler allowlist as a remote server.
+> Ephemeral state is per-run and does not persist across invocations:
 >
 > ```bash
-> PYTHONPATH=$(pwd) omnigent run examples/content_factory/ --server local
+> PYTHONPATH=$(pwd) omnigent run examples/content_factory/ --server local --no-session
 > ```
 >
 > See "Custom policies do not run against a remote server" in the repo-root
@@ -165,6 +168,12 @@ session_mode: new
 The supervisor calls `sys_scheduled_task_create` with those parameters, and each firing starts a fresh session that runs one cycle.
 
 **Creating a schedule is itself approval-gated.** The first thing you will be asked to approve is the factory's own existence — which is the right default for an agent that proposes to wake up every morning and write on your behalf.
+
+> **Observed behaviour, honestly:** in two live runs the supervisor did **not**
+> propose the schedule — it went straight into the content workflow. The tool is
+> present (`sys_scheduled_task_create` resolves; all builtin tool groups default
+> on), so this is prompt noncompliance, not a missing capability. Treat the
+> schedule step as intended behaviour that is not yet reliably reproduced.
 
 Two other mechanisms exist if a daily RRULE is the wrong shape:
 
