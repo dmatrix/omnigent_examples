@@ -1,7 +1,7 @@
 # Content Factory — Walkthrough
 
 A guided tour of this example. By the end you will have run a full production
-cycle, watched the factory stage five artifacts without asking you anything, and
+cycle, watched the factory stage five content artifacts plus a dashboard snapshot without asking you anything, and
 then watched it refuse to publish without your signature.
 
 Read [README.md](README.md) first if you want the architecture. This file is the
@@ -180,7 +180,9 @@ publish gate, and successful `PUBLISHED` — not after every step — so the tab
 shows durable backlog and artifact facts without flooding the chat. There is no
 Start button to hunt for: example agents cannot configure one, so your `Run one
 factory cycle.` chat message starts the work. The native Approve/Reject card at
-step 12 is the review UI.
+step 12 is the review UI. Its publication total is all-time disk state, not a
+fraction of the session-scoped daily ceiling, so the table does not claim it
+knows the current policy counter.
 
 | # | what happens | who | you? |
 |---|---|---|---|
@@ -219,8 +221,8 @@ When it stops, inspect what it made:
 find examples/content_factory/artifacts -type f | sort
 ```
 
-Five files for one topic — outline, draft, X thread, LinkedIn post, cycle log.
-All free. All cheap to throw away.
+Six files for one topic — outline, draft, X thread, LinkedIn post, cycle log,
+and the current dashboard snapshot. All free. All cheap to throw away.
 
 The cycle log is the one that is **not** per-topic: it is named for the UTC date,
 so a second cycle on the same day adds four new files and *appends* a second
@@ -365,7 +367,7 @@ optimism; it does not stop a determined agent.
 
 ```bash
 # always free, every time, on every path
-read_backlog · save_artifact
+read_backlog (including dashboard mode) · save_artifact
 # free for READY, DRAFTED, EDITED, APPROVED — checked only for PUBLISHED
 update_backlog
 ```
@@ -446,7 +448,7 @@ A ~12 minute version:
 | min | beat |
 |---|---|
 | 2 | `backlog.md` and the two-tier `artifacts/` layout — the design in two files |
-| 4 | one unattended cycle: Codex drafts, Claude edits, five artifacts, no human |
+| 4 | one unattended cycle: Codex drafts, Claude edits, five content artifacts plus the dashboard, no human |
 | 2 | the gate — two policies, one prompt — then approve |
 | 1 | DENY: social copy before the post is approved |
 | 1 | DENY: the per-cycle ceiling — three articles, and the one in flight still finishes |

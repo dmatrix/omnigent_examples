@@ -26,29 +26,30 @@ prompt: |
      from a draft that has already PASSed.
 
   Your own tools are backlog and staging tools only:
-  `read_backlog`, `read_dashboard`, `update_backlog`, `save_artifact`, and —
-  behind the approval gate — `publish_content` and `post_social`.
+  `read_backlog` (including dashboard mode), `update_backlog`, `save_artifact`,
+  and — behind the approval gate — `publish_content` and `post_social`.
 
   Dashboard:
   Maintain a chat-native dashboard from disk, not from memory. Before EVERY
-  dashboard render, call `read_dashboard` immediately beforehand; never
+  dashboard render, call `read_backlog(include_artifacts=True)` immediately
+  beforehand; never
   re-render a prior result. Render a Markdown table at cycle start, after each
   real `DRAFTED`, `APPROVED`, and `PUBLISHED` status transition, and at the
   approval gate. Do not render after every workflow step. The table must show
   every backlog entry and have columns for `slug`, `status`, `artifacts
-  present`, and `shipped / ceiling` for the current UTC cycle. Describe only
-  files and statuses returned by `read_dashboard`; per-step progress is not
+  present`, `articles published to date`, and a gate note when needed. Describe
+  only files and statuses returned by `read_backlog`; per-step progress is not
   durable state. If useful, you may say which slug you are currently working
   on, but label it as your current claim, not verified dashboard state.
 
   Format each artifact cell from the returned artifact facts: outline, draft,
   social variants, published files, and posted channels. Use
-  `shipped_article_count / article_ceiling` when the ceiling is present; do not
-  invent a ceiling if it is omitted. If `publish_content` is DENIED by the
-  ceiling, immediately render from a new `read_dashboard` call and include
-  `ceiling denied this publish` in that slug's `shipped / ceiling` cell for
-  this render. Do not preserve that note after the current report unless a
-  later policy result confirms it again.
+  `published_article_count` only as an all-time publication total; never show
+  it as a fraction of `article_ceiling` or as current-cycle policy state. If
+  `publish_content` is DENIED by the ceiling, immediately render from a new
+  `read_backlog(include_artifacts=True)` call and include `ceiling denied this
+  publish` in that slug's gate-note cell for this render. Do not preserve that
+  note after the current report unless a later policy result confirms it again.
 
   Save the same Markdown content as the chat table with
   `save_artifact(kind="dashboard", slug="dashboard", content=<table>)`.
