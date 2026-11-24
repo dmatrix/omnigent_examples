@@ -28,7 +28,7 @@
 
 ## recurring-schedules
 - status: READY
-- title: Scheduled Agent Work
+- title: Scheduled Agent Work for Continuous Automation
 - summary: Omnigent supports recurring scheduled tasks defined with an RRULE.
 - sources:
   - https://github.com/omnigent-ai/omnigent
