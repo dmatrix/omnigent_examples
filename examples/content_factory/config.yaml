@@ -202,7 +202,7 @@ guardrails:
         arguments:
           # Distinct ARTICLES (slugs) a cycle may START shipping, not guarded
           # calls: one article normally takes three calls to ship.
-          max_articles_per_cycle: 3
+          max_articles_per_cycle: 5
 
     # threshold 0 with no tool_points means the session score is always at the
     # threshold, so each guarded tool escalates on every call. Non-guarded
@@ -281,5 +281,5 @@ guardrails:
       function:
         path: omnigent.policies.builtins.cost.user_daily_cost_budget
         arguments:
-          max_cost_usd: 5.0
-          ask_thresholds_usd: [0.50]
+          max_cost_usd: 25.00
+          ask_thresholds_usd: [5.50, 10.50, 15.50, 20.50]

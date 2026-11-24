@@ -19,8 +19,9 @@
 
 **Prompt:**
 ```
-Write a Python rate limiter class using the token bucket algorithm.
-Put it in rate_limiter.py with unit tests in test_rate_limiter.py.
+Write a Python binary search function in binary_search.py with unit tests
+in test_binary_search.py. Include tests for an empty list, a missing target,
+and duplicate elements.
 ```
 
 **Watch:** The supervisor dispatches to `impl_worker` (OpenAI writes the code and runs tests), then dispatches to `review_worker` (Claude reviews it).

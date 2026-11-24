@@ -34,8 +34,21 @@ Harness and model live **here**, not at the top level. There is no top-level
 
 ### OS Environment
 
-**Absent from all four configs, on purpose.** There is no `os_env:` key
-anywhere in this bundle. Every config used to carry this block:
+> **⚠️ Out of date with the configs.** This section documents the state in which
+> **no** agent declared `os_env`. Two now do: `blog_writer` and `editor` both
+> carry `os_env: {type: caller_process, cwd: ., sandbox: {type: none}}`, so both
+> are granted `sys_os_read` / `sys_os_write` / `sys_os_edit` / `sys_os_shell`,
+> and `blog_writer`'s Codex sandbox is back to `danger-full-access`. The
+> supervisor and `social_writer` still declare none.
+>
+> Everything below is accurate **for the supervisor and `social_writer`**, and
+> accurate as history for the other two. The claims that `no_self_modification`
+> is inert and that the Codex sandbox is narrowed do not currently hold for
+> `blog_writer` or `editor`. Resolve by removing the two blocks or rewriting
+> this section around the narrower claim.
+
+**Originally absent from all four configs, on purpose.** Every config used to
+carry this block:
 
 ```yaml
 # what all four configs used to declare -- now none of them do
@@ -62,7 +75,7 @@ supervisor, `editor` and `social_writer` now hold no file tool of any kind.
 `tests/test_self_edit_guard.py` asserts that against a real `ToolManager`, not
 just against the YAML.
 
-It was not needed. `cwd: .` is not what lets the five tools resolve
+It was not needed. `cwd: .` is not what lets the six tools resolve
 `backlog.md` and `artifacts/` — they run as server-side subprocesses and
 resolve paths from `os.getcwd()`, the workspace root, independent of any
 agent's `os_env`. Removing the block costs the example nothing; verified by
@@ -161,7 +174,7 @@ publish_gate:
   function:
     path: examples.content_factory.policies.publish_gate.publish_gate
     arguments:
-      max_articles_per_cycle: 3
+      max_articles_per_cycle: 5
 ```
 
 `path` is a dotted import path to a **factory function** that returns the policy
@@ -186,7 +199,7 @@ does not gate `update_backlog` for `READY`, `DRAFTED`, `EDITED` or `APPROVED`.
 R3 counts **articles** — distinct backlog slugs — not guarded calls. One article
 ships in three guarded calls (`publish_content` plus a `post_social` per
 channel), so a call-based count would stop the second article mid-flight at
-`max_articles_per_cycle: 3`. The two-part condition is what gives the rule its
+`max_articles_per_cycle: 5`. The two-part condition is what gives the rule its
 semantics: **finish what you started, but do not start a new one.** A slug the
 cycle has already counted is never refused by R3, so no article is left
 published with its social copy stranded; a new slug is refused on its first
@@ -196,7 +209,7 @@ The argument is named `max_articles_per_cycle` for exactly that reason — it
 counts articles, so it says so. Note what it bounds: the articles a cycle may
 **start**. Because an already-counted slug is exempt, the same article can be
 re-shipped inside the cycle without R3 noticing; R2 is what holds there, asking
-on every shipping call. Do not read `3` as a cap on outbound actions.
+on every shipping call. Do not read `5` as a cap on outbound actions.
 
 Order matters. R1 before R3 means an unapproved post at the ceiling reports the
 *sequencing* violation, which is the more useful message. R3 before R2 is what
@@ -287,12 +300,14 @@ tools, sub-agent dispatch and every read stay untouched.
 **It is inert for the `sys_os_*` family, and powerless over the rest.** Those
 two halves need separating, because the tool list is wider than the protection:
 
-- `sys_os_write` / `sys_os_edit` / `sys_os_shell` — no agent declares `os_env`,
-  so none is granted these, and the policy has nothing to act on today. It is
-  here because `os_env` is the boilerplate CLAUDE.md documents for filesystem
-  access: re-adding the block is a plausible accident, and this makes that
-  accident non-silent rather than a restored capability. For these names the
-  gate is genuine (see below).
+- `sys_os_write` / `sys_os_edit` / `sys_os_shell` — the supervisor and
+  `social_writer` declare no `os_env`, so neither is granted these and the
+  policy has nothing to act on for them. `blog_writer` and `editor` *do* declare
+  `os_env`, so for those two the DENY is live rather than inert. `os_env` is the
+  boilerplate CLAUDE.md documents for filesystem access, so re-adding the block
+  is a plausible accident — which is exactly what makes this policy worth
+  keeping, and what makes that accident non-silent. For these names the gate is
+  genuine (see below).
 - `shell` / `apply_patch` — `blog_writer` **does** hold Codex's native
   `apply_patch`. Naming it here cannot stop it; see below. It is listed so a
   reader does not have to infer the omission.
@@ -334,8 +349,8 @@ user_daily_cost_budget:
   function:
     path: omnigent.policies.builtins.cost.user_daily_cost_budget
     arguments:
-      max_cost_usd: 5.0
-      ask_thresholds_usd: [0.50]
+      max_cost_usd: 25.00
+      ask_thresholds_usd: [5.50, 10.50, 15.50, 20.50]
 ```
 
 Per-user, per-UTC-day, so it survives `--no-session`.
@@ -372,7 +387,7 @@ copying into your own supervisor:
 
 The prompt also states two UX limits up front: no agent-configurable Start
 button exists, so a run begins with chat; and a whole-backlog run is not
-unattended because the $0.50 daily-cost ASK and three-articles-per-UTC-day
+unattended because the $5.50 daily-cost ASK (then every $5) and five-articles-per-UTC-day
 ceiling can stop it. Its alternative stages steps 1–11 for all entries and
 publishes them one at a time.
 
@@ -429,7 +444,8 @@ transition, which the supervisor only performs after a `PASS`.
 ### Sub-agent guardrails
 
 ```yaml
-cost_budget:          max_cost_usd: 1.0, ask_thresholds_usd: [0.25]
+cost_budget:          max_cost_usd: 25.00, ask_thresholds_usd: [6.25, 11.25, 16.25, 21.25]
+                      (social_writer steps from 7.50; every value must be < max_cost_usd)
 max_tool_calls_per_session:  limit 250
 ```
 
@@ -447,11 +463,12 @@ runaway tool use. The supervisor has no tool-call limit.
   them would break continuous operation.
 - **No `guardrails.labels:`** — this example gates on *state*, not on taint
   labels. See [secure_code_assistant](../secure_code_assistant/) for labels.
-- **No `tools:` block on the supervisor beyond `agents:`** — the five factory
+- **No `tools:` block on the supervisor beyond `agents:`** — the six factory
   tools are auto-discovered.
-- **No `skills:` key** — `skills/blog-style/` is found by convention.
-- **No `os_env` on any of the four agents** — and that is the point, not an
-  omission. See [OS Environment](#os-environment).
+- **`skills:` declared on `blog_writer`** — it lists `blog-style` explicitly.
+- **No `os_env` on the supervisor or `social_writer`** — and that is the point,
+  not an omission. `blog_writer` and `editor` currently do declare one; see
+  [OS Environment](#os-environment).
 
 ---
 
@@ -466,7 +483,7 @@ executor
   model
   config.harness
 prompt
-(no os_env anywhere              — see OS Environment)
+(os_env on blog_writer+editor    — see OS Environment)
 tools
   agents[]                       supervisor only
   builtins[]                     blog_writer only

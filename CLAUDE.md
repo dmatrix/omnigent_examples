@@ -2,12 +2,14 @@
 
 ## Project Overview
 
-Example agent configurations for the Omnigent CLI. The examples include a secure code assistant with information flow policies, a telco customer data agent demonstrating session-scoped PII/financial policy labels, a slow-burn guard that blocks a fragmented data-exfiltration attack with a single stateful risk-score policy, a cross-harness coding supervisor, and a harness portability inspector using four LLM providers.
+Example agent configurations for the Omnigent CLI. Six examples: a content factory that drafts, edits and stages blog + social content across three harnesses behind a human publish gate; a cross-harness coding supervisor; a harness portability inspector using four LLM providers; a secure code assistant with information flow policies; a slow-burn guard that blocks a fragmented data-exfiltration attack with a single stateful risk-score policy; and a telco customer data agent demonstrating session-scoped PII/financial policy labels.
 
 ## Tech Stack
 
 - **Omnigent CLI** -- runs agents from YAML configs
-- **Claude SDK harness** (`harness: claude-sdk`) -- most agents default to `claude-sonnet-4-6` (direct API); cross_harness_coding defaults to `databricks-claude-sonnet-4-6` (Databricks AI Gateway)
+- **Claude SDK harness** (`harness: claude-sdk`) -- most agents default to `claude-sonnet-4-6` (direct API); cross_harness_coding and content_factory default to `databricks-claude-sonnet-4-6` (Databricks AI Gateway)
+- **Codex harness** (`harness: codex`) -- slow_burn_guard (`gpt-5.5-mini`), harness_portability's test_inspector (`gpt-5.4`), and the sub-agents cross_harness_coding/impl_worker and content_factory/blog_writer (both `databricks-gpt-5-4`)
+- **Pi and Hermes harnesses** -- two of harness_portability's four inspectors
 - **Python tools** -- `@tool` decorator from `omnigent_client.tools`, auto-discovered from `tools/python/`
 - **SQLite** -- telco tools query `examples/tools/data/telco.db`
 
@@ -20,14 +22,19 @@ omnigent setup
 # Set up databases (once)
 python examples/tools/create_telco_db.py
 
-# Run locally (auto-spawns background server, uses configured credentials)
-omnigent run examples/secure_code_assistant/
-omnigent run examples/telco_customer_agent/
+# Run locally -- builtin-policy examples only (auto-spawns background server)
 omnigent run examples/cross_harness_coding/
+omnigent run examples/harness_portability/
+omnigent run examples/slow_burn_guard/
+
+# Custom-policy examples: local ephemeral session required (see Known Issues)
+PYTHONPATH=$(pwd) omnigent run examples/content_factory/ --server local --no-session
+PYTHONPATH=$(pwd) omnigent run examples/telco_customer_agent/ --server local --no-session
+omnigent run examples/secure_code_assistant/ --server local --no-session   # no PYTHONPATH needed
 
 # Override model and harness at the command line
-omnigent run examples/secure_code_assistant/ --model gpt-5.5 --harness openai-agents
-omnigent run examples/secure_code_assistant/ --model claude-sonnet-4-6 --harness claude-sdk
+omnigent run examples/cross_harness_coding/ --model gpt-5.5 --harness codex
+omnigent run examples/secure_code_assistant/ --server local --no-session --model claude-sonnet-4-6 --harness claude-sdk
 
 # Run against Databricks-hosted server
 # NOTE: only works for examples whose policies are all builtins -- see
@@ -35,18 +42,8 @@ omnigent run examples/secure_code_assistant/ --model claude-sonnet-4-6 --harness
 omnigent login https://omnigent-<id>.aws.databricksapps.com
 omnigent run examples/cross_harness_coding/ --server https://omnigent-<id>.aws.databricksapps.com
 
-# Force a LOCAL server, ignoring any configured remote default.
-# Required for content_factory, telco_customer_agent and secure_code_assistant
-# once you have run `omnigent login`, because a configured remote becomes the
-# default for a plain `omnigent run`. PYTHONPATH is needed so the CLI preflight
-# can import the `examples.*` policy modules.
-PYTHONPATH=$(pwd) omnigent run examples/content_factory/ --server local --no-session
-
 # Fresh session (no persistence)
-omnigent run examples/telco_customer_agent/ --no-session
-
-# Cross-harness coding (Codex + Claude)
-omnigent run examples/cross_harness_coding/
+omnigent run examples/harness_portability/ --no-session
 
 # Harness portability (Code Project Health Inspector — runs on any harness)
 omnigent run examples/harness_portability/
@@ -54,7 +51,7 @@ omnigent run examples/harness_portability/ --model gpt-5.4 --harness codex
 omnigent run examples/harness_portability/ --harness pi
 omnigent run examples/harness_portability/ --harness hermes
 
-# Slow-burn guard (codex harness + gpt-5.4-mini; needs OPENAI_API_KEY)
+# Slow-burn guard (codex harness + gpt-5.5-mini; needs OPENAI_API_KEY)
 omnigent run examples/slow_burn_guard/
 omnigent run examples/slow_burn_guard/ --model claude-sonnet-4-6 --harness claude-sdk
 ```
@@ -99,6 +96,33 @@ os_env:
 
 ```
 examples/
+|-- content_factory/               # Agentic content factory (3 harnesses, human publish gate)
+|   |-- config.yaml               #   Supervisor (claude-sdk, databricks-claude-sonnet-4-6)
+|   |-- backlog.md                #   Markdown work queue -- the factory's input
+|   |-- README.md
+|   |-- README_YAML_CONFIG.md
+|   |-- demo.md
+|   |-- agents/
+|   |   |-- blog_writer/
+|   |   |   +-- config.yaml       #   Drafts (codex, databricks-gpt-5-4); declares os_env + blog-style skill
+|   |   |-- editor/
+|   |   |   |-- config.yaml       #   PASS/REVISE/REJECT (claude-sdk); declares os_env
+|   |   |   +-- tools/python/read_local_file.py
+|   |   +-- social_writer/
+|   |       +-- config.yaml       #   X thread + LinkedIn post (claude-sdk)
+|   |-- policies/
+|   |   +-- publish_gate.py       #   Custom policy: R1-R4 publish rules (max_articles_per_cycle: 5)
+|   |-- skills/blog-style/
+|   |   +-- SKILL.md              #   House style for the blog writer
+|   |-- tools/python/             #   6 tools; publish_content + post_social are guarded
+|   |   |-- read_backlog.py       #   Next READY feature + disk-derived dashboard
+|   |   |-- update_backlog.py     #   Status transitions (PUBLISHED is gated by R4)
+|   |   |-- save_artifact.py      #   Stage outline/draft/social/cycle log (free)
+|   |   |-- read_artifact.py      #   Read a staged artifact back (free)
+|   |   |-- publish_content.py    #   Promote draft to published/ (GUARDED)
+|   |   +-- post_social.py        #   Outbound post stub (GUARDED)
+|   |-- tests/                    #   pytest suite for the tools and the gate
+|   +-- artifacts/                #   Factory output: outlines, drafts, social, published
 |-- cross_harness_coding/          # Cross-harness coding (Codex implements, Claude reviews)
 |   |-- config.yaml               #   Supervisor (claude-sdk), references sub-agents by name
 |   +-- agents/
@@ -123,7 +147,7 @@ examples/
 |       |-- read_source.py        #   File reader (triggers has_proprietary_code)
 |       +-- search_docs.py        #   Doc search stub (triggers has_external_content)
 |-- slow_burn_guard/              # Slow-burn attack demo (single risk-score policy)
-|   |-- config.yaml               #   harness: codex, model: gpt-5.4-mini
+|   |-- config.yaml               #   harness: codex, model: gpt-5.5-mini
 |   |-- README.md
 |   |-- demo.md
 |   +-- tools/python/
@@ -196,6 +220,35 @@ of the example that uses it, and is auto-discovered from there.
   `PYTHONPATH=$(pwd)` makes the `examples.*` policy module importable; CLI
   preflight does not import from the workspace directory on its own.
   `--no-session` is **required**, not optional.
+
+  **Two distinct walls -- do not conflate them.** The handler allowlist and the
+  `sys.path` preflight are separate checks that fail at different moments, and
+  they do not affect the same set of examples:
+
+  | example | `--no-session` | `PYTHONPATH=$(pwd)` | why |
+  |---|---|---|---|
+  | `content_factory` | **required** | **required** | `examples.content_factory.policies.publish_gate` lives in the workspace |
+  | `telco_customer_agent` | **required** | **required** | `examples.telco_customer_agent.policies.bulk_access_guard` likewise |
+  | `secure_code_assistant` | **required** | not needed | only `omnigent.policies.function.make_fixed_action_callable` -- a framework path, importable from the CLI env, just not registry-listed |
+  | `cross_harness_coding` | not needed | not needed | builtins only |
+  | `harness_portability` | not needed | not needed | builtins only |
+  | `slow_burn_guard` | not needed | not needed | builtins only |
+
+  Verified by running each form. The preflight failure is distinctive -- it names
+  `sys.path` and `ModuleNotFoundError: No module named 'examples'`, and it happens
+  before any server contact:
+
+  ```
+  Error: --agent examples/content_factory: agent 'content_factory' policy 'publish_gate'
+  references function 'examples.content_factory.policies.publish_gate.publish_gate',
+  which cannot be resolved from sys.path (ModuleNotFoundError: No module named 'examples').
+  ```
+
+  The trailing `omnigent stop` / HTTP 401 hint on that message is boilerplate
+  appended to any run failure. It is not a diagnosis, and stale host processes are
+  not the cause. Also note `PYTHONPATH` must be the **repo root** (the directory
+  containing `examples/`), since the dotted path starts at `examples.`; no
+  `__init__.py` files are needed because implicit namespace packages cover it.
 
   **What ephemeral costs you.** The database, artifacts, schedules and
   conversation state are per-run and temporary. State accumulates *within* one

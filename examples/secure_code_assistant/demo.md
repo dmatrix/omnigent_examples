@@ -40,9 +40,14 @@ All declarative, and the model can't override it."
 
 ---
 
+> **Every command below carries `--server local --no-session`.** This example's
+> taint policies use an unregistered handler, so a plain `omnigent run` — or a
+> persistent local run — is rejected before the session starts. See
+> [README.md](README.md#run-locally). No `PYTHONPATH` is needed for this example.
+
 ### Act 2: Policies — Information Flow (4 min)
 
-**Do:** `omnigent run examples/secure_code_assistant/`
+**Do:** `omnigent run examples/secure_code_assistant/ --server local --no-session`
 
 **Turn 1 — web search works (no code read yet):**
 
@@ -78,7 +83,7 @@ Use web_search to find how other projects implement tool decorators
 
 **Turn 4 — reverse flow (write blocked after web):**
 
-Start a new session: `omnigent run examples/secure_code_assistant/ --no-session`
+Start a new session: `omnigent run examples/secure_code_assistant/ --server local --no-session`
 
 ```
 Search the web for the latest FastAPI middleware patterns
@@ -103,7 +108,7 @@ Write a new middleware file at middleware.py with what you found
 **Do:** Exit the REPL. Re-run with OpenAI:
 
 ```bash
-omnigent run examples/secure_code_assistant/ --model gpt-5.5 --harness openai-agents --no-session
+omnigent run examples/secure_code_assistant/ --server local --no-session --model gpt-5.5 --harness openai-agents
 ```
 
 ```
@@ -129,7 +134,7 @@ Use web_search to find YAML schema validation libraries
 **Terminal 1:**
 
 ```bash
-omnigent run examples/secure_code_assistant/
+omnigent run examples/secure_code_assistant/ --server local --no-session
 ```
 
 ```
@@ -161,6 +166,12 @@ Both terminals show the response in real time.
 **Say:** "Same session, in the browser. On a deployed instance, this URL works from your phone. The session is the unit of continuity, not the terminal."
 
 **Fork (if time):** `omnigent run --fork <session_id>` from Terminal 2.
+
+> **Check this act before demoing it.** Session sharing, multi-surface attach and
+> `--fork` all address a session by id, and `--no-session` uses a throwaway local
+> session store. Rehearse it on your setup rather than discovering it live; if it
+> does not hold, demo Act 4 with `cross_harness_coding` or `harness_portability`,
+> which run persistently because they use builtin policies only.
 
 **Say:** "Fork branches the conversation. Like `git branch` for agent sessions."
 

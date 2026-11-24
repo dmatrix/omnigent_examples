@@ -94,18 +94,24 @@ export $(grep ANTHROPIC_API_KEY .env | tr -d '"')
 
 ### 3. Run the agent
 
+Run these from the **repo root**, so `PYTHONPATH=$(pwd)` points at the directory
+containing `examples/`:
+
 ```bash
 # Default: claude-sonnet-4-6 via claude-sdk
-omnigent run examples/telco_customer_agent/
+PYTHONPATH=$(pwd) omnigent run examples/telco_customer_agent/ --server local --no-session
 
 # Override with OpenAI models (requires OPENAI_API_KEY)
 export $(grep OPENAI_API_KEY .env | tr -d '"')
-omnigent run examples/telco_customer_agent/ --model gpt-5.5 --harness openai-agents
-omnigent run examples/telco_customer_agent/ --model gpt-5.4 --harness openai-agents
-
-# Fresh session (no persistence)
-omnigent run examples/telco_customer_agent/ --no-session
+PYTHONPATH=$(pwd) omnigent run examples/telco_customer_agent/ --server local --no-session \
+  --model gpt-5.5 --harness openai-agents
 ```
+
+All three flags are required. Dropping `PYTHONPATH` gives
+`ModuleNotFoundError: No module named 'examples'` from CLI preflight; dropping
+`--no-session` gives `handler ... is not a registered policy handler`. Every run
+is ephemeral, so each one starts with clean taint labels and a zero
+`bulk_access_guard` count.
 
 ---
 

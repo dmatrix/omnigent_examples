@@ -18,7 +18,12 @@
 
 ### Act 2: Safe queries (2 min) — "Public data, no restrictions"
 
-**Run:** `omnigent run examples/telco_customer_agent/ --no-session`
+**Run:** `PYTHONPATH=$(pwd) omnigent run examples/telco_customer_agent/ --server local --no-session`
+
+> Run from the repo root. This example's `bulk_access_guard` is a custom handler
+> living in the workspace, so CLI preflight needs `PYTHONPATH=$(pwd)` to import
+> it and only `--no-session` accepts an unregistered handler. See
+> [README.md](README.md#run-locally).
 
 **Prompt:**
 ```
@@ -55,7 +60,7 @@ Use web_search to find T-Mobile's current pricing
 
 ### Act 4: Risk score escalation (3 min) — "The pattern matters"
 
-**Start a fresh session:** `omnigent run examples/telco_customer_agent/ --no-session`
+**Start a fresh session:** `PYTHONPATH=$(pwd) omnigent run examples/telco_customer_agent/ --server local --no-session`
 
 **Prompt:**
 ```
@@ -97,7 +102,7 @@ Look up CUST-1004's account details
 
 ### Act 6: The contrast (2 min) — "Order matters"
 
-**Start a fresh session:** `omnigent run examples/telco_customer_agent/ --no-session`
+**Start a fresh session:** `PYTHONPATH=$(pwd) omnigent run examples/telco_customer_agent/ --server local --no-session`
 
 **Prompt:**
 ```
