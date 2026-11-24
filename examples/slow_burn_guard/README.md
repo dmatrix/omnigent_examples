@@ -21,7 +21,7 @@ It has four tools:
 - **`query_billing`** — queries the billing and subscriptions tables (financial data). Adds **+30 risk points**.
 - **`send_report`** — the outbound egress action (a stub — it does not actually send). This is the **guarded** tool: the policy DENIES it once the session risk score is ≥ 50.
 
-Runs on the **`codex` harness** with **`gpt-5.4-mini`** (the cheapest codex tier). The policy is harness-independent — the same DENY fires on Claude, GPT, or any supported harness.
+Runs on the **`codex` harness** with **`gpt-5.5-mini`** (the cheapest codex tier). The policy is harness-independent — the same DENY fires on Claude, GPT, or any supported harness.
 
 ---
 
@@ -39,7 +39,7 @@ This creates `examples/tools/data/telco.db` with 5 tables and 125 synthetic reco
 
 ## Run Locally
 
-The default config uses `gpt-5.4-mini` via the **`codex` harness**, which needs `OPENAI_API_KEY` (not `ANTHROPIC_API_KEY`).
+The default config uses `gpt-5.5-mini` via the **`codex` harness**, which needs `OPENAI_API_KEY` (not `ANTHROPIC_API_KEY`).
 
 ### 1. Configure credentials (one-time)
 

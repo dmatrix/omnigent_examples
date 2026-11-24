@@ -4,7 +4,7 @@ description: Slow-burn attack demo — a single stateful risk-score policy block
 
 executor:
   type: omnigent
-  model: gpt-5.4-mini
+  model: gpt-5.5-mini
   config:
     harness: codex
 

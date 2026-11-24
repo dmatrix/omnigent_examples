@@ -59,23 +59,31 @@ button at the publish gate. It shows articles published to date separately from
 the configured article ceiling, and marks the current publish attempt when that
 ceiling denies it.
 
-### Five tools
+### Six tools
 
 - **`read_backlog`** — pulls the next `READY` feature from `backlog.md`; its
   `include_artifacts=True` mode returns the entire file-order, disk-derived
   dashboard. Free.
 - **`update_backlog`** — sets one entry to any valid backlog status (`READY`, `DRAFTED`, `EDITED`, `APPROVED`, `PUBLISHED`). It validates the value, not the transition — the intended progression comes from the supervisor prompt. The supervisor writes `DRAFTED` at step 5, `APPROVED` at step 8 and the terminal `PUBLISHED` at step 13, once publishing has actually succeeded. (`EDITED` is valid but unused.) **Free for every status except `PUBLISHED`,** which `publish_gate` R4 checks against what actually shipped — see [R4](#custom-policy-publish_gate).
 - **`save_artifact`** — stages an outline, draft, social post or cycle log. Free.
+- **`read_artifact`** — reads a staged artifact back from disk by `slug` and
+  `kind` (`outline`, `draft`, `social`, `cycle`, `dashboard`), so the supervisor
+  can quote a draft to a sub-agent without holding it in context. On a miss it
+  returns the list of files that *are* present. Free.
 - **`publish_content`** — promotes a staged draft into `artifacts/published/`. **Guarded.**
 - **`post_social`** — the outbound egress action, a stub that does not actually post. **Guarded.**
+
+The `editor` sub-agent carries one tool of its own, `read_local_file`, under
+`agents/editor/tools/python/`.
 
 ### Whole-backlog runs are not unattended
 
 A request to run all four ready entries has two intentional stopping points:
-the supervisor's `user_daily_cost_budget` asks at **$0.50**, and four entries
-across three sub-agents will very likely cross it; the publish ceiling permits
-only **three distinct articles per UTC day**, so the fourth cannot ship that
-day. For a whole backlog, the honest option is to run steps 1–11 for every
+the supervisor's `user_daily_cost_budget` asks at **$5.50** and again every
+$5 after that (hard cap $25.00), and four entries across three sub-agents can
+cross the first checkpoint; the publish
+ceiling permits only **five distinct articles per UTC day**, so a sixth cannot
+ship that day. For a whole backlog, the honest option is to run steps 1–11 for every
 entry (stage everything), then publish one entry at a time. Do not expect an
 unattended end-to-end run.
 
@@ -85,13 +93,13 @@ Runs on the **`claude-sdk` harness** with **`claude-sonnet-4-6`** for the superv
 
 ## Get Started
 
-Nothing to build. The backlog ships seeded with five real Omnigent features, so the factory writes about the framework it runs on:
+Nothing to build. The backlog ships seeded with six real Omnigent features, so the factory writes about the framework it runs on:
 
 ```bash
 cat examples/content_factory/backlog.md
 ```
 
-Four entries are `READY` — one of them deliberately thin, so a cycle will pick it up and it is designed to elicit a `REVISE` (the editor may also return `REJECT`) — and one is already `PUBLISHED`, which the state machine skips.
+Four entries are `READY` — one of them deliberately thin, so a cycle will pick it up and it is designed to elicit a `REVISE` (the editor may also return `REJECT`). The other two sit mid-pipeline: `contextual-policies` is `APPROVED` and `mlflow-auto-issue-detection` is `DRAFTED`. `read_backlog` pulls `READY` only, so a cycle skips both.
 
 ---
 
@@ -130,12 +138,26 @@ export OPENAI_API_KEY=sk-...
 
 ### 3. Run the agent
 
-```bash
-omnigent run examples/content_factory/
+Run this from the **repo root**, so `PYTHONPATH=$(pwd)` points at the directory
+containing `examples/`:
 
-# Fresh session (no persistence — resets the cycle's publish count)
-omnigent run examples/content_factory/ --no-session
+```bash
+PYTHONPATH=$(pwd) omnigent run examples/content_factory/ --server local --no-session
 ```
+
+All three flags are load-bearing, and a plain `omnigent run examples/content_factory/`
+will fail before the session starts:
+
+| flag | why |
+|---|---|
+| `PYTHONPATH=$(pwd)` | CLI preflight imports `examples.content_factory.policies.publish_gate` to validate it, and does not add the workspace directory to `sys.path` |
+| `--server local` | overrides a remote default left behind by `omnigent login` |
+| `--no-session` | the only path that accepts an unregistered policy handler |
+
+Omitting `PYTHONPATH` gives you `ModuleNotFoundError: No module named 'examples'`;
+omitting `--no-session` gives you `handler ... is not a registered policy handler`.
+Because the session is always ephemeral here, every run starts with a fresh
+publish count and no memory of earlier cycles.
 
 Then ask it to run a cycle:
 
@@ -147,12 +169,30 @@ Run one factory cycle.
 
 ## Run on Databricks
 
-```bash
-omnigent login https://omnigent-<id>.aws.databricksapps.com
-omnigent run examples/content_factory/ --server https://omnigent-<id>.aws.databricksapps.com
+**This example cannot run against a remote Omnigent server.** Two independent
+checks reject the bundle before a session is created:
+
+```
+Policy 'publish_gate': handler 'examples.content_factory.policies.publish_gate.publish_gate'
+is not a registered policy handler.
 ```
 
-The default config pins Databricks AI Gateway endpoints (`databricks-claude-sonnet-4-6`, `databricks-gpt-5-4`), so no direct provider keys are needed in this mode.
+```
+uploaded agent bundle may not ship a server-side Python/TS tool file
+(tool 'post_social' -> 'tools/python/post_social.py')
+```
+
+Both are deliberate — they stop an uploaded bundle injecting arbitrary Python.
+The models still route through Databricks: the default config pins AI Gateway
+endpoints (`databricks-claude-sonnet-4-6` for the supervisor, editor and social
+writer; `databricks-gpt-5-4` for the blog writer), so with a Databricks
+credential you need no direct provider keys even on the local ephemeral path.
+
+Making this example server-hosted requires an operator to install the policy
+module into both the server and runner environments, export a `POLICY_REGISTRY`,
+list its dotted path under `policy_modules:`, pre-register the agent as
+operator-owned, and restart. See "Custom policies do not run against a remote
+server" in the repo-root [CLAUDE.md](../../CLAUDE.md).
 
 ---
 
@@ -225,10 +265,18 @@ Two complementary layers guard the same two shipping tools.
 |---|---|---|
 | `publish_gate` | custom, stateful | Slug-aware. DENIES a social post whose blog is not yet `APPROVED`; DENIES shipping a *new* article once the cycle ceiling is hit, while letting an article already started finish; DENIES a `PUBLISHED` backlog write for an article that did not fully ship; otherwise ASKS with a reason naming the slug and artifact. |
 | `guarded_tools` | builtin `risk_score` | Coarse unconditional brake. Knows nothing about slugs — escalates `publish_content` and `post_social` on **every** call, so the gate holds even if the custom policy is removed. |
-| `no_self_modification` | builtin `cel` | Backstop. DENIES `sys_os_write` / `sys_os_edit` / `sys_os_shell` and the native `Write` / `Edit` / `MultiEdit` / `NotebookEdit` / `Bash` / `shell` / `apply_patch` aliases. **Inert for the `sys_os_*` family**, because no agent declares `os_env` and so none is granted those tools — it is there so re-adding `os_env` cannot silently restore them. It does **not** protect against `blog_writer`'s native Codex `apply_patch`, which that agent does hold: native calls cannot be gated by any policy. See [What this does not close](#what-this-does-not-close). |
-| `user_daily_cost_budget` | builtin | $5.00/day per user, ASKs at $0.50. |
+| `no_self_modification` | builtin `cel` | Backstop. DENIES `sys_os_write` / `sys_os_edit` / `sys_os_shell` and the native `Write` / `Edit` / `MultiEdit` / `NotebookEdit` / `Bash` / `shell` / `apply_patch` aliases. Was **inert for the `sys_os_*` family** while no agent declared `os_env`; `blog_writer` and `editor` now do, so for those two the `cel` DENY is live rather than a backstop — see the warning under [Why the supervisor has no filesystem access](#why-the-supervisor-has-no-filesystem-access). It does **not** protect against `blog_writer`'s native Codex `apply_patch`, which that agent does hold: native calls cannot be gated by any policy. See [What this does not close](#what-this-does-not-close). |
+| `user_daily_cost_budget` | builtin | $25.00/day per user, ASKing at $5.50, $10.50, $15.50 and $20.50. |
 
-Each sub-agent additionally carries `cost_budget` ($1.00, ASK at $0.25) and `max_tool_calls_per_session` (250) to bound runaway tool use.
+Each sub-agent additionally carries `cost_budget` ($25.00 hard cap) and `max_tool_calls_per_session` (250) to bound runaway tool use. Each uses a four-step ASK staircase rather than a single checkpoint, so a long run keeps checking in instead of asking once and then running free to the cap:
+
+| agent | `max_cost_usd` | `ask_thresholds_usd` |
+|---|---|---|
+| `blog_writer`, `editor` | $25.00 | $6.25, $11.25, $16.25, $21.25 |
+| `social_writer` | $25.00 | $7.50, $12.50, $17.50, $22.50 |
+| supervisor (`user_daily_cost_budget`) | $25.00 | $5.50, $10.50, $15.50, $20.50 |
+
+Every threshold must be **strictly less than** `max_cost_usd`. The factory validates this on each evaluation, and a threshold at or above the cap makes every turn fail closed with `Denied by policy (policy evaluation error: ValueError)` -- see [Troubleshooting](demo.md#troubleshooting).
 
 The two shipping layers **do not produce two prompts.** The engine evaluates every policy and joins all ASK reasons into one pending approval, so the human sees a single request carrying both reason lines.
 
@@ -237,13 +285,13 @@ The two shipping layers **do not produce two prompts.** The engine evaluates eve
 Four rules. R4 stands on its own — it is the only one that looks at a tool outside the guarded pair — and R1, R3, R2 are evaluated in that order on `publish_content` / `post_social`:
 
 1. **R1 — DENY** `post_social` until this session has recorded a successful `update_backlog(status="APPROVED")` for that slug. The editorial intent is *short-form content cannot precede the long-form post it cites*; what R1 actually enforces is the recorded state transition, not the existence of a blog or an editor verdict. The supervisor performs that transition only after a `PASS`, which is what links the two.
-2. **R3 — DENY** once `max_articles_per_cycle` (default 3) **articles** have shipped in the current cycle. The unit is the article — a *distinct backlog slug* — not the guarded call, because shipping one article fully takes three guarded calls (`publish_content`, plus a `post_social` per channel). Counting calls would hard-stop the second article partway through.
+2. **R3 — DENY** once `max_articles_per_cycle` (currently 5) **articles** have shipped in the current cycle. The unit is the article — a *distinct backlog slug* — not the guarded call, because shipping one article fully takes three guarded calls (`publish_content`, plus a `post_social` per channel). Counting calls would hard-stop the second article partway through.
 
-   So the rule is **you may finish an article you have started, but you may not start a new one past the ceiling**: R3 refuses a slug only when that slug is *not already* in the cycle's shipped set *and* the set is full. At a ceiling of 3, with articles A and B shipped and C's `publish_content` just counted, C's remaining `post_social` calls still go through — nothing is left published with its social copy stranded — while a fourth slug D is refused on its first call.
+   So the rule is **you may finish an article you have started, but you may not start a new one past the ceiling**: R3 refuses a slug only when that slug is *not already* in the cycle's shipped set *and* the set is full. At a ceiling of 5, with articles A through D shipped and E's `publish_content` just counted, E's remaining `post_social` calls still go through — nothing is left published with its social copy stranded — while a sixth slug F is refused on its first call.
 
    A real stop, not a nag: the ceiling holds until the next cycle (a UTC calendar day).
 
-   Be precise about what it caps, though: **articles started, not shipping actions.** Because an already-counted slug is exempt, the same article can be re-published within the cycle without the ceiling noticing. `max_articles_per_cycle: 3` does not bound the number of `publish_content` / `post_social` calls a cycle makes — R2 is what holds there, asking on every single one, so nothing ships unattended either way.
+   Be precise about what it caps, though: **articles started, not shipping actions.** Because an already-counted slug is exempt, the same article can be re-published within the cycle without the ceiling noticing. `max_articles_per_cycle: 5` does not bound the number of `publish_content` / `post_social` calls a cycle makes — R2 is what holds there, asking on every single one, so nothing ships unattended either way.
 3. **R2 — ASK** any other `publish_content` or `post_social`, naming the slug and what is being shipped.
 
 4. **R4 — DENY** an `update_backlog(status="PUBLISHED")` write for an article this session did not watch *fully* ship: `publish_content` succeeded **and** every social variant the cycle staged for it was then posted. It is a `DENY`, never an `ASK`, so no human joins the unattended path.
@@ -294,6 +342,29 @@ The research rule is worth calling out, because an unsupervised writer with a se
 
 ## Why the supervisor has no filesystem access
 
+> **⚠️ This section is currently out of date with the configs.** It was written
+> when **none** of the four agents declared `os_env`, and the argument below
+> depends on that. Two of them now do:
+>
+> | agent | `os_env` | consequence |
+> |---|---|---|
+> | `content_factory` (supervisor) | no | as described below — holds no `sys_os_*` tool |
+> | `social_writer` | no | as described below |
+> | `blog_writer` | **yes** (`sandbox: {type: none}`) | granted `sys_os_read` / `sys_os_write` / `sys_os_edit` / `sys_os_shell`, and its Codex sandbox returns to `danger-full-access` |
+> | `editor` | **yes** (`sandbox: {type: none}`) | same, needed for its `read_local_file` tool |
+>
+> So the claims below that `no_self_modification` is *inert for the `sys_os_*`
+> family* and that "no agent declares `os_env`" **no longer hold for those two
+> sub-agents**. The `cel` policy is now load-bearing rather than a backstop
+> there, and the Codex sandbox narrowing described under
+> [What this does not close](#what-this-does-not-close) no longer applies to
+> `blog_writer`. The supervisor-focused argument — the part this section is
+> actually about — is unaffected: the supervisor still declares no `os_env`.
+>
+> Resolve this by either removing `os_env` from the two sub-agents or rewriting
+> this section and [README_YAML_CONFIG.md](README_YAML_CONFIG.md#os-environment)
+> around the narrower claim.
+
 None of the four configs declares `os_env`. That is deliberate, and it is
 written down here because of a failure worth admitting.
 
@@ -329,7 +400,7 @@ justification for the edit into a comment. So the `os_env` block is gone from
 all four configs.
 
 Nothing is lost. Every write the documented workflow performs goes through one
-of the [five tools](#five-tools), which run as server-side subprocesses rooted
+of the [six tools](#six-tools), which run as server-side subprocesses rooted
 at the workspace cwd — they never used the agent's `os_env`, so constraining it
 was never a trade-off against `save_artifact` or `update_backlog`. On
 `claude-sdk` the native `Write` / `Edit` / `Bash` tools are not exposed either
@@ -497,7 +568,7 @@ See [demo.md](demo.md) for a ~12 minute script. The short version:
 2. Run a cycle. Watch Codex draft and Claude edit, and watch steps 1–11 complete with no human input.
 3. Watch it stop at step 12 and ask.
 4. Try to post social copy for a slug that was never approved. **DENIED** — and read the reason.
-5. Ship three articles, then try a fourth. **DENIED** until the next cycle — but the third article's remaining social posts still go out.
+5. Ship five articles, then try a sixth. **DENIED** until the next cycle — but the fifth article's remaining social posts still go out.
 6. Ask it to mark something `PUBLISHED` that never shipped. **DENIED** — the status column cannot lie.
 
 ---
@@ -508,14 +579,16 @@ See [demo.md](demo.md) for a ~12 minute script. The short version:
 examples/content_factory/
 ├── config.yaml                     supervisor
 ├── agents/
-│   ├── blog_writer/config.yaml     Codex — the only researcher
-│   ├── editor/config.yaml          Claude — PASS / REVISE / REJECT
+│   ├── blog_writer/config.yaml     Codex — the only researcher; loads blog-style
+│   ├── editor/
+│   │   ├── config.yaml             Claude — PASS / REVISE / REJECT
+│   │   └── tools/python/           read_local_file
 │   └── social_writer/config.yaml   Claude — X + LinkedIn
 ├── policies/
 │   └── publish_gate.py             the gate: R1 / R3 / R4 DENY, R2 ASK
-├── tools/python/                   five tools, two of them guarded
+├── tools/python/                   six tools, two of them guarded
 ├── tests/                          executable specs for the gate, staging, and dashboard
-├── skills/blog-style/SKILL.md      the editor's rubric
-├── backlog.md                      five seeded Omnigent features
+├── skills/blog-style/SKILL.md      house style, loaded by blog_writer
+├── backlog.md                      six seeded Omnigent features
 └── artifacts/                      everything the factory makes
 ```

@@ -55,11 +55,18 @@ guardrails:
       function:
         path: omnigent.policies.builtins.cost.cost_budget
         arguments:
-          max_cost_usd: 1.0
-          ask_thresholds_usd: [0.25]
+          max_cost_usd: 25.00
+          ask_thresholds_usd: [6.25, 11.25, 16.25, 21.25]
     max_tool_calls_per_session:
       type: function
       function:
         path: omnigent.policies.builtins.safety.max_tool_calls_per_session
         arguments:
           limit: 250
+
+os_env:
+  type: caller_process
+  cwd: .
+  sandbox:
+    type: none
+

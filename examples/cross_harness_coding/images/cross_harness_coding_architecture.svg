@@ -136,7 +136,7 @@
   <!-- ============ Shared CWD ============ -->
   <rect x="160" y="465" width="580" height="45" rx="8" fill="url(#cwdG)" filter="url(#shadow)" opacity="0.7"/>
   <text x="450" y="487" text-anchor="middle" fill="#a8d8ea" font-size="11" font-weight="700">&#x1F4C2; Shared Working Directory</text>
-  <text x="450" y="501" text-anchor="middle" fill="#7ec8e3" font-size="8">Both sub-agents read and write the same project files — rate_limiter.py, test_rate_limiter.py, etc.</text>
+  <text x="450" y="501" text-anchor="middle" fill="#7ec8e3" font-size="8">Both sub-agents read and write the same project files — binary_search.py, test_binary_search.py, etc.</text>
 
   <!-- ============ Pipeline Flow ============ -->
   <text x="450" y="540" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">Cross-Harness Pipeline</text>
@@ -144,7 +144,7 @@
   <!-- Flow boxes — 6 steps -->
   <rect x="15" y="555" width="115" height="50" rx="8" fill="url(#userG)" filter="url(#shadow)" opacity="0.8"/>
   <text x="72" y="577" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">User Request</text>
-  <text x="72" y="593" text-anchor="middle" fill="#d5f5e3" font-size="7">"Write a rate limiter"</text>
+  <text x="72" y="593" text-anchor="middle" fill="#d5f5e3" font-size="7">"Write a binary search"</text>
 
   <line x1="130" y1="580" x2="145" y2="580" stroke="#fff" stroke-width="1.5" opacity="0.4"/>
   <polygon points="143,576 143,584 151,580" fill="#fff" opacity="0.4"/>

@@ -8,7 +8,7 @@ Attribute-level breakdown of `config.yaml` for the slow-burn guard. The whole ex
 
 | Attribute | Value | Notes |
 |---|---|---|
-| `model` | `gpt-5.4-mini` | Cheapest codex tier. Override with `--model` at the CLI. |
+| `model` | `gpt-5.5-mini` | Cheapest codex tier. Override with `--model` at the CLI. |
 | `config.harness` | `codex` | Override with `--harness`. Needs `OPENAI_API_KEY`. |
 
 The `codex` harness only accepts GPT models. The same policy fires on any harness — swap to `--model claude-sonnet-4-6 --harness claude-sdk` and the DENY still triggers.
@@ -96,7 +96,7 @@ config.yaml
 +-- description               # human-readable summary
 +-- executor                  # LLM config
 |   +-- type
-|   +-- model                 # gpt-5.4-mini
+|   +-- model                 # gpt-5.5-mini
 |   +-- config.harness        # codex
 +-- os_env                    # filesystem/shell access
 |   +-- type                  # caller_process

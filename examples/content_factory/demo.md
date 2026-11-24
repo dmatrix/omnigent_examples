@@ -17,11 +17,18 @@ export ANTHROPIC_API_KEY=sk-ant-...
 # blog_writer runs on codex
 export OPENAI_API_KEY=sk-...
 
-omnigent run examples/content_factory/
+# Run from the repo root. All three flags are required — see README.md step 3.
+PYTHONPATH=$(pwd) omnigent run examples/content_factory/ --server local --no-session
 ```
 
 Nothing to build and no database to create. The example ships with its input
 queue already filled in.
+
+A plain `omnigent run examples/content_factory/` fails before the session starts:
+this example's `publish_gate` is a custom handler, so it needs the local
+ephemeral path (`--server local --no-session`), and its policy module lives in
+the workspace, so CLI preflight needs `PYTHONPATH=$(pwd)` to import it. Every
+run is therefore a fresh session — the publish count never carries over.
 
 ---
 
@@ -70,7 +77,7 @@ Omnigent feature that makes a good blog post. Reading the backlog and thinking
 "why is a content demo talking about coding harnesses?" is an easy and
 reasonable mistake; the answer is that the backlog is *content*, not config.
 
-If that is distracting for your audience, replace the five entries with topics
+If that is distracting for your audience, replace the six entries with topics
 from your own domain. Nothing in the factory depends on what they say — see
 [Part 5](#part-5--add-your-own-topic).
 
@@ -134,16 +141,26 @@ Short answer: **it could, but this example deliberately does not let it.**
 
 Three layers to that:
 
-1. **No tool is wired for it.** The five tools in `tools/python/` can read
-   entries and change statuses. None writes a new one.
+1. **No tool is wired for it.** The six tools in `tools/python/` can read
+   entries, read artifacts back and change statuses. None writes a new one.
 2. **The supervisor cannot do it by hand either — not any more.** It used to:
    it declared `os_env: {type: caller_process, sandbox: {type: none}}`, which
    grants filesystem access through the framework's `sys_os_*` tools, and a run
-   used exactly that to rewrite a sub-agent's config. No agent in this bundle
-   declares `os_env` now, so none of them holds a `sys_os_*` tool. The capability
-   has not vanished entirely, though: `blog_writer` runs `harness: codex`, and
-   Codex's own `apply_patch` could append to `backlog.md` if the supervisor
-   asked it to. See [README.md](README.md#what-this-does-not-close).
+   used exactly that to rewrite a sub-agent's config. The supervisor declares no
+   `os_env` now, so it holds no `sys_os_*` tool.
+
+   > **Caveat, currently true:** this claim covers the *supervisor* only.
+   > `blog_writer` and `editor` do declare `os_env` with `sandbox: {type: none}`,
+   > so both hold `sys_os_*` tools and `blog_writer`'s Codex runs at
+   > `danger-full-access`. The `no_self_modification` `cel` policy DENIES the
+   > write/edit/shell names for them, which is a policy gate rather than an
+   > absent capability. See the warning in
+   > [README.md](README.md#why-the-supervisor-has-no-filesystem-access).
+
+   The capability has not vanished entirely either way: `blog_writer` runs
+   `harness: codex`, and Codex's own `apply_patch` could append to `backlog.md`
+   if the supervisor asked it to — a native call no policy can gate. See
+   [README.md](README.md#what-this-does-not-close).
 3. **Leaving it unwired is the point.** The backlog is the last place a human
    decides **what** gets written. If the factory fills its own queue it chooses
    its own subjects, and your only remaining control is a yes/no at publish
@@ -235,9 +252,10 @@ entry to the same `artifacts/cycles/<date>-cycle.md`, separated by a rule. So a
 multi-cycle day leaves you one log that reads as a sequence of cycles — rather
 than, as it used to, one log describing only the last one.
 
-If you ask for the whole backlog, expect an honest warning first: the $0.50
-daily-cost policy will likely ask during four entries across three sub-agents,
-and the three-articles-per-UTC-day ceiling stops the fourth publish. To stage
+If you ask for the whole backlog, expect an honest warning first: the $5.50
+daily-cost ASK threshold can trigger during four entries across three
+sub-agents (and again every $5 up to the $25.00 cap), and the
+five-articles-per-UTC-day ceiling stops a sixth publish. To stage
 everything, ask for steps 1–11 across the backlog, then approve publishing one
 entry at a time.
 
@@ -304,7 +322,7 @@ pressure. It lives outside the model, and the agent cannot talk its way past it.
 
 ### DENY #2 — the per-cycle ceiling
 
-Ship three **articles** in one cycle, then start a fourth.
+Ship five **articles** in one cycle, then start a sixth.
 
 **DENIED**, and note it is a `DENY`, not another `ASK`. A ceiling that only nags
 is not a ceiling. It holds until the next cycle — a UTC calendar day, matching
@@ -313,16 +331,16 @@ the daily schedule.
 The unit is the **article**, meaning a distinct backlog slug — not the guarded
 call. That distinction is load-bearing, because shipping one article fully takes
 three guarded calls: `publish_content`, then a `post_social` per channel. If the
-ceiling counted calls, `max_articles_per_cycle: 3` would stop the *second*
+ceiling counted calls, `max_articles_per_cycle: 5` would stop the *second*
 article on its first publish.
 
 So the semantics are **finish what you started, but do not start a new one**:
 
-| at a ceiling of 3 | verdict |
+| at a ceiling of 5 | verdict |
 |---|---|
-| articles A and B shipped; C's `publish_content` | `ASK` — the third article |
-| C's `post_social` for x and linkedin, now at the ceiling | `ASK` — C is already counted |
-| a fourth slug D's `publish_content` | **`DENY`** — D would be a new article |
+| articles A–D shipped; E's `publish_content` | `ASK` — the fifth article |
+| E's `post_social` for x and linkedin, now at the ceiling | `ASK` — E is already counted |
+| a sixth slug F's `publish_content` | **`DENY`** — F would be a new article |
 
 Without that exemption C would end up published with no social copy — stranded
 half-shipped by its own guardrail. Try it: at the ceiling, the article in flight
@@ -366,8 +384,10 @@ Two limits, stated because a reader will find them anyway: an article for which
 require a post nobody wrote — and R4 is not a security boundary. It gates a tool
 call, so it has nothing to say about an agent that edits `backlog.md` directly
 and skips `update_backlog` entirely. That used to be the supervisor's own
-`os_env`; it no longer has one. It is now `blog_writer`'s Codex `apply_patch`,
-one delegation hop away — a different mechanism, same conclusion. R4 raises the
+`os_env`; the supervisor no longer has one. It is now `blog_writer`'s Codex
+`apply_patch`, one delegation hop away — plus that agent's own `os_env`-granted
+`sys_os_*` tools, which `no_self_modification` DENIES but which exist.
+A different mechanism, same conclusion. R4 raises the
 floor on careless optimism; it does not stop a determined agent.
 
 ### What is and is not gated
@@ -418,7 +438,8 @@ asks you to approve is its own existence — which is the right default for
 something proposing to wake up every morning and write in your name.
 
 ```bash
-omnigent run examples/content_factory/   # then: "Show me the schedule you created."
+PYTHONPATH=$(pwd) omnigent run examples/content_factory/ --server local --no-session
+# then: "Show me the schedule you created."
 ```
 
 ---
@@ -467,7 +488,7 @@ A ~12 minute version:
 | 4 | one unattended cycle: Codex drafts, Claude edits, five content artifacts plus the dashboard, no human |
 | 2 | the gate — two policies, one prompt — then approve |
 | 1 | DENY: social copy before the post is approved |
-| 1 | DENY: the per-cycle ceiling — three articles, and the one in flight still finishes |
+| 1 | DENY: the per-cycle ceiling — five articles, and the one in flight still finishes |
 | 1 | DENY: a `PUBLISHED` status for an article that only half shipped |
 | 2 | it schedules itself, and that is gated too |
 
@@ -476,6 +497,23 @@ Never cut the unattended cycle or the gate. Those two together are the argument.
 ---
 
 ## Troubleshooting
+
+**Every turn is denied with `policy evaluation error: ValueError`.** A policy
+factory is raising, and the engine fails closed. The verdict you see names only
+the exception *class* — never its message — so read the server log for the real
+cause:
+
+```bash
+grep -A3 "Input policy evaluation failed" \
+  ~/.omnigent/logs/server/$(ls -t ~/.omnigent/logs/server | head -1)
+```
+
+The usual culprit is a cost budget whose `ask_thresholds_usd` contains a value
+**not strictly less than** `max_cost_usd`; the check is `0 < t < max_cost_usd`,
+so a threshold equal to the cap fails too. Note CLI preflight does not catch
+this — it validates that handler paths resolve, not that their arguments are
+valid, and the engine is rebuilt from the spec on every message, so the raise
+happens per turn rather than at startup.
 
 **"Nothing is `READY`."** Every entry has moved on. Reset one:
 `update_backlog` back to `READY`, or edit the file.

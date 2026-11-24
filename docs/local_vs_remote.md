@@ -1,5 +1,16 @@
 # Omnigent: Local vs Remote — All Components Explained
 
+
+> **Which examples can use which mode.** The commands in this document use
+> `cross_harness_coding` and `harness_portability`, which declare only builtin
+> policy handlers and therefore work in every mode shown here. Three examples —
+> `content_factory`, `telco_customer_agent` and `secure_code_assistant` — use
+> custom or unregistered handlers and run **only** as a local ephemeral session
+> (`--server local --no-session`, plus `PYTHONPATH=$(pwd)` for the first two).
+> They cannot run against a remote server or a persistent local daemon. See
+> "Custom policies do not run against a remote server" in the repo-root
+> `CLAUDE.md`.
+
 ## The 5 Components
 
 | Component | Role | Source File | Framework |
@@ -68,7 +79,7 @@ Terminal REPL ──▶ Runner (laptop) ──▶ Harness (laptop) ──▶ AI 
 
 ```bash
 # One terminal — runs the agent REPL and connects to the Databricks server
-omnigent run examples/telco_customer_agent/
+omnigent run examples/cross_harness_coding/
 
 # Claude Code TUI — registers your laptop as a host so
 # the Web UI and mobile clients can co-attach
@@ -187,11 +198,11 @@ omnigent host
 **Run a specific agent:**
 
 ```bash
-omnigent run examples/telco_customer_agent/
+omnigent run examples/harness_portability/
 
 # Override model and harness at the command line
-omnigent run examples/telco_customer_agent/ --model gpt-5.5 --harness openai-agents
-omnigent run examples/telco_customer_agent/ --model claude-sonnet-4-6 --harness claude-sdk
+omnigent run examples/harness_portability/ --model gpt-5.4 --harness codex
+omnigent run examples/harness_portability/ --model claude-sonnet-4-6 --harness claude-sdk
 ```
 
 **Server management:**
@@ -224,7 +235,7 @@ omnigent stop             # stop everything (server + host)
 | **LLM routing** | Via Databricks AI Gateway | Direct API (OpenAI/Anthropic/Gateway/Ollama) |
 | **Auth** | `omnigent login <url>` (OIDC/accounts) | `omnigent setup` (local credentials) |
 | **Session persistence** | PostgreSQL, resumable anywhere | Local SQLite, single machine |
-| **Models** | `databricks-gpt-5-5`, `databricks-claude-sonnet-4-6`, `databricks-claude-opus-4-7` | `gpt-5.4`, `gpt-5.4-mini`, `claude-sonnet-4-6`, Ollama models |
+| **Models** | `databricks-gpt-5-5`, `databricks-claude-sonnet-4-6`, `databricks-claude-opus-4-7` | `gpt-5.4`, `gpt-5.5-mini`, `claude-sonnet-4-6`, Ollama models |
 | **Config** | `omnigent config set --global server=<url>` | `omnigent setup` |
 | **Terminals needed** | 1 (just `omnigent run --server <url>`) | 1 (`omnigent`, auto-spawns background server) or 2 (`server start` + `host`) |
 | **AI Gateway guardrails** | Yes (rate limits, PII detection, content filters) | No — direct API, no gateway layer |
@@ -309,4 +320,4 @@ See the upstream [agent-framework `deploy/` directory](https://github.com/databr
 - Server health: `curl http://localhost:8000/health`
 - Session creation: `curl -X POST http://localhost:8000/v1/sessions`
 - Web UI: open `http://localhost:8000/` in browser
-- Terminal REPL: `omnigent run examples/telco_customer_agent/`
+- Terminal REPL: `omnigent run examples/harness_portability/`

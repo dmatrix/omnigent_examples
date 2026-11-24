@@ -52,20 +52,26 @@ The CLI opens an interactive REPL. A Web UI is also available at the Databricks 
 
 ## Run Locally
 
-> **This example uses a custom policy, so it needs a local server.** If you have
-> run `omnigent login`, a plain `omnigent run` targets your configured remote
-> server, which rejects unregistered policy handlers before the session starts.
-> Use `--server local --no-session` and set `PYTHONPATH` so the policy module is
-> importable. `--no-session` is required: persistent local mode goes through the
-> host daemon, which enforces the same handler allowlist as a remote server.
-> Ephemeral state is per-run and does not persist across invocations:
+> **This example uses unregistered policy handlers, so it needs a local
+> ephemeral session.** Its four taint/label policies use
+> `omnigent.policies.function.make_fixed_action_callable` — a framework path that
+> is **not** in the server's policy registry. A remote server rejects the bundle
+> before the session starts, and so does a persistent local run, because that
+> goes through the host daemon and enforces the same allowlist:
 >
 > ```bash
-> PYTHONPATH=$(pwd) omnigent run examples/secure_code_assistant/ --server local --no-session
+> omnigent run examples/secure_code_assistant/ --server local --no-session
 > ```
 >
-> See "Custom policies do not run against a remote server" in the repo-root
-> `CLAUDE.md` for what a remote deployment would require.
+> `--no-session` is required, not optional — it is the only path that accepts the
+> handler. Ephemeral state is per-run and does not persist across invocations.
+>
+> **No `PYTHONPATH` needed here.** Unlike `content_factory` and
+> `telco_customer_agent`, this example's policy handlers all live in the
+> installed `omnigent` package rather than in the workspace, so CLI preflight can
+> import them without help. See "Custom policies do not run against a remote
+> server" in the repo-root `CLAUDE.md` for what a remote deployment would
+> require.
 
 
 The default config uses `claude-sonnet-4-6` via direct Anthropic API. No Databricks dependency.
@@ -86,14 +92,15 @@ export $(grep ANTHROPIC_API_KEY .env | tr -d '"')
 
 ```bash
 # Default: Claude Sonnet via claude-sdk
-omnigent run examples/secure_code_assistant/
-
-# Fresh session (no persistence)
-omnigent run examples/secure_code_assistant/ --no-session
+omnigent run examples/secure_code_assistant/ --server local --no-session
 
 # Override model and harness
-omnigent run examples/secure_code_assistant/ --model gpt-5.5 --harness openai-agents
+omnigent run examples/secure_code_assistant/ --server local --no-session \
+  --model gpt-5.5 --harness openai-agents
 ```
+
+Every run is ephemeral, so each one starts with a clean taint state — which is
+what you want when demonstrating the information-flow policies.
 
 ---
 

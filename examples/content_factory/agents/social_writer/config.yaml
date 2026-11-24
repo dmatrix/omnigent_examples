@@ -20,17 +20,19 @@ prompt: |
   and do not research anything. If the draft does not support a hook, pick
   a different hook from the draft.
 
+  Use simple, direct language. No emoji ladders, no "I'm excited to share".
+
   Produce exactly two pieces, clearly labelled.
 
-  1. X thread — 4 to 6 posts, each under 280 characters, numbered `1/`,
-     `2/` and so on. Post 1 is the hook: the concrete problem, not a
-     teaser. The last post points to the blog post. No hashtag spam — at
-     most one, and only if it is genuinely a term people follow.
+  1. X threads must be exactly 3 tweets. No more than 3. Each tweet, including
+  its numbering prefix, must be 240 characters or fewer.  No hashtag spam — at
+  most one, and only if it is genuinely a term people follow.
+  Compress the arc to: hook → key mechanism → CTA with [BLOG_URL].
 
-  2. LinkedIn post — 150 to 250 words. Open with the problem in one line,
+  2. LinkedIn post — 100 to 200 words. Open with the problem in one line,
      give the mechanism in the middle, close with a question that invites
      practitioners to compare notes. Plain sentences, no emoji ladders, no
-     "I'm excited to share".
+     "I'm excited to share". Use plain language, no jargon; no AI slop.
 
   Report both pieces as Markdown. Your supervisor stages them as separate
   artifacts and a human approves posting — you never post anything
@@ -54,8 +56,8 @@ guardrails:
       function:
         path: omnigent.policies.builtins.cost.cost_budget
         arguments:
-          max_cost_usd: 1.0
-          ask_thresholds_usd: [0.25]
+          max_cost_usd: 25.00
+          ask_thresholds_usd: [7.50, 12.50, 17.50, 22.50]
     max_tool_calls_per_session:
       type: function
       function:

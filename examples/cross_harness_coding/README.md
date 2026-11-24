@@ -86,15 +86,16 @@ omnigent run examples/cross_harness_coding/ --model databricks-claude-sonnet-4-6
 
 **Implement, test, and review:**
 ```
-Write a Python rate limiter class using the token bucket algorithm.
-Put it in rate_limiter.py with unit tests in test_rate_limiter.py.
-Make sure all tests pass before sending to review.
+Write a Python binary search function in binary_search.py with unit tests
+in test_binary_search.py. Include tests for an empty list, a missing target,
+and duplicate elements. Make sure all tests pass before sending to review.
 ```
 
 **Test failure → fix cycle:**
 ```
-Write a binary search function in search.py with edge case tests
-in test_search.py. Include a test for an empty list.
+Write a function in brackets.py that checks whether a string of brackets
+()[]{} is balanced, with tests in test_brackets.py. Include a test for
+an empty string and mismatched pairs.
 ```
 
 **Filesystem operations + test:**
@@ -103,12 +104,6 @@ Write a file_scanner.py that walks the current directory, collects
 file sizes, and writes a summary report to scan_report.txt.
 Include tests that verify the scanner handles permission errors
 and symbolic links. Run the tests.
-```
-
-**Refactor + re-test + review:**
-```
-Read rate_limiter.py, refactor it to use async/await,
-re-run the tests, then review the refactor for correctness.
 ```
 
 **Cost guard trigger (run after the queries above):**
@@ -180,7 +175,7 @@ All three agents share the same `os_env` (filesystem and CWD). The supervisor di
 ### Request flow
 
 ```
-1. User sends a coding task (e.g. "write a rate limiter")
+1. User sends a coding task (e.g. "write a binary search")
 2. Supervisor (Claude) breaks down the request, dispatches to impl_worker
 3. impl_worker (Codex) writes code and runs tests
 4. If tests fail → Supervisor sends failures back to impl_worker for fixes
