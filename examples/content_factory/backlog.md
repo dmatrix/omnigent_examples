@@ -1,3 +1,11 @@
+## build-content-factories
+- status: APPROVED
+- title: How Omnigent Facilitates Building Agentic Content Factories
+- summary: Use the content_factory example as a reference for building a factory on Omnigent primitives: a supervisor that delegates to sub-agents running on different harnesses, a custom stateful policy that gates irreversible actions behind human approval, tools auto-discovered from tools/python/, and a two-tier artifact layout separating free staging work from anything that ships outward.
+- sources:
+  - https://github.com/omnigent-ai/omnigent
+  - https://github.com/dmatrix/omnigent_examples/tree/main/examples/content_factory
+
 ## contextual-policies
 - status: PUBLISHED
 - title: How Omnigent's Contextual Policies Gate Data, Not Just Tools
@@ -28,7 +36,7 @@
 
 ## recurring-schedules
 - status: READY
-- title: Scheduled Agent Work for Continuous Automation
+- title: Scheduled Agent Work and Tasks
 - summary: Omnigent supports recurring scheduled tasks defined with an RRULE.
 - sources:
   - https://github.com/omnigent-ai/omnigent

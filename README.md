@@ -21,12 +21,12 @@ Databricks-hosted Omnigent Server.
 
 This repository contains example agent configurations for the [Omnigent](https://github.com/omnigent) meta-harness. Each example defines a [Custom Omnigent AI agent](https://omnigent.ai/docs/use/custom-agents) in YAML -- specifying the executor, system prompt, contextual and custom policies, skills, and tools. Six examples demonstrate different patterns, each using [session-based contextual policies](https://www.databricks.com/blog/contextual-policies-omnigent-using-session-state-better-govern-ai-agents) and the meta-harness for orchestrating agents and secured execution:
 
-1. **[Content Factory](examples/content_factory/)** -- an agentic software factory across three harnesses: a Claude supervisor pulls a feature from a backlog, a Codex `blog_writer` drafts, a Claude `editor` returns PASS/REVISE/REJECT, a Claude `social_writer` derives short-form copy. Drafting is unattended; publishing and outbound posting stop at a custom stateful `publish_gate`. Scheduling itself is approval-gated too.
-2. **[Cross-Harness Coding](examples/cross_harness_coding/)** -- multi-harness delegation (Codex implements, Claude reviews, one shared session)
-3. **[Harness Portability](examples/harness_portability/)** -- one supervisor, four inspectors, four harnesses: a Code Project Health Inspector with Claude SDK, Codex, Pi, and Hermes sub-agents, including MLflow tracing of Claude and Codex.
-4. **[Secure Code Assistant](examples/secure_code_assistant/)** -- session-based information flow control blocks web search after private code read, blocks file writes after web content reads, and enforces ALLOW, DENY, ASK policy guardrails, and budget control costs at session level.
-5. **[Slow-Burn Guard](examples/slow_burn_guard/)** -- a compromised runbook fragments a data-exfiltration goal into individually-benign steps; a single stateful risk-score policy sees the whole session and DENIES the outbound send. Databricks [Omnigent blog](https://www.databricks.com/blog/blocking-slow-burn-attacks-contextual-policies-omnigent) companion example.
-6. **[Telco Customer Agent](examples/telco_customer_agent/)** -- multi-tool customer data agent with 9 contextual and session-based policies: PII/financial taint labels, cost budget, PII leak prevention, stateful risk scoring, and a custom bulk access guard
+1. **[Content Factory](examples/content_factory/README.md)** -- an agentic software factory across three harnesses: a Claude supervisor pulls a feature from a backlog, a Codex `blog_writer` drafts, a Claude `editor` returns PASS/REVISE/REJECT, a Claude `social_writer` derives short-form copy. Drafting is unattended; publishing and outbound posting stop at a custom stateful `publish_gate`. Scheduling itself is approval-gated too.
+2. **[Cross-Harness Coding](examples/cross_harness_coding/README.md)** -- multi-harness delegation (Codex implements, Claude reviews, one shared session)
+3. **[Harness Portability](examples/harness_portability/README.md)** -- one supervisor, four inspectors, four harnesses: a Code Project Health Inspector with Claude SDK, Codex, Pi, and Hermes sub-agents, including MLflow tracing of Claude and Codex.
+4. **[Secure Code Assistant](examples/secure_code_assistant/README.md)** -- session-based information flow control blocks web search after private code read, blocks file writes after web content reads, and enforces ALLOW, DENY, ASK policy guardrails, and budget control costs at session level.
+5. **[Slow-Burn Guard](examples/slow_burn_guard/README.md)** -- a compromised runbook fragments a data-exfiltration goal into individually-benign steps; a single stateful risk-score policy sees the whole session and DENIES the outbound send. Databricks [Omnigent blog](https://www.databricks.com/blog/blocking-slow-burn-attacks-contextual-policies-omnigent) companion example.
+6. **[Telco Customer Agent](examples/telco_customer_agent/README.md)** -- multi-tool customer data agent with 9 contextual and session-based policies: PII/financial taint labels, cost budget, PII leak prevention, stateful risk scoring, and a custom bulk access guard
 
 > **Three of the six use custom policy handlers and only run as a local ephemeral session.** `content_factory`, `telco_customer_agent` and `secure_code_assistant` are rejected by a persistent local daemon or a remote server before the session starts. See [Custom policies: local ephemeral only](#custom-policies-local-ephemeral-only).
 
@@ -143,7 +143,7 @@ PYTHONPATH=$(pwd) omnigent run examples/telco_customer_agent/ --server local --n
 omnigent run examples/secure_code_assistant/ --server local --no-session
 ```
 
-Each example README has detailed local setup instructions -- see [Content Factory](examples/content_factory/), [Cross-Harness](examples/cross_harness_coding/), [Harness Portability](examples/harness_portability/), [Secure Code Assistant](examples/secure_code_assistant/), [Slow-Burn Guard](examples/slow_burn_guard/), [Telco](examples/telco_customer_agent/).
+Each example README has detailed local setup instructions -- see [Content Factory](examples/content_factory/README.md), [Cross-Harness](examples/cross_harness_coding/README.md), [Harness Portability](examples/harness_portability/README.md), [Secure Code Assistant](examples/secure_code_assistant/README.md), [Slow-Burn Guard](examples/slow_burn_guard/README.md), [Telco](examples/telco_customer_agent/README.md).
 
 ### Custom policies: local ephemeral only
 
@@ -199,12 +199,12 @@ omnigent server stop      # stop server and local host daemon
 ---
 
 Each example README has a full list of queries, and most have a `demo.md` walkthrough:
-- [Content Factory walkthrough](examples/content_factory/demo.md)
-- [Cross-Harness Coding queries](examples/cross_harness_coding/#example-queries)
-- [Harness Portability queries](examples/harness_portability/#example-queries)
-- [Secure Code Assistant queries](examples/secure_code_assistant/#example-queries)
-- [Slow-Burn Guard walkthrough](examples/slow_burn_guard/#the-attack-step-by-step)
-- [Telco Customer Agent queries](examples/telco_customer_agent/#example-queries)
+- [Content Factory](examples/content_factory/README.md) -- [the cycle, step by step](examples/content_factory/README.md#the-cycle-step-by-step) and the [walkthrough](examples/content_factory/demo.md)
+- [Cross-Harness Coding queries](examples/cross_harness_coding/README.md#example-queries)
+- [Harness Portability queries](examples/harness_portability/README.md#example-queries)
+- [Secure Code Assistant queries](examples/secure_code_assistant/README.md#example-queries)
+- [Slow-Burn Guard walkthrough](examples/slow_burn_guard/README.md#the-attack-step-by-step)
+- [Telco Customer Agent queries](examples/telco_customer_agent/README.md#example-queries-to-trigger-policies)
 
 ---
 
@@ -294,12 +294,12 @@ No Python tool code changes are needed -- the tools are provider-independent.
 
 Each agent has its own architecture diagram in its README:
 
-- [Content Factory architecture](examples/content_factory/)
-- [Cross-Harness Coding architecture](examples/cross_harness_coding/)
-- [Harness Portability](examples/harness_portability/)
-- [Secure Code Assistant](examples/secure_code_assistant/)
-- [Slow-Burn Guard](examples/slow_burn_guard/)
-- [Telco Customer Agent architecture](examples/telco_customer_agent/)
+- [Content Factory architecture](examples/content_factory/README.md)
+- [Cross-Harness Coding architecture](examples/cross_harness_coding/README.md)
+- [Harness Portability](examples/harness_portability/README.md)
+- [Secure Code Assistant](examples/secure_code_assistant/README.md)
+- [Slow-Burn Guard](examples/slow_burn_guard/README.md)
+- [Telco Customer Agent architecture](examples/telco_customer_agent/README.md)
 
 Reference docs:
 

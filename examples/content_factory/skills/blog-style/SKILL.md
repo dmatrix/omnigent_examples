@@ -133,6 +133,7 @@ Include Python snippets where showing the code is faster than describing it.
 - [ ] Word count 1400-2000?
 - [ ] Any code verified against official sources? If unverifiable, replaced with prose + doc link?
 - [ ] Are there any digarams added where necessary to show architecture, workflow or data flow
+- [ ] Make sure all hyperlinks are accessible and not broken
 
 ---
 
